@@ -22,6 +22,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quickdropapp.ui.theme.QuickDropAppTheme
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,6 +54,18 @@ fun QuickDropHomeScreen() {
             repeatMode = RepeatMode.Reverse
         )
     )
+
+    // State voor leveringen
+    var deliveries by remember { mutableStateOf<List<Delivery>?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Fetch deliveries bij het opstarten
+    LaunchedEffect(Unit) {
+        fetchDeliveries { result, error ->
+            deliveries = result
+            errorMessage = error
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -117,10 +132,73 @@ fun QuickDropHomeScreen() {
             Spacer(modifier = Modifier.height(12.dp))
 
             ActionCard(
-                title = "Bekijk Matches",
-                description = "Vind beschikbare koeriers voor je pakket",
-                onClick = { /* Navigeer naar matching scherm */ }
+                title = "Bekijk Leveringen",
+                description = "Bekijk alle leveringen",
+                onClick = {
+                    fetchDeliveries { result, error ->
+                        deliveries = result
+                        errorMessage = error
+                    }
+                }
             )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Toon leveringen onder de Action Cards
+            deliveries?.let { deliveryList ->
+                if (deliveryList.isNotEmpty()) {
+                    Text(
+                        text = "Actieve Leveringen",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
+                    deliveryList.forEach { delivery ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "Levering #${delivery.id}",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "Pakket: ${delivery.package_id}, Koerier: ${delivery.courier_id}",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                                Text(
+                                    text = "Ophaaltijd: ${delivery.pickup_time ?: "Niet opgegeven"}," +
+                                            " Levertijd: ${delivery.delivery_time ?: "Niet geleverd"}",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            errorMessage?.let {
+                Text(
+                    text = "Fout: $it",
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -189,4 +267,23 @@ fun ActionCard(title: String, description: String, onClick: () -> Unit) {
             )
         }
     }
+}
+
+// Helperfunctie om leveringen op te halen
+fun fetchDeliveries(callback: (List<Delivery>?, String?) -> Unit) {
+    val apiService = RetrofitClient.instance.create(ApiService::class.java)
+    val call = apiService.getDeliveries()
+    call.enqueue(object : Callback<List<Delivery>> {
+        override fun onResponse(call: Call<List<Delivery>>, response: Response<List<Delivery>>) {
+            if (response.isSuccessful) {
+                callback(response.body(), null)
+            } else {
+                callback(null, "Fout: ${response.code()} - ${response.message()}")
+            }
+        }
+
+        override fun onFailure(call: Call<List<Delivery>>, t: Throwable) {
+            callback(null, "Fout: ${t.message}")
+        }
+    })
 }

@@ -2,10 +2,13 @@ package com.example.quickdropapp.network
 
 import com.example.quickdropapp.models.Courier
 import com.example.quickdropapp.models.Delivery
+import com.example.quickdropapp.models.LoginRequest
+import com.example.quickdropapp.models.User
 import retrofit2.Call
 import retrofit2.http.*
 
 interface ApiService {
+    // Bestaande endpoints
     @GET("api/deliveries")
     fun getDeliveries(): Call<List<Delivery>>
 
@@ -21,7 +24,6 @@ interface ApiService {
     @DELETE("api/deliveries/{id}")
     fun deleteDelivery(@Path("id") id: Int): Call<Void>
 
-    // Optioneel: Voeg endpoints voor /api/couriers toe als je die wilt testen
     @GET("api/couriers")
     fun getCouriers(): Call<List<Courier>>
 
@@ -36,4 +38,11 @@ interface ApiService {
 
     @DELETE("api/couriers/{id}")
     fun deleteCourier(@Path("id") id: Int): Call<Void>
+
+    // Nieuwe endpoints voor authenticatie
+    @POST("api/users/login")
+    fun loginUser(@Body loginRequest: LoginRequest): Call<User>
+
+    @POST("api/users/register")
+    fun createUser(@Body user: User): Call<User>
 }

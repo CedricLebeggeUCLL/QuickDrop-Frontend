@@ -48,6 +48,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.ui.text)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -60,4 +61,13 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.gson)
+
+    // Navigation dependencies
+    implementation(libs.androidx.navigation.compose)
+
+    // Material Icons Extended dependency (voor Icons.Default)
+    implementation(libs.androidx.material.icons.extended)
+
+    // Animation dependency (voor animateFloatAsState, tween)
+    implementation(libs.androidx.animation)
 }

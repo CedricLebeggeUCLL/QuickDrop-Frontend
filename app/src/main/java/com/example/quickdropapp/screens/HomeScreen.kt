@@ -8,16 +8,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp // Voor uitloggen
-import androidx.compose.material.icons.filled.BikeScooter
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.DoubleArrow
 import androidx.compose.material.icons.filled.DriveEta
 import androidx.compose.material.icons.filled.FormatListNumbered
-import androidx.compose.material.icons.filled.GifBox
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,7 +31,7 @@ import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
 
 @Composable
-fun HomeScreen(navController: NavController, onLogout: () -> Unit) { // Toegevoegd voor uitloggen
+fun HomeScreen(navController: NavController, onLogout: () -> Unit) {
     Scaffold(
         bottomBar = {
             ModernBottomNavigation(navController)

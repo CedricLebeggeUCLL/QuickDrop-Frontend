@@ -32,6 +32,7 @@ class MainActivity : ComponentActivity() {
                     composable("sendPackage") { SendPackageScreen(navController) }
                     composable("becomeCourier") { BecomeCourierScreen(navController) }
                     composable("trackDelivery") { TrackDeliveryScreen(navController) }
+                    composable("viewDeliveries") { ViewDeliveriesScreen(navController) }
                 }
             }
         }

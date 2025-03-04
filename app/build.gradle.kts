@@ -57,7 +57,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    // Retrofit dependencies (via Version Catalog)
+    // Retrofit dependencies
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.gson)
@@ -70,4 +70,8 @@ dependencies {
 
     // Animation dependency (voor animateFloatAsState, tween)
     implementation(libs.androidx.animation)
+
+    // Google Maps dependencies (via Version Catalog)
+    implementation(libs.maps.compose)
+    implementation(libs.play.services.maps)
 }

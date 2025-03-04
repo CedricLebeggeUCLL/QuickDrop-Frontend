@@ -1,5 +1,7 @@
-package com.example.quickdropapp
+package com.example.quickdropapp.network
 
+import com.example.quickdropapp.models.Courier
+import com.example.quickdropapp.models.Delivery
 import retrofit2.Call
 import retrofit2.http.*
 

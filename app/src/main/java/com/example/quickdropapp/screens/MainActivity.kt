@@ -1,4 +1,4 @@
-package com.example.quickdropapp
+package com.example.quickdropapp.screens
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -21,6 +21,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.quickdropapp.R
+import com.example.quickdropapp.models.Delivery
+import com.example.quickdropapp.network.ApiService
+import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.QuickDropAppTheme
 import retrofit2.Call
 import retrofit2.Callback

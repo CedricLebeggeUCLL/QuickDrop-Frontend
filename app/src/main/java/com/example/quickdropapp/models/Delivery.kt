@@ -1,4 +1,4 @@
-package com.example.quickdropapp
+package com.example.quickdropapp.models
 
 data class Delivery(
     val id: Int? = null,

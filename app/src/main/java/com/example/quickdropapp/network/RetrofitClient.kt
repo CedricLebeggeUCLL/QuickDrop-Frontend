@@ -1,4 +1,4 @@
-package com.example.quickdropapp
+package com.example.quickdropapp.network
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory

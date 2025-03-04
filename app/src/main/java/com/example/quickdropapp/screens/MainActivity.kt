@@ -20,7 +20,15 @@ class MainActivity : ComponentActivity() {
                     composable("welcome") { WelcomeScreen(navController) }
                     composable("login") { LoginScreen(navController) }
                     composable("register") { RegisterScreen(navController) }
-                    composable("home") { HomeScreen(navController) }
+                    composable("home") {
+                        HomeScreen(
+                            navController = navController,
+                            onLogout = {
+                                navController.popBackStack("welcome", inclusive = false)
+                                navController.navigate("welcome")
+                            }
+                        )
+                    }
                 }
             }
         }

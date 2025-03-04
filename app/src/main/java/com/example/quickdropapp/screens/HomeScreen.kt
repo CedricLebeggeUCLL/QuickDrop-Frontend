@@ -197,10 +197,10 @@ fun ModernBottomNavigation(navController: NavController) {
         tonalElevation = 8.dp
     ) {
         val items = listOf(
-            "Home" to Icons.Filled.Home,
-            "Send" to Icons.Filled.DoubleArrow,
-            "Track" to Icons.Filled.LocationOn,
-            "Deliveries" to Icons.Filled.FormatListNumbered
+            "home" to Icons.Filled.Home,
+            "sendPackage" to Icons.Filled.DoubleArrow,
+            "trackDelivery" to Icons.Filled.LocationOn,
+            "viewDeliveries" to Icons.Filled.FormatListNumbered
         )
         items.forEach { (route, icon) ->
             NavigationBarItem(

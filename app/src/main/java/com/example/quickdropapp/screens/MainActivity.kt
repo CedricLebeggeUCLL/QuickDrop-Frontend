@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
+                    composable("sendPackage") { SendPackageScreen(navController) }
                 }
             }
         }

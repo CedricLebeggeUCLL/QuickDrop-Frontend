@@ -193,12 +193,12 @@ fun ModernBottomNavigation(navController: NavController) {
         tonalElevation = 8.dp
     ) {
         val items = listOf(
-            "home" to Icons.Filled.Home,
-            "sendPackage" to Icons.Filled.DoubleArrow,
-            "trackDelivery" to Icons.Filled.LocationOn,
-            "viewDeliveries" to Icons.Filled.FormatListNumbered
+            Triple("home", Icons.Filled.Home, "Home"),
+            Triple("sendPackage", Icons.Filled.DoubleArrow, "Send"),
+            Triple("trackDelivery", Icons.Filled.LocationOn, "Track"),
+            Triple("viewDeliveries", Icons.Filled.FormatListNumbered, "Deliveries")
         )
-        items.forEach { (route, icon) ->
+        items.forEach { (route, icon, label) ->
             NavigationBarItem(
                 selected = navController.currentDestination?.route == route,
                 onClick = { navController.navigate(route) },
@@ -211,9 +211,10 @@ fun ModernBottomNavigation(navController: NavController) {
                 },
                 label = {
                     Text(
-                        text = route.replaceFirstChar { it.uppercase() },
+                        text = label,
                         color = if (navController.currentDestination?.route == route) GreenSustainable else DarkGreen.copy(alpha = 0.6f),
-                        fontSize = 12.sp
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal
                     )
                 }
             )

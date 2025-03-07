@@ -26,12 +26,34 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.quickdropapp.models.Courier
+import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @Composable
 fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) {
+    var isCourier by remember { mutableStateOf<Boolean?>(null) }
+
+    val apiService = RetrofitClient.instance
+
+    // Check of de gebruiker een courier is
+    LaunchedEffect(userId) {
+        apiService.getCourierByUserId(userId).enqueue(object : Callback<Courier> {
+            override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
+                isCourier = response.isSuccessful && response.body() != null
+            }
+
+            override fun onFailure(call: Call<Courier>, t: Throwable) {
+                isCourier = false // Als de aanroep faalt, gaan we ervan uit dat de gebruiker geen courier is
+            }
+        })
+    }
+
     Scaffold(
         bottomBar = {
             ModernBottomNavigation(navController, userId)
@@ -96,13 +118,31 @@ fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) 
                     onClick = { navController.navigate("sendPackage/$userId") },
                     containerColor = GreenSustainable
                 )
-                ModernActionCard(
-                    title = "Word Koerier",
-                    description = " Bezorg en verdien",
-                    icon = Icons.Filled.DriveEta,
-                    onClick = { navController.navigate("becomeCourier") },
-                    containerColor = DarkGreen
-                )
+
+                // Toon een laad-indicator terwijl de courier-status wordt opgehaald
+                if (isCourier == null) {
+                    CircularProgressIndicator(
+                        color = GreenSustainable,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                } else if (isCourier == true) {
+                    ModernActionCard(
+                        title = "Start een Levering",
+                        description = " Stel je locatie en radius in",
+                        icon = Icons.Filled.DriveEta,
+                        onClick = { navController.navigate("startDelivery/$userId") },
+                        containerColor = DarkGreen
+                    )
+                } else {
+                    ModernActionCard(
+                        title = "Word Koerier",
+                        description = " Bezorg en verdien",
+                        icon = Icons.Filled.DriveEta,
+                        onClick = { navController.navigate("becomeCourier/$userId") },
+                        containerColor = DarkGreen
+                    )
+                }
+
                 ModernActionCard(
                     title = "Track Levering",
                     description = " Volg live je pakket",

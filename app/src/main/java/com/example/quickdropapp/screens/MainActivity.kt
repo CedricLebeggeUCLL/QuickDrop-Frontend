@@ -42,7 +42,27 @@ class MainActivity : ComponentActivity() {
                         val userId = backStackEntry.arguments?.getInt("userId") ?: 0
                         SendPackageScreen(navController, userId)
                     }
-                    composable("becomeCourier") { BecomeCourierScreen(navController) }
+                    composable(
+                        route = "becomeCourier/{userId}",
+                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                        BecomeCourierScreen(navController, userId)
+                    }
+                    composable(
+                        route = "startDelivery/{userId}",
+                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                        StartDeliveryScreen(navController, userId)
+                    }
+                    composable(
+                        route = "searchPackages/{userId}",
+                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                        SearchPackagesScreen(navController, userId)
+                    }
                     composable("trackDelivery") { TrackDeliveryScreen(navController) }
                     composable(
                         route = "viewDeliveries/{userId}",

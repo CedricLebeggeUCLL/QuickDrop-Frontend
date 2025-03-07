@@ -50,11 +50,14 @@ interface ApiService {
     @GET("couriers/{id}")
     fun getCourierById(@Path("id") id: Int): Call<Courier>
 
+    @GET("couriers/user/{userId}")
+    fun getCourierByUserId(@Path("userId") userId: Int): Call<Courier>
+
     @POST("couriers")
     fun becomeCourier(@Body courier: Courier): Call<Courier>
 
     @PUT("couriers/{id}")
-    fun updateCourier(@Path("id") id: Int, @Body courier: Courier): Call<Courier>
+    fun updateCourier(@Path("id") id: Int, @Body courierData: Map<String, Any>): Call<Courier>
 
     @DELETE("couriers/{id}")
     fun deleteCourier(@Path("id") id: Int): Call<Void>
@@ -78,7 +81,7 @@ interface ApiService {
     @GET("deliveries/users/{userId}")
     fun getDeliveryHistory(@Path("userId") id: Int): Call<List<Delivery>>
 
-    @POST("deliveries/search")
+    @POST("packages/search")
     fun searchPackages(@Body searchRequest: SearchRequest): Call<SearchResponse>
 
     // Search Request and Response

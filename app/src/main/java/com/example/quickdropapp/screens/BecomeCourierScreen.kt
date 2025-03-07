@@ -3,7 +3,6 @@ package com.example.quickdropapp.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.BikeScooter
@@ -14,18 +13,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.quickdropapp.models.Courier
+import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @Composable
-fun BecomeCourierScreen(navController: NavController) {
-    // Dummy-gebruikersdata (vervang later door echte ingelogde user)
-    val currentUser = "johndoe" // Simulatie van ingelogde gebruiker
+fun BecomeCourierScreen(navController: NavController, userId: Int) {
+    var itsmeCode by remember { mutableStateOf("") }
+    var licenseNumber by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var successMessage by remember { mutableStateOf<String?>(null) }
+
+    val apiService = RetrofitClient.instance
 
     Scaffold(containerColor = SandBeige) { paddingValues ->
         Column(
@@ -68,7 +75,7 @@ fun BecomeCourierScreen(navController: NavController) {
             ) {
                 // Subtitel
                 Text(
-                    text = "Bezorg duurzaam en verdien!",
+                    text = "Registreer je als koerier met verificatie",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     color = DarkGreen.copy(alpha = 0.8f)
@@ -77,13 +84,6 @@ fun BecomeCourierScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Formuliervelden
-                var currentLatitude by remember { mutableStateOf("") }
-                var currentLongitude by remember { mutableStateOf("") }
-                var destinationLatitude by remember { mutableStateOf("") }
-                var destinationLongitude by remember { mutableStateOf("") }
-                var itsmeCode by remember { mutableStateOf("") } // Simulatie van itsme-verificatie
-                var licenseNumber by remember { mutableStateOf("") } // Extra beveiliging
-
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -92,86 +92,7 @@ fun BecomeCourierScreen(navController: NavController) {
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        // Gebruikersinfo (readonly)
-                        Text(
-                            text = "Gebruikersnaam: $currentUser",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = DarkGreen,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Huidige locatie
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            OutlinedTextField(
-                                value = currentLatitude,
-                                onValueChange = { currentLatitude = it.filter { char -> char.isDigit() || char == '.' || char == '-' } },
-                                label = { Text("Huidige Latitude") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                modifier = Modifier.weight(1f),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenSustainable,
-                                    unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                    cursorColor = GreenSustainable,
-                                    focusedLabelColor = GreenSustainable
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            OutlinedTextField(
-                                value = currentLongitude,
-                                onValueChange = { currentLongitude = it.filter { char -> char.isDigit() || char == '.' || char == '-' } },
-                                label = { Text("Huidige Longitude") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                modifier = Modifier.weight(1f),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenSustainable,
-                                    unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                    cursorColor = GreenSustainable,
-                                    focusedLabelColor = GreenSustainable
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Bestemmingslocatie
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            OutlinedTextField(
-                                value = destinationLatitude,
-                                onValueChange = { destinationLatitude = it.filter { char -> char.isDigit() || char == '.' || char == '-' } },
-                                label = { Text("Bestemming Latitude") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                modifier = Modifier.weight(1f),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenSustainable,
-                                    unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                    cursorColor = GreenSustainable,
-                                    focusedLabelColor = GreenSustainable
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            OutlinedTextField(
-                                value = destinationLongitude,
-                                onValueChange = { destinationLongitude = it.filter { char -> char.isDigit() || char == '.' || char == '-' } },
-                                label = { Text("Bestemming Longitude") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                modifier = Modifier.weight(1f),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenSustainable,
-                                    unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                    cursorColor = GreenSustainable,
-                                    focusedLabelColor = GreenSustainable
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Beveiligingsvelden
+                        // Itsme Verificatiecode
                         OutlinedTextField(
                             value = itsmeCode,
                             onValueChange = { itsmeCode = it },
@@ -188,10 +109,11 @@ fun BecomeCourierScreen(navController: NavController) {
 
                         Spacer(modifier = Modifier.height(12.dp))
 
+                        // Rijbewijsnummer (optioneel)
                         OutlinedTextField(
                             value = licenseNumber,
                             onValueChange = { licenseNumber = it },
-                            label = { Text("Rijbewijsnummer (optioneel)") },
+                            label = { Text("Rijbewijsnummer of ID (optioneel)") },
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = GreenSustainable,
@@ -204,34 +126,81 @@ fun BecomeCourierScreen(navController: NavController) {
                     }
                 }
 
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Fout- en succesmeldingen onderaan
+                successMessage?.let {
+                    Text(
+                        text = it,
+                        color = GreenSustainable,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        maxLines = 5
+                    )
+                }
+                errorMessage?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        maxLines = 5
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(32.dp))
 
                 // Registreer knop
                 Button(
                     onClick = {
-                        if (currentLatitude.isNotBlank() && currentLongitude.isNotBlank() &&
-                            destinationLatitude.isNotBlank() && destinationLongitude.isNotBlank() &&
-                            itsmeCode.isNotBlank()
-                        ) {
-                            println(
-                                "Koerier registratie: " +
-                                        "User: $currentUser, " +
-                                        "Current Location: [$currentLatitude, $currentLongitude], " +
-                                        "Destination: [$destinationLatitude, $destinationLongitude], " +
-                                        "Itsme Code: $itsmeCode, " +
-                                        "License: ${licenseNumber.ifBlank { "N/A" }}"
-                            )
-                            navController.popBackStack() // Terug naar HomeScreen
+                        if (itsmeCode.isBlank()) {
+                            errorMessage = "Itsme verificatiecode is verplicht"
+                            return@Button
                         }
+
+                        // Maak courierData met itsme_code en license_number
+                        val courierData = Courier(
+                            user_id = userId,
+                            itsme_code = itsmeCode,
+                            license_number = if (licenseNumber.isBlank()) null else licenseNumber
+                            // Geen locatie of radius bij registratie, backend vult defaults in
+                        )
+
+                        // Log voor debugging
+                        println("Sending courier data: $courierData")
+
+                        val call = apiService.becomeCourier(courierData)
+                        call.enqueue(object : Callback<Courier> {
+                            override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
+                                if (response.isSuccessful) {
+                                    successMessage = "Je bent nu een koerier!"
+                                    errorMessage = null
+                                    navController.popBackStack() // Terug naar HomeScreen
+                                } else {
+                                    val errorBody = response.errorBody()?.string() ?: "Geen details"
+                                    errorMessage = "Fout bij registratie: ${response.code()} - $errorBody"
+                                    successMessage = null
+                                    println("Error response: ${response.code()} - $errorBody")
+                                }
+                            }
+
+                            override fun onFailure(call: Call<Courier>, t: Throwable) {
+                                errorMessage = "Netwerkfout: ${t.message}"
+                                successMessage = null
+                                println("Network failure: ${t.message}")
+                            }
+                        })
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable),
                     shape = RoundedCornerShape(16.dp),
-                    enabled = currentLatitude.isNotBlank() && currentLongitude.isNotBlank() &&
-                            destinationLatitude.isNotBlank() && destinationLongitude.isNotBlank() &&
-                            itsmeCode.isNotBlank()
+                    enabled = itsmeCode.isNotBlank()
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(

@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.Courier
+import com.example.quickdropapp.network.ApiService
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -43,18 +44,24 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
     // Haal de koerier-ID op bij het laden van het scherm
     LaunchedEffect(userId) {
+        if (userId <= 0) {
+            errorMessage = "Ongeldige user ID: $userId"
+            return@LaunchedEffect
+        }
         apiService.getCourierByUserId(userId).enqueue(object : Callback<Courier> {
             override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
                 if (response.isSuccessful) {
                     courierId = response.body()?.id
-                    println("Courier ID for user $userId: $courierId")
+                    println("Fetched courierId: $courierId for userId: $userId")
                 } else {
                     errorMessage = "Kon koerier niet vinden: ${response.code()} - ${response.errorBody()?.string() ?: "Geen details"}"
+                    println("Failed to fetch courier: ${response.code()} - ${response.errorBody()?.string()}")
                 }
             }
 
             override fun onFailure(call: Call<Courier>, t: Throwable) {
                 errorMessage = "Netwerkfout bij ophalen koerier: ${t.message}"
+                println("Network failure fetching courier: ${t.message}")
             }
         })
     }
@@ -248,8 +255,10 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
                 Button(
                     onClick = {
+                        println("Button clicked - Checking state: courierId=$courierId, inputs: lat=$currentLatitude, lng=$currentLongitude, destLat=$destinationLatitude, destLng=$destinationLongitude, pickupRad=$pickupRadius, dropoffRad=$dropoffRadius")
                         if (courierId == null) {
                             errorMessage = "Koerier-ID niet geladen, probeer opnieuw"
+                            println("Crash point: Courier ID is null")
                             return@Button
                         }
 
@@ -261,44 +270,49 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                         val dropoffRad = dropoffRadius.toDoubleOrNull()
 
                         if (currentLat == null || currentLng == null || destLat == null || destLng == null || pickupRad == null || dropoffRad == null) {
-                            errorMessage = "Vul geldige coördinaten en radius in"
+                            errorMessage = "Vul geldige coördinaten en radius in: currentLat=$currentLat, currentLng=$currentLng, destLat=$destLat, destLng=$destLng, pickupRad=$pickupRad, dropoffRad=$dropoffRad"
+                            println("Crash point: Invalid input detected")
                             return@Button
                         }
 
-                        // Update koerier met de nieuwe waarden
-                        val updateData = mapOf(
-                            "current_location" to listOf(currentLat, currentLng), // Aanpassen naar lijst voor backend-compatibiliteit
-                            "destination" to listOf(destLat, destLng),           // Aanpassen naar lijst voor backend-compatibiliteit
-                            "pickup_radius" to pickupRad,
-                            "dropoff_radius" to dropoffRad,
-                            "availability" to true
+                        val updateData = ApiService.CourierUpdateRequest(
+                            current_location = listOf(currentLat, currentLng),
+                            destination = listOf(destLat, destLng),
+                            pickup_radius = pickupRad,
+                            dropoff_radius = dropoffRad,
+                            availability = true
                         )
 
-                        println("Updating courier $courierId with data: $updateData")
+                        println("Attempting to update courier $courierId with data: $updateData")
 
                         apiService.updateCourier(courierId!!, updateData).enqueue(object : Callback<Courier> {
                             override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
+                                println("API response received: code=${response.code()}, body=${response.body()}")
                                 if (response.isSuccessful) {
                                     successMessage = "Locatie en radius succesvol ingesteld!"
                                     errorMessage = null
-                                    // Navigeer naar zoekscherm met geldige data
-                                    navController.navigate("searchPackages/$userId") {
-                                        // Voorkom dat de backstack te diep wordt
-                                        popUpTo("startDelivery/$userId") { inclusive = false }
-                                        launchSingleTop = true
+                                    println("Courier updated successfully: ${response.body()}")
+                                    try {
+                                        navController.navigate("searchPackages/$userId") {
+                                            popUpTo("startDelivery/$userId") { inclusive = false }
+                                            launchSingleTop = true
+                                        }
+                                    } catch (e: Exception) {
+                                        errorMessage = "Navigatiefout: ${e.message}"
+                                        println("Navigation failed: ${e.message}")
                                     }
                                 } else {
                                     val errorBody = response.errorBody()?.string() ?: "Geen details"
                                     errorMessage = "Fout bij updaten: ${response.code()} - $errorBody"
                                     successMessage = null
-                                    println("Error response: ${response.code()} - $errorBody")
+                                    println("Update failed: ${response.code()} - $errorBody")
                                 }
                             }
 
                             override fun onFailure(call: Call<Courier>, t: Throwable) {
                                 errorMessage = "Netwerkfout: ${t.message}"
                                 successMessage = null
-                                println("Network failure: ${t.message}")
+                                println("Network failure during update: ${t.message}")
                             }
                         })
                     },

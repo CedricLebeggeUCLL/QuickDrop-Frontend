@@ -43,6 +43,9 @@ interface ApiService {
     @GET("packages/{id}/track")
     fun trackPackage(@Path("id") id: Int): Call<Map<String, Any>>
 
+    @POST("packages/search")
+    fun searchPackages(@Body searchRequest: SearchRequest): Call<SearchResponse>
+
     // Couriers Endpoints
     @GET("couriers")
     fun getCouriers(): Call<List<Courier>>
@@ -57,7 +60,7 @@ interface ApiService {
     fun becomeCourier(@Body courier: Courier): Call<Courier>
 
     @PUT("couriers/{id}")
-    fun updateCourier(@Path("id") id: Int, @Body courierData: Map<String, Any>): Call<Courier>
+    fun updateCourier(@Path("id") id: Int, @Body courierData: CourierUpdateRequest): Call<Courier>
 
     @DELETE("couriers/{id}")
     fun deleteCourier(@Path("id") id: Int): Call<Void>
@@ -81,14 +84,11 @@ interface ApiService {
     @GET("deliveries/users/{userId}")
     fun getDeliveryHistory(@Path("userId") id: Int): Call<List<Delivery>>
 
-    @POST("packages/search")
-    fun searchPackages(@Body searchRequest: SearchRequest): Call<SearchResponse>
-
     // Search Request and Response
     data class SearchRequest(
         val user_id: Int,
-        val start_location: List<Double>, // Gewijzigd van Map naar List
-        val destination: List<Double>,   // Gewijzigd van Map naar List
+        val start_location: List<Double>,
+        val destination: List<Double>,
         val pickup_radius: Double,
         val dropoff_radius: Double
     )
@@ -96,5 +96,14 @@ interface ApiService {
     data class SearchResponse(
         val message: String,
         val packages: List<Package>
+    )
+
+    // Nieuwe dataklasse voor Courier Update Request
+    data class CourierUpdateRequest(
+        val current_location: List<Double>,
+        val destination: List<Double>,
+        val pickup_radius: Double,
+        val dropoff_radius: Double,
+        val availability: Boolean
     )
 }

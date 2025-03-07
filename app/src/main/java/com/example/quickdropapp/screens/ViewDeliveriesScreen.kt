@@ -10,7 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,18 +20,37 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.Delivery
+import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @Composable
-fun ViewDeliveriesScreen(navController: NavController) {
-    // Hardcoded testdata gebaseerd op je SQL en Delivery-model
-    val deliveries = listOf(
-        Delivery(1, 1, 1, "2023-10-01T10:00:00Z", null), // Pakket #1, In Transit
-        Delivery(2, 2, 2, "2023-10-01T12:30:00Z", "2023-10-01T14:00:00Z"), // Pakket #2, Delivered
-        Delivery(3, 3, 1, "2023-10-01T15:00:00Z", null) // Pakket #3, In Transit
-    )
+fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
+    var deliveries by remember { mutableStateOf<List<Delivery>?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val apiService = RetrofitClient.instance
+
+    // Fetch deliveries when the composable is first rendered
+    LaunchedEffect(Unit) {
+        val call = apiService.getDeliveryHistory(userId)
+        call.enqueue(object : Callback<List<Delivery>> {
+            override fun onResponse(call: Call<List<Delivery>>, response: Response<List<Delivery>>) {
+                if (response.isSuccessful) {
+                    deliveries = response.body()
+                } else {
+                    errorMessage = "Fout bij het laden van leveringen: ${response.message()}"
+                }
+            }
+
+            override fun onFailure(call: Call<List<Delivery>>, t: Throwable) {
+                errorMessage = "Fout: ${t.message}"
+            }
+        })
+    }
 
     Scaffold(containerColor = SandBeige) { paddingValues ->
         Column(
@@ -82,18 +101,33 @@ fun ViewDeliveriesScreen(navController: NavController) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Lijst van pakketten
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(deliveries) { delivery ->
-                        DeliveryItem(
-                            delivery = delivery,
-                            onTrackClick = { navController.navigate("trackDelivery") }
+                // Toon laadscherm of foutmelding
+                when {
+                    errorMessage != null -> {
+                        Text(
+                            text = errorMessage!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
                         )
+                    }
+                    deliveries == null -> {
+                        CircularProgressIndicator(color = GreenSustainable)
+                    }
+                    else -> {
+                        // Lijst van pakketten
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(deliveries!!) { delivery ->
+                                DeliveryItem(
+                                    delivery = delivery,
+                                    onTrackClick = { navController.navigate("trackDelivery/${delivery.id}") }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -119,18 +153,18 @@ fun DeliveryItem(delivery: Delivery, onTrackClick: () -> Unit) {
         ) {
             Column {
                 Text(
-                    text = "Pakket ID: ${delivery.package_id}", // Package_id als titel
+                    text = "Pakket ID: ${delivery.package_id}", // Gebruik packageId (camelCase)
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = DarkGreen
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Status: ${if (delivery.delivery_time != null) "Delivered" else "In Transit"}",
+                    text = "Status: ${if (delivery.deliveryTime != null) "Delivered" else "In Transit"}",
                     fontSize = 14.sp,
                     color = DarkGreen.copy(alpha = 0.8f)
                 )
-                delivery.pickup_time?.let {
+                delivery.pickupTime?.let {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Opgehaald: $it",
@@ -139,7 +173,7 @@ fun DeliveryItem(delivery: Delivery, onTrackClick: () -> Unit) {
                     )
                 }
             }
-            if (delivery.delivery_time == null) { // Alleen tracken als nog niet geleverd
+            if (delivery.deliveryTime == null) { // Alleen tracken als nog niet geleverd
                 IconButton(
                     onClick = onTrackClick,
                     modifier = Modifier

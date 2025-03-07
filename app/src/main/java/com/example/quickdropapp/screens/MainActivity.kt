@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.quickdropapp.ui.theme.QuickDropAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -20,9 +21,14 @@ class MainActivity : ComponentActivity() {
                     composable("welcome") { WelcomeScreen(navController) }
                     composable("login") { LoginScreen(navController) }
                     composable("register") { RegisterScreen(navController) }
-                    composable("home") {
+                    composable(
+                        route = "home/{userId}",
+                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
                         HomeScreen(
                             navController = navController,
+                            userId = userId,
                             onLogout = {
                                 navController.popBackStack("welcome", inclusive = false)
                                 navController.navigate("welcome")
@@ -32,7 +38,13 @@ class MainActivity : ComponentActivity() {
                     composable("sendPackage") { SendPackageScreen(navController) }
                     composable("becomeCourier") { BecomeCourierScreen(navController) }
                     composable("trackDelivery") { TrackDeliveryScreen(navController) }
-                    composable("viewDeliveries") { ViewDeliveriesScreen(navController) }
+                    composable(
+                        route = "viewDeliveries/{userId}",
+                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                        ViewDeliveriesScreen(navController, userId)
+                    }
                 }
             }
         }

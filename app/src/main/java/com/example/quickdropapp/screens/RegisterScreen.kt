@@ -11,7 +11,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.User
-import com.example.quickdropapp.network.ApiService
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -26,6 +25,8 @@ fun RegisterScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val apiService = RetrofitClient.instance
 
     Column(
         modifier = Modifier
@@ -93,8 +94,8 @@ fun RegisterScreen(navController: NavController) {
         Button(
             onClick = {
                 if (username.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()) {
-                    val apiService = RetrofitClient.instance.create(ApiService::class.java)
-                    val call = apiService.createUser(User(username = username, email = email, password = password, role = "user"))
+                    val user = User(username = username, email = email, password = password, role = "user")
+                    val call = apiService.registerUser(user)
                     call.enqueue(object : Callback<User> {
                         override fun onResponse(call: Call<User>, response: Response<User>) {
                             if (response.isSuccessful) {

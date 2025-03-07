@@ -4,12 +4,13 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.1.18:3000/" // Gebruik je lokale IP-adres
+    private const val BASE_URL = "http://10.0.2.2:3000/api/" // Voor emulator, pas aan naar je IP voor fysiek apparaat
 
-    val instance: Retrofit by lazy {
-        Retrofit.Builder()
+    val instance: ApiService by lazy {
+        val retrofit = Retrofit.Builder()
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+        retrofit.create(ApiService::class.java)
     }
 }

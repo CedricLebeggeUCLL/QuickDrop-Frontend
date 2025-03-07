@@ -31,10 +31,10 @@ import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
 
 @Composable
-fun HomeScreen(navController: NavController, onLogout: () -> Unit) {
+fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) {
     Scaffold(
         bottomBar = {
-            ModernBottomNavigation(navController)
+            ModernBottomNavigation(navController, userId)
         },
         containerColor = SandBeige
     ) { paddingValues ->
@@ -114,7 +114,7 @@ fun HomeScreen(navController: NavController, onLogout: () -> Unit) {
                     title = "Mijn Leveringen",
                     description = " Bekijk je historie",
                     icon = Icons.Filled.FormatListNumbered,
-                    onClick = { navController.navigate("viewDeliveries") },
+                    onClick = { navController.navigate("viewDeliveries/$userId") },
                     containerColor = DarkGreen
                 )
             }
@@ -182,7 +182,7 @@ fun ModernActionCard(
 }
 
 @Composable
-fun ModernBottomNavigation(navController: NavController) {
+fun ModernBottomNavigation(navController: NavController, userId: Int) {
     NavigationBar(
         modifier = Modifier
             .fillMaxWidth()
@@ -196,23 +196,28 @@ fun ModernBottomNavigation(navController: NavController) {
             Triple("home", Icons.Filled.Home, "Home"),
             Triple("sendPackage", Icons.Filled.DoubleArrow, "Send"),
             Triple("trackDelivery", Icons.Filled.LocationOn, "Track"),
-            Triple("viewDeliveries", Icons.Filled.FormatListNumbered, "Deliveries")
+            Triple("viewDeliveries/$userId", Icons.Filled.FormatListNumbered, "Deliveries")
         )
         items.forEach { (route, icon, label) ->
             NavigationBarItem(
-                selected = navController.currentDestination?.route == route,
-                onClick = { navController.navigate(route) },
+                selected = navController.currentDestination?.route?.startsWith(route.split("/")[0]) == true,
+                onClick = {
+                    // Voorkom dubbele navigatie naar dezelfde bestemming
+                    if (navController.currentDestination?.route?.startsWith(route.split("/")[0]) != true) {
+                        navController.navigate(route)
+                    }
+                },
                 icon = {
                     Icon(
                         imageVector = icon,
                         contentDescription = route,
-                        tint = if (navController.currentDestination?.route == route) GreenSustainable else DarkGreen.copy(alpha = 0.6f)
+                        tint = if (navController.currentDestination?.route?.startsWith(route.split("/")[0]) == true) GreenSustainable else DarkGreen.copy(alpha = 0.6f)
                     )
                 },
                 label = {
                     Text(
                         text = label,
-                        color = if (navController.currentDestination?.route == route) GreenSustainable else DarkGreen.copy(alpha = 0.6f),
+                        color = if (navController.currentDestination?.route?.startsWith(route.split("/")[0]) == true) GreenSustainable else DarkGreen.copy(alpha = 0.6f),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Normal
                     )

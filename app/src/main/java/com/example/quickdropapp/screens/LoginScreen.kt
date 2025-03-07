@@ -12,7 +12,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.LoginRequest
 import com.example.quickdropapp.models.User
-import com.example.quickdropapp.network.ApiService
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -26,6 +25,8 @@ fun LoginScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val apiService = RetrofitClient.instance
 
     Column(
         modifier = Modifier
@@ -80,19 +81,29 @@ fun LoginScreen(navController: NavController) {
         Button(
             onClick = {
                 if (email.isNotEmpty() && password.isNotEmpty()) {
-                    val apiService = RetrofitClient.instance.create(ApiService::class.java)
-                    val call = apiService.loginUser(LoginRequest(email, password))
+                    val loginRequest = LoginRequest(email, password)
+                    val call = apiService.loginUser(loginRequest)
                     call.enqueue(object : Callback<User> {
                         override fun onResponse(call: Call<User>, response: Response<User>) {
                             if (response.isSuccessful) {
-                                navController.navigate("home") // Navigeer naar hoofdscherm na succes
+                                val user = response.body()
+                                val userId = user?.id ?: 0
+                                if (userId > 0) {
+                                    navController.navigate("home/$userId")
+                                } else {
+                                    errorMessage = "Gebruikers-ID niet gevonden in de respons"
+                                }
                             } else {
-                                errorMessage = "Inloggen mislukt: ${response.message()}"
+                                errorMessage = when (response.code()) {
+                                    401 -> "Ongeldige e-mail of wachtwoord"
+                                    500 -> "Serverfout, probeer het later opnieuw"
+                                    else -> "Inloggen mislukt: ${response.message()}"
+                                }
                             }
                         }
 
                         override fun onFailure(call: Call<User>, t: Throwable) {
-                            errorMessage = "Fout: ${t.message}"
+                            errorMessage = "Netwerkfout: ${t.message}"
                         }
                     })
                 } else {

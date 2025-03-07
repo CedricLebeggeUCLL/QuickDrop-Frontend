@@ -48,6 +48,12 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
     val apiService = RetrofitClient.instance
 
     LaunchedEffect(userId) {
+        if (userId <= 0) {
+            errorMessage = "Ongeldige user ID: $userId"
+            isLoading = false
+            return@LaunchedEffect
+        }
+
         apiService.getCourierByUserId(userId).enqueue(object : Callback<com.example.quickdropapp.models.Courier> {
             override fun onResponse(call: Call<com.example.quickdropapp.models.Courier>, response: Response<com.example.quickdropapp.models.Courier>) {
                 if (response.isSuccessful) {
@@ -55,10 +61,10 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                     if (courier != null) {
                         val searchRequest = ApiService.SearchRequest(
                             user_id = userId,
-                            start_location = courier.current_location ?: mapOf("lat" to 0.0, "lng" to 0.0),
-                            destination = courier.destination ?: mapOf("lat" to 0.0, "lng" to 0.0),
-                            pickup_radius = courier.pickup_radius,
-                            dropoff_radius = courier.dropoff_radius
+                            start_location = courier.current_location ?: listOf(0.0, 0.0),
+                            destination = courier.destination ?: listOf(0.0, 0.0),
+                            pickup_radius = courier.pickup_radius ?: 5.0,
+                            dropoff_radius = courier.dropoff_radius ?: 5.0
                         )
 
                         println("Searching packages with request: $searchRequest")
@@ -66,25 +72,27 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                         apiService.searchPackages(searchRequest).enqueue(object : Callback<ApiService.SearchResponse> {
                             override fun onResponse(call: Call<ApiService.SearchResponse>, response: Response<ApiService.SearchResponse>) {
                                 if (response.isSuccessful) {
-                                    packages = response.body()?.packages ?: emptyList()
+                                    packages = response.body()?.packages?.filterNotNull() ?: emptyList()
                                     errorMessage = null
                                 } else {
-                                    errorMessage = "Fout bij zoeken: ${response.code()} - ${response.errorBody()?.string()}"
+                                    errorMessage = "Fout bij zoeken: ${response.code()} - ${response.errorBody()?.string() ?: "Geen details"}"
+                                    println("Search failed: ${response.code()} - ${response.errorBody()?.string()}")
                                 }
                                 isLoading = false
                             }
 
                             override fun onFailure(call: Call<ApiService.SearchResponse>, t: Throwable) {
                                 errorMessage = "Netwerkfout bij zoeken: ${t.message}"
+                                println("Network failure: ${t.message}")
                                 isLoading = false
                             }
                         })
                     } else {
-                        errorMessage = "Geen koeriergegevens gevonden"
+                        errorMessage = "Geen koeriergegevens gevonden voor user ID: $userId"
                         isLoading = false
                     }
                 } else {
-                    errorMessage = "Kon koerier niet ophalen: ${response.code()}"
+                    errorMessage = "Kon koerier niet ophalen: ${response.code()} - ${response.errorBody()?.string() ?: "Geen details"}"
                     isLoading = false
                 }
             }
@@ -195,7 +203,7 @@ fun PackageCard(packageItem: Package) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Pakket ID: ${packageItem.id}",
+                text = "Pakket ID: ${packageItem.id ?: "Onbekend"}",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = DarkGreen
@@ -208,13 +216,17 @@ fun PackageCard(packageItem: Package) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Ophaallocatie: ${packageItem.pickupLocation.let { if (it.size >= 2) "(${it[0]}, ${it[1]})" else "Onbekend" }}",
+                text = "Ophaallocatie: ${packageItem.pickupLocation.let { loc ->
+                    if (loc.size >= 2) "(${loc[0]}, ${loc[1]})" else "Onbekend"
+                }}",
                 fontSize = 14.sp,
                 color = DarkGreen.copy(alpha = 0.8f)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Afleverlocatie: ${packageItem.dropoffLocation.let { if (it.size >= 2) "(${it[0]}, ${it[1]})" else "Onbekend" }}",
+                text = "Afleverlocatie: ${packageItem.dropoffLocation.let { loc ->
+                    if (loc.size >= 2) "(${loc[0]}, ${loc[1]})" else "Onbekend"
+                }}",
                 fontSize = 14.sp,
                 color = DarkGreen.copy(alpha = 0.8f)
             )

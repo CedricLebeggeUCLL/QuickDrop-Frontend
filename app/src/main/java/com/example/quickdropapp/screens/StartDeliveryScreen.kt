@@ -37,7 +37,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
     var dropoffRadius by remember { mutableStateOf("5.0") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
-    var courierId by remember { mutableStateOf<Int?>(null) } // Om de koerier-ID op te slaan
+    var courierId by remember { mutableStateOf<Int?>(null) }
 
     val apiService = RetrofitClient.instance
 
@@ -49,7 +49,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                     courierId = response.body()?.id
                     println("Courier ID for user $userId: $courierId")
                 } else {
-                    errorMessage = "Kon koerier niet vinden: ${response.code()}"
+                    errorMessage = "Kon koerier niet vinden: ${response.code()} - ${response.errorBody()?.string() ?: "Geen details"}"
                 }
             }
 
@@ -66,7 +66,6 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                 .padding(paddingValues)
                 .background(SandBeige)
         ) {
-            // Custom Top Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -115,7 +114,6 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        // Huidige locatie
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             OutlinedTextField(
                                 value = currentLatitude,
@@ -151,7 +149,6 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Bestemmingslocatie
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             OutlinedTextField(
                                 value = destinationLatitude,
@@ -187,7 +184,6 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Radius
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             OutlinedTextField(
                                 value = pickupRadius,
@@ -269,9 +265,10 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                             return@Button
                         }
 
+                        // Update koerier met de nieuwe waarden
                         val updateData = mapOf(
-                            "current_location" to mapOf("lat" to currentLat, "lng" to currentLng),
-                            "destination" to mapOf("lat" to destLat, "lng" to destLng),
+                            "current_location" to listOf(currentLat, currentLng), // Aanpassen naar lijst voor backend-compatibiliteit
+                            "destination" to listOf(destLat, destLng),           // Aanpassen naar lijst voor backend-compatibiliteit
                             "pickup_radius" to pickupRad,
                             "dropoff_radius" to dropoffRad,
                             "availability" to true
@@ -282,12 +279,14 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                         apiService.updateCourier(courierId!!, updateData).enqueue(object : Callback<Courier> {
                             override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
                                 if (response.isSuccessful) {
-                                    successMessage = "Locatie en radius ingesteld!"
+                                    successMessage = "Locatie en radius succesvol ingesteld!"
                                     errorMessage = null
-                                    // Trigger refresh in HomeScreen
-                                    navController.previousBackStackEntry?.savedStateHandle?.set("refresh", "true")
-                                    // Navigeer naar zoekscherm
-                                    navController.navigate("searchPackages/$userId")
+                                    // Navigeer naar zoekscherm met geldige data
+                                    navController.navigate("searchPackages/$userId") {
+                                        // Voorkom dat de backstack te diep wordt
+                                        popUpTo("startDelivery/$userId") { inclusive = false }
+                                        launchSingleTop = true
+                                    }
                                 } else {
                                     val errorBody = response.errorBody()?.string() ?: "Geen details"
                                     errorMessage = "Fout bij updaten: ${response.code()} - $errorBody"

@@ -87,8 +87,8 @@ interface ApiService {
     // Search Request and Response
     data class SearchRequest(
         val user_id: Int,
-        val start_location: Map<String, Double>,
-        val destination: Map<String, Double>,
+        val start_location: List<Double>, // Gewijzigd van Map naar List
+        val destination: List<Double>,   // Gewijzigd van Map naar List
         val pickup_radius: Double,
         val dropoff_radius: Double
     )

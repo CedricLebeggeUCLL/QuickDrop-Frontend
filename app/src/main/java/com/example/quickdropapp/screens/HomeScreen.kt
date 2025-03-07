@@ -93,7 +93,7 @@ fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) 
                     title = "Pakket Versturen",
                     description = " Verstuur duurzaam en snel",
                     icon = Icons.Filled.DoubleArrow,
-                    onClick = { navController.navigate("sendPackage") },
+                    onClick = { navController.navigate("sendPackage/$userId") },
                     containerColor = GreenSustainable
                 )
                 ModernActionCard(
@@ -193,8 +193,8 @@ fun ModernBottomNavigation(navController: NavController, userId: Int) {
         tonalElevation = 8.dp
     ) {
         val items = listOf(
-            Triple("home", Icons.Filled.Home, "Home"),
-            Triple("sendPackage", Icons.Filled.DoubleArrow, "Send"),
+            Triple("home/$userId", Icons.Filled.Home, "Home"),
+            Triple("sendPackage/$userId", Icons.Filled.DoubleArrow, "Send"),
             Triple("trackDelivery", Icons.Filled.LocationOn, "Track"),
             Triple("viewDeliveries/$userId", Icons.Filled.FormatListNumbered, "Deliveries")
         )

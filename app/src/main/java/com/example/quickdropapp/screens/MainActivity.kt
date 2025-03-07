@@ -35,7 +35,13 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
-                    composable("sendPackage") { SendPackageScreen(navController) }
+                    composable(
+                        route = "sendPackage/{userId}",
+                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                        SendPackageScreen(navController, userId)
+                    }
                     composable("becomeCourier") { BecomeCourierScreen(navController) }
                     composable("trackDelivery") { TrackDeliveryScreen(navController) }
                     composable(

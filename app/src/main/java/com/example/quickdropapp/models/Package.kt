@@ -1,5 +1,7 @@
 package com.example.quickdropapp.models
 
+import com.google.gson.annotations.SerializedName
+
 data class Package(
     val id: Int? = null,
     val user_id: Int,
@@ -7,7 +9,9 @@ data class Package(
     val pickup_address_id: Int,
     val dropoff_address_id: Int,
     val status: String? = "pending",
-    val created_at: String? = null
+    val created_at: String? = null,
+    @SerializedName("pickupAddress") val pickupAddress: Address? = null, // Toegevoegd
+    @SerializedName("dropoffAddress") val dropoffAddress: Address? = null // Toegevoegd
 )
 
 // Request dataklasse voor het aanmaken/bijwerken van een package

@@ -84,6 +84,9 @@ interface ApiService {
     @GET("deliveries/users/{userId}")
     fun getDeliveryHistory(@Path("userId") id: Int): Call<List<Delivery>>
 
+    @GET("deliveries/couriers/{userId}")
+    fun getCourierDeliveries(@Path("userId") id: Int): Call<List<Delivery>>
+
     // Search Request and Response
     data class SearchRequest(
         val user_id: Int,

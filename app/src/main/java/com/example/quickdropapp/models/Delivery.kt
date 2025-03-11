@@ -4,8 +4,12 @@ import com.google.gson.annotations.SerializedName
 
 data class Delivery(
     val id: Int? = null,
+    @SerializedName("package_id")
     val package_id: Int,
+    @SerializedName("courier_id")
     val courier_id: Int,
+    @SerializedName("user_id")
+    val user_id: Int? = null, // Optioneel veld voor de backend
     @SerializedName("pickup_location")
     val pickupLocation: List<Double>, // [lat, lng]
     @SerializedName("dropoff_location")

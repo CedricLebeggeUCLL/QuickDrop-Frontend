@@ -32,22 +32,32 @@ import retrofit2.Response
 fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
     var deliveries by remember { mutableStateOf<List<Delivery>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
     val apiService = RetrofitClient.instance
 
-    // Fetch deliveries when the composable is first rendered
-    LaunchedEffect(Unit) {
-        val call = apiService.getDeliveryHistory(userId)
-        call.enqueue(object : Callback<List<Delivery>> {
+    // Fetch deliveries for the specific user when the composable is first rendered
+    LaunchedEffect(userId) {
+        if (userId <= 0) {
+            errorMessage = "Ongeldige user ID: $userId"
+            isLoading = false
+            return@LaunchedEffect
+        }
+
+        apiService.getCourierDeliveries(userId).enqueue(object : Callback<List<Delivery>> {
             override fun onResponse(call: Call<List<Delivery>>, response: Response<List<Delivery>>) {
                 if (response.isSuccessful) {
                     deliveries = response.body()
+                    isLoading = false
                 } else {
-                    errorMessage = "Fout bij het laden van leveringen: ${response.message()}"
+                    errorMessage = "Fout bij het laden van leveringen: ${response.code()} - ${response.message()}"
+                    isLoading = false
                 }
             }
 
             override fun onFailure(call: Call<List<Delivery>>, t: Throwable) {
-                errorMessage = "Fout: ${t.message}"
+                errorMessage = "Netwerkfout bij het laden van leveringen: ${t.message}"
+                isLoading = false
             }
         })
     }
@@ -93,7 +103,7 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
             ) {
                 // Subtitel
                 Text(
-                    text = "Bekijk je pakketgeschiedenis",
+                    text = "Bekijk je leveringen",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     color = DarkGreen.copy(alpha = 0.8f)
@@ -101,8 +111,11 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Toon laadscherm of foutmelding
+                // Toon laadscherm, foutmelding of leveringen
                 when {
+                    isLoading -> {
+                        CircularProgressIndicator(color = GreenSustainable)
+                    }
                     errorMessage != null -> {
                         Text(
                             text = errorMessage!!,
@@ -110,11 +123,14 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                    deliveries == null -> {
-                        CircularProgressIndicator(color = GreenSustainable)
+                    deliveries == null || deliveries?.isEmpty() == true -> {
+                        Text(
+                            text = "Geen leveringen gevonden",
+                            color = DarkGreen,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                     else -> {
-                        // Lijst van pakketten
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -153,14 +169,14 @@ fun DeliveryItem(delivery: Delivery, onTrackClick: () -> Unit) {
         ) {
             Column {
                 Text(
-                    text = "Pakket ID: ${delivery.package_id}", // Gebruik packageId (camelCase)
+                    text = "Levering ID: ${delivery.id}",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = DarkGreen
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Status: ${if (delivery.deliveryTime != null) "Delivered" else "In Transit"}",
+                    text = "Status: ${delivery.status?.uppercase() ?: "ASSIGNED"}",
                     fontSize = 14.sp,
                     color = DarkGreen.copy(alpha = 0.8f)
                 )

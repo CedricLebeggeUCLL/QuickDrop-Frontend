@@ -292,7 +292,6 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
     }
 }
 
-// Functie om pakketten te zoeken
 fun searchPackages(
     apiService: ApiService,
     userId: Int,
@@ -310,27 +309,50 @@ fun searchPackages(
         dropoff_radius = dropoffRadius,
         use_current_as_start = false
     )
+    println("Sending search request: $searchRequest")
     apiService.searchPackages(searchRequest).enqueue(object : Callback<SearchResponse> {
         override fun onResponse(call: Call<SearchResponse>, response: Response<SearchResponse>) {
+            println("Search packages response received: code=${response.code()}, body=${response.body()}")
             if (response.isSuccessful) {
                 val result = response.body()
-                println("Search packages response: $result")
-                if (result != null && result.packages.isNotEmpty()) {
-                    println("Navigating to searchPackages/$userId")
+                println("Parsed search response: $result")
+                if (result != null) {
+                    println("Packages in response: ${result.packages}")
+                    if (result.packages.isNotEmpty()) {
+                        println("Packages found, navigating to searchPackages/$userId")
+                        navController.navigate("searchPackages/$userId") {
+                            popUpTo("startDelivery/$userId") { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    } else {
+                        println("No packages found for userId: $userId, navigating anyway for debugging")
+                        navController.navigate("searchPackages/$userId") {
+                            popUpTo("startDelivery/$userId") { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    }
+                } else {
+                    println("Search response is null, navigating for debugging")
                     navController.navigate("searchPackages/$userId") {
                         popUpTo("startDelivery/$userId") { inclusive = false }
                         launchSingleTop = true
                     }
-                } else {
-                    println("No packages found for userId: $userId")
                 }
             } else {
-                println("Failed to search packages: ${response.code()} - ${response.errorBody()?.string()}")
+                println("Failed to search packages: ${response.code()} - ${response.errorBody()?.string()}, navigating for debugging")
+                navController.navigate("searchPackages/$userId") {
+                    popUpTo("startDelivery/$userId") { inclusive = false }
+                    launchSingleTop = true
+                }
             }
         }
 
         override fun onFailure(call: Call<SearchResponse>, t: Throwable) {
-            println("Network failure during package search: ${t.message}")
+            println("Network failure during package search: ${t.message}, navigating for debugging")
+            navController.navigate("searchPackages/$userId") {
+                popUpTo("startDelivery/$userId") { inclusive = false }
+                launchSingleTop = true
+            }
         }
     })
 }

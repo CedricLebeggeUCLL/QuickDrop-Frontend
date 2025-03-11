@@ -35,7 +35,8 @@ fun AddressInputField(
                 cursorColor = GreenSustainable,
                 focusedLabelColor = GreenSustainable
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
+            isError = address.street_name.isBlank()
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
@@ -49,7 +50,8 @@ fun AddressInputField(
                 cursorColor = GreenSustainable,
                 focusedLabelColor = GreenSustainable
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
+            isError = address.house_number.isBlank()
         )
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
@@ -63,8 +65,52 @@ fun AddressInputField(
                 cursorColor = GreenSustainable,
                 focusedLabelColor = GreenSustainable
             ),
+            shape = RoundedCornerShape(12.dp),
+            isError = address.postal_code.isBlank()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = address.city ?: "",
+            onValueChange = { onAddressChange(address.copy(city = it)) },
+            label = { Text("$label (Stad)") },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = GreenSustainable,
+                unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
+                cursorColor = GreenSustainable,
+                focusedLabelColor = GreenSustainable
+            ),
+            shape = RoundedCornerShape(12.dp),
+            isError = address.city.isNullOrBlank()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = address.country ?: "",
+            onValueChange = { onAddressChange(address.copy(country = it)) },
+            label = { Text("$label (Land)") },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = GreenSustainable,
+                unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
+                cursorColor = GreenSustainable,
+                focusedLabelColor = GreenSustainable
+            ),
+            shape = RoundedCornerShape(12.dp),
+            isError = address.country.isNullOrBlank()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = address.extra_info ?: "",
+            onValueChange = { onAddressChange(address.copy(extra_info = it.ifEmpty { null })) },
+            label = { Text("$label (Appartement nr, bus, etc., optioneel)") },
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = GreenSustainable,
+                unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
+                cursorColor = GreenSustainable,
+                focusedLabelColor = GreenSustainable
+            ),
             shape = RoundedCornerShape(12.dp)
         )
-        // Extra info veld is verwijderd om lege velden te voorkomen
     }
 }

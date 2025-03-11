@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.composables.AddressInputField
 import com.example.quickdropapp.models.*
+import com.example.quickdropapp.network.ApiService
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -34,8 +35,8 @@ import retrofit2.Response
 fun StartDeliveryScreen(navController: NavController, userId: Int) {
     var startAddress by remember { mutableStateOf(Address()) }
     var destinationAddress by remember { mutableStateOf(Address()) }
-    var pickupRadius by remember { mutableStateOf("5.0") }
-    var dropoffRadius by remember { mutableStateOf("5.0") }
+    var pickupRadius by remember { mutableStateOf("30.0") }
+    var dropoffRadius by remember { mutableStateOf("40.0") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
     var courierId by remember { mutableStateOf<Int?>(null) }
@@ -43,7 +44,6 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
     val apiService = RetrofitClient.instance
 
-    // Haal de koerier-ID en huidige data op bij het laden van het scherm
     LaunchedEffect(userId) {
         if (userId <= 0) {
             errorMessage = "Ongeldige user ID: $userId"
@@ -125,30 +125,24 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            // Startadres
                             AddressInputField(
                                 label = "Startadres",
                                 address = startAddress,
                                 onAddressChange = { startAddress = it }
                             )
-
                             Spacer(modifier = Modifier.height(12.dp))
-
-                            // Bestemmingsadres
                             AddressInputField(
                                 label = "Bestemmingsadres",
                                 address = destinationAddress,
                                 onAddressChange = { destinationAddress = it }
                             )
-
                             Spacer(modifier = Modifier.height(12.dp))
-
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 OutlinedTextField(
                                     value = pickupRadius,
                                     onValueChange = { pickupRadius = it.filter { char -> char.isDigit() || char == '.' } },
                                     label = { Text("Ophaalradius (km)") },
-                                    placeholder = { Text("Bijv. 5.0") },
+                                    placeholder = { Text("Bijv. 30.0") },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                     modifier = Modifier.weight(1f),
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -163,7 +157,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                     value = dropoffRadius,
                                     onValueChange = { dropoffRadius = it.filter { char -> char.isDigit() || char == '.' } },
                                     label = { Text("Afleverradius (km)") },
-                                    placeholder = { Text("Bijv. 5.0") },
+                                    placeholder = { Text("Bijv. 40.0") },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                     modifier = Modifier.weight(1f),
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -180,7 +174,6 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Fout- en succesmeldingen
                     successMessage?.let {
                         Text(
                             text = it,
@@ -206,7 +199,6 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Zoek Pakketten knop
                     Button(
                         onClick = {
                             println("Button clicked - Checking state: courierId=$courierId, inputs: startAddress=$startAddress, destinationAddress=$destinationAddress, pickupRad=$pickupRadius, dropoffRad=$dropoffRadius")
@@ -225,16 +217,15 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                 return@Button
                             }
 
-                            if (startAddress.street_name.isBlank() || startAddress.house_number.isBlank() || startAddress.postal_code.isBlank()) {
-                                errorMessage = "Een geldig startadres is verplicht (straat, huisnummer en postcode)"
+                            if (startAddress.street_name.isBlank() || startAddress.house_number.isBlank() || startAddress.postal_code.isBlank() || startAddress.city.isNullOrBlank() || startAddress.country.isNullOrBlank()) {
+                                errorMessage = "Een geldig startadres is verplicht (straat, huisnummer, postcode, stad, land)"
                                 return@Button
                             }
-                            if (destinationAddress.street_name.isBlank() || destinationAddress.house_number.isBlank() || destinationAddress.postal_code.isBlank()) {
-                                errorMessage = "Een geldig bestemmingsadres is verplicht (straat, huisnummer en postcode)"
+                            if (destinationAddress.street_name.isBlank() || destinationAddress.house_number.isBlank() || destinationAddress.postal_code.isBlank() || destinationAddress.city.isNullOrBlank() || destinationAddress.country.isNullOrBlank()) {
+                                errorMessage = "Een geldig bestemmingsadres is verplicht (straat, huisnummer, postcode, stad, land)"
                                 return@Button
                             }
 
-                            // Update de koerier met de nieuwe adressen
                             val updateData = CourierUpdateRequest(
                                 start_address = startAddress,
                                 destination_address = destinationAddress,
@@ -251,17 +242,10 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                     if (response.isSuccessful) {
                                         successMessage = "Locatie en radius succesvol ingesteld!"
                                         errorMessage = null
-                                        println("Courier updated successfully: ${response.body()}")
                                         currentCourier = response.body()
-                                        try {
-                                            navController.navigate("searchPackages/$userId") {
-                                                popUpTo("startDelivery/$userId") { inclusive = false }
-                                                launchSingleTop = true
-                                            }
-                                        } catch (e: Exception) {
-                                            errorMessage = "Navigatiefout: ${e.message}"
-                                            println("Navigation failed: ${e.message}")
-                                        }
+                                        println("Courier updated successfully: ${response.body()}")
+
+                                        searchPackages(apiService, userId, startAddress, destinationAddress, pickupRad, dropoffRad, navController)
                                     } else {
                                         val errorBody = response.errorBody()?.string() ?: "Geen details"
                                         errorMessage = "Fout bij updaten: ${response.code()} - $errorBody"
@@ -282,7 +266,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                             .height(56.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable),
                         shape = RoundedCornerShape(16.dp),
-                        enabled = true // Altijd tonen
+                        enabled = true
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
@@ -301,9 +285,52 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp)) // Extra ruimte aan het einde
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
     }
+}
+
+// Functie om pakketten te zoeken
+fun searchPackages(
+    apiService: ApiService,
+    userId: Int,
+    startAddress: Address,
+    destinationAddress: Address,
+    pickupRadius: Double,
+    dropoffRadius: Double,
+    navController: NavController
+) {
+    val searchRequest = SearchRequest(
+        user_id = userId,
+        start_address = startAddress,
+        destination_address = destinationAddress,
+        pickup_radius = pickupRadius,
+        dropoff_radius = dropoffRadius,
+        use_current_as_start = false
+    )
+    apiService.searchPackages(searchRequest).enqueue(object : Callback<SearchResponse> {
+        override fun onResponse(call: Call<SearchResponse>, response: Response<SearchResponse>) {
+            if (response.isSuccessful) {
+                val result = response.body()
+                println("Search packages response: $result")
+                if (result != null && result.packages.isNotEmpty()) {
+                    println("Navigating to searchPackages/$userId")
+                    navController.navigate("searchPackages/$userId") {
+                        popUpTo("startDelivery/$userId") { inclusive = false }
+                        launchSingleTop = true
+                    }
+                } else {
+                    println("No packages found for userId: $userId")
+                }
+            } else {
+                println("Failed to search packages: ${response.code()} - ${response.errorBody()?.string()}")
+            }
+        }
+
+        override fun onFailure(call: Call<SearchResponse>, t: Throwable) {
+            println("Network failure during package search: ${t.message}")
+        }
+    })
 }

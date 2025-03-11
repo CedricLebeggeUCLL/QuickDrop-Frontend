@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.clickable
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.network.RetrofitClient
@@ -36,7 +37,6 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
 
     val apiService = RetrofitClient.instance
 
-    // Fetch deliveries for the specific user when the composable is first rendered
     LaunchedEffect(userId) {
         if (userId <= 0) {
             errorMessage = "Ongeldige user ID: $userId"
@@ -69,7 +69,6 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                 .padding(paddingValues)
                 .background(SandBeige)
         ) {
-            // Custom Top Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -92,7 +91,7 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
                 )
-                Spacer(modifier = Modifier.width(48.dp)) // Balans
+                Spacer(modifier = Modifier.width(48.dp))
             }
 
             Column(
@@ -101,7 +100,6 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                     .padding(horizontal = 20.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Subtitel
                 Text(
                     text = "Bekijk je leveringen",
                     style = MaterialTheme.typography.titleMedium,
@@ -111,7 +109,6 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Toon laadscherm, foutmelding of leveringen
                 when {
                     isLoading -> {
                         CircularProgressIndicator(color = GreenSustainable)
@@ -140,7 +137,7 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                             items(deliveries!!) { delivery ->
                                 DeliveryItem(
                                     delivery = delivery,
-                                    onTrackClick = { navController.navigate("trackDelivery/${delivery.id}") }
+                                    navController = navController
                                 )
                             }
                         }
@@ -152,12 +149,15 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
 }
 
 @Composable
-fun DeliveryItem(delivery: Delivery, onTrackClick: () -> Unit) {
+fun DeliveryItem(delivery: Delivery, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .shadow(4.dp),
+            .shadow(4.dp)
+            .clickable {
+                navController.navigate("deliveryInfo/${delivery.id}")
+            },
         colors = CardDefaults.cardColors(containerColor = SandBeige)
     ) {
         Row(
@@ -189,9 +189,9 @@ fun DeliveryItem(delivery: Delivery, onTrackClick: () -> Unit) {
                     )
                 }
             }
-            if (delivery.deliveryTime == null) { // Alleen tracken als nog niet geleverd
+            if (delivery.deliveryTime == null) {
                 IconButton(
-                    onClick = onTrackClick,
+                    onClick = { navController.navigate("trackDelivery/${delivery.id}") },
                     modifier = Modifier
                         .size(40.dp)
                         .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)

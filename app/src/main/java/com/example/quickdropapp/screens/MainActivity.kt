@@ -71,6 +71,13 @@ class MainActivity : ComponentActivity() {
                         val userId = backStackEntry.arguments?.getInt("userId") ?: 0
                         ViewDeliveriesScreen(navController, userId)
                     }
+                    composable(
+                        route = "deliveryInfo/{deliveryId}",
+                        arguments = listOf(navArgument("deliveryId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val deliveryId = backStackEntry.arguments?.getInt("deliveryId") ?: 0
+                        DeliveryInfoScreen(navController, deliveryId)
+                    }
                 }
             }
         }

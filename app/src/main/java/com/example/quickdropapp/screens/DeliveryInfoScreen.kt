@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.Delivery
+import com.example.quickdropapp.models.DeliveryUpdate
 import com.example.quickdropapp.network.ApiService
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
@@ -23,6 +24,8 @@ import com.example.quickdropapp.ui.theme.SandBeige
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
@@ -159,23 +162,18 @@ fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
                                 ) {
                                     Button(
                                         onClick = {
+                                            println("Ophalen knop geklikt")
                                             if (del.status == "assigned") {
-                                                updateDeliveryStatus(apiService, deliveryId, "picked_up", navController) { newDelivery ->
-                                                    delivery = newDelivery // Update de lokale state
+                                                val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())
+                                                updateDeliveryStatus(apiService, deliveryId, "picked_up", currentTime, null, navController) { newDelivery ->
+                                                    delivery = newDelivery
                                                     if (newDelivery.status == "picked_up") {
-                                                        navController.popBackStack()
-                                                    }
-                                                }
-                                            } else if (del.status == "picked_up") {
-                                                updateDeliveryStatus(apiService, deliveryId, "delivered", navController) { newDelivery ->
-                                                    delivery = newDelivery // Update de lokale state
-                                                    if (newDelivery.status == "delivered") {
                                                         navController.popBackStack()
                                                     }
                                                 }
                                             }
                                         },
-                                        enabled = del.status in listOf("assigned", "picked_up"),
+                                        enabled = del.status == "assigned",
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = GreenSustainable,
                                             contentColor = SandBeige
@@ -183,11 +181,34 @@ fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
                                         shape = RoundedCornerShape(12.dp)
                                     ) {
                                         Text(
-                                            text = when (del.status) {
-                                                "assigned" -> "Ophalen"
-                                                "picked_up" -> "Afleveren"
-                                                else -> "Geen actie"
-                                            },
+                                            text = "Ophalen",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            println("Afleveren knop geklikt")
+                                            if (del.status == "picked_up") {
+                                                val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())
+                                                updateDeliveryStatus(apiService, deliveryId, "delivered", null, currentTime, navController) { newDelivery ->
+                                                    delivery = newDelivery
+                                                    if (newDelivery.status == "delivered") {
+                                                        navController.popBackStack()
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        enabled = del.status == "picked_up",
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = GreenSustainable,
+                                            contentColor = SandBeige
+                                        ),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Text(
+                                            text = "Afleveren",
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.SemiBold
                                         )
@@ -224,17 +245,20 @@ fun updateDeliveryStatus(
     apiService: ApiService,
     deliveryId: Int,
     newStatus: String,
+    pickupTime: String? = null,
+    deliveryTime: String? = null,
     navController: NavController,
     onUpdate: (Delivery) -> Unit
 ) {
-    val updatedDelivery = Delivery(id = deliveryId, package_id = 0, courier_id = 0, user_id = null, pickupLocation = emptyList(), dropoffLocation = emptyList(), pickupTime = null, deliveryTime = null, status = newStatus)
-    apiService.updateDelivery(deliveryId, updatedDelivery).enqueue(object : Callback<Delivery> {
+    println("Updating delivery $deliveryId to status $newStatus with pickupTime: $pickupTime, deliveryTime: $deliveryTime")
+    val deliveryUpdate = DeliveryUpdate(id = deliveryId, status = newStatus, pickupTime = pickupTime, deliveryTime = deliveryTime)
+    apiService.updateDelivery(deliveryId, deliveryUpdate).enqueue(object : Callback<Delivery> {
         override fun onResponse(call: Call<Delivery>, response: Response<Delivery>) {
             if (response.isSuccessful) {
                 response.body()?.let { newDelivery ->
-                    println("Status succesvol bijgewerkt naar $newStatus")
-                    onUpdate(newDelivery) // Roep de callback aan met de nieuwe delivery
-                }
+                    println("Status succesvol bijgewerkt naar $newStatus: $newDelivery")
+                    onUpdate(newDelivery)
+                } ?: println("Response body is null")
             } else {
                 println("Fout bij het updaten van de status: ${response.code()} - ${response.message()}")
             }

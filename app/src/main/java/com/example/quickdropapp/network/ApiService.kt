@@ -76,7 +76,7 @@ interface ApiService {
     fun createDelivery(@Body delivery: Delivery): Call<Delivery>
 
     @PUT("deliveries/{id}")
-    fun updateDelivery(@Path("id") id: Int, @Body delivery: Delivery): Call<Delivery>
+    fun updateDelivery(@Path("id") id: Int, @Body delivery: DeliveryUpdate): Call<Delivery>
 
     @DELETE("deliveries/{id}")
     fun cancelDelivery(@Path("id") id: Int): Call<Void>

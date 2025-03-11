@@ -39,10 +39,11 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
     var courierId by remember { mutableStateOf<Int?>(null) }
+    var currentCourier by remember { mutableStateOf<Courier?>(null) } // Huidige koerierdata
 
     val apiService = RetrofitClient.instance
 
-    // Haal de koerier-ID op bij het laden van het scherm
+    // Haal de koerier-ID en huidige data op bij het laden van het scherm
     LaunchedEffect(userId) {
         if (userId <= 0) {
             errorMessage = "Ongeldige user ID: $userId"
@@ -51,8 +52,10 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
         apiService.getCourierByUserId(userId).enqueue(object : Callback<Courier> {
             override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
                 if (response.isSuccessful) {
-                    courierId = response.body()?.id
-                    println("Fetched courierId: $courierId for userId: $userId")
+                    val courier = response.body()
+                    courierId = courier?.id
+                    currentCourier = courier // Sla de huidige koerierdata op
+                    println("Fetched courierId: $courierId for userId: $userId, data: $courier")
                 } else {
                     errorMessage = "Kon koerier niet vinden: ${response.code()} - ${response.errorBody()?.string() ?: "Geen details"}"
                     println("Failed to fetch courier: ${response.code()} - ${response.errorBody()?.string()}")
@@ -256,9 +259,9 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                 Button(
                     onClick = {
                         println("Button clicked - Checking state: courierId=$courierId, inputs: lat=$currentLatitude, lng=$currentLongitude, destLat=$destinationLatitude, destLng=$destinationLongitude, pickupRad=$pickupRadius, dropoffRad=$dropoffRadius")
-                        if (courierId == null) {
-                            errorMessage = "Koerier-ID niet geladen, probeer opnieuw"
-                            println("Crash point: Courier ID is null")
+                        if (courierId == null || currentCourier == null) {
+                            errorMessage = "Koerier-ID of koerierdata niet geladen, probeer opnieuw"
+                            println("Crash point: Courier ID or data is null")
                             return@Button
                         }
 
@@ -275,6 +278,30 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                             return@Button
                         }
 
+                        // Vergelijk met huidige koerierdata
+                        val currentData = currentCourier!!
+                        val currentLocation = currentData.current_location
+                        val destination = currentData.destination
+
+                        val isSameData = currentLocation?.takeIf { it.size >= 2 } == listOf(currentLat, currentLng) &&
+                                destination?.takeIf { it.size >= 2 } == listOf(destLat, destLng) &&
+                                currentData.pickup_radius == pickupRad &&
+                                currentData.dropoff_radius == dropoffRad &&
+                                currentData.availability
+
+                        if (isSameData) {
+                            // Als de data hetzelfde is, geen update nodig, direct navigeren
+                            println("Data is unchanged, skipping update and navigating directly")
+                            successMessage = "Data ongewijzigd, direct doorgestuurd!"
+                            errorMessage = null
+                            navController.navigate("searchPackages/$userId") {
+                                popUpTo("startDelivery/$userId") { inclusive = false }
+                                launchSingleTop = true
+                            }
+                            return@Button
+                        }
+
+                        // Als de data verschilt, voer de update uit
                         val updateData = ApiService.CourierUpdateRequest(
                             current_location = listOf(currentLat, currentLng),
                             destination = listOf(destLat, destLng),
@@ -292,6 +319,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                     successMessage = "Locatie en radius succesvol ingesteld!"
                                     errorMessage = null
                                     println("Courier updated successfully: ${response.body()}")
+                                    currentCourier = response.body() // Update de huidige koerierdata
                                     try {
                                         navController.navigate("searchPackages/$userId") {
                                             popUpTo("startDelivery/$userId") { inclusive = false }
@@ -323,7 +351,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                     shape = RoundedCornerShape(16.dp),
                     enabled = currentLatitude.isNotBlank() && currentLongitude.isNotBlank() &&
                             destinationLatitude.isNotBlank() && destinationLongitude.isNotBlank() &&
-                            pickupRadius.isNotBlank() && dropoffRadius.isNotBlank() && courierId != null
+                            pickupRadius.isNotBlank() && dropoffRadius.isNotBlank() && courierId != null && currentCourier != null
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(

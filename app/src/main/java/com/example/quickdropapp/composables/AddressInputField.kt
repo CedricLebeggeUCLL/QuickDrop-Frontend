@@ -101,7 +101,9 @@ fun AddressInputField(
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(
             value = address.extra_info ?: "",
-            onValueChange = { onAddressChange(address.copy(extra_info = it.ifEmpty { null })) },
+            onValueChange = { newValue ->
+                onAddressChange(address.copy(extra_info = if (newValue.isBlank()) null else newValue))
+            },
             label = { Text("$label (Appartement nr, bus, etc., optioneel)") },
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(

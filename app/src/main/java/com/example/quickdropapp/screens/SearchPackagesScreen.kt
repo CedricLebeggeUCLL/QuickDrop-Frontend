@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.composables.PackageCard // Nieuwe import
+import com.example.quickdropapp.composables.PackageCard
 import com.example.quickdropapp.models.*
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
@@ -51,24 +51,30 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                     val courier = response.body()
                     if (courier != null) {
                         courierId = courier.id
-                        // Simuleer start- en destination-adressen (in echte app haal je deze op via courier.start_address_id en courier.destination_address_id)
+                        // Gebruik de testadressen zoals je hebt aangegeven
                         startAddress = Address(
-                            street_name = "Startstraat",
-                            house_number = "1",
-                            postal_code = "1000"
+                            street_name = "Beemdstraat",
+                            house_number = "8",
+                            postal_code = "1910",
+                            city = "Kampenhout",
+                            country = "België",
+                            extra_info = null
                         )
                         destinationAddress = Address(
-                            street_name = "Eindstraat",
-                            house_number = "2",
-                            postal_code = "2000"
+                            street_name = "Sliksteenvest",
+                            house_number = "6",
+                            postal_code = "3300",
+                            city = "Tienen",
+                            country = "België",
+                            extra_info = null
                         )
 
                         val searchRequest = SearchRequest(
                             user_id = userId,
                             start_address = startAddress ?: Address(),
                             destination_address = destinationAddress ?: Address(),
-                            pickup_radius = (courier.pickup_radius ?: 5.0f).toDouble(),
-                            dropoff_radius = (courier.dropoff_radius ?: 5.0f).toDouble(),
+                            pickup_radius = 30.0,  // Hardcoded zoals in je test
+                            dropoff_radius = 40.0, // Hardcoded zoals in je test
                             use_current_as_start = false
                         )
 
@@ -77,9 +83,13 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                         apiService.searchPackages(searchRequest).enqueue(object : Callback<SearchResponse> {
                             override fun onResponse(call: Call<SearchResponse>, response: Response<SearchResponse>) {
                                 if (response.isSuccessful) {
-                                    packages = response.body()?.packages?.filterNotNull() ?: emptyList()
+                                    val searchResponse = response.body()
+                                    println("Search response received: $searchResponse")
+                                    packages = searchResponse?.packages?.filterNotNull() ?: emptyList()
+                                    println("Packages assigned: $packages")
                                     errorMessage = null
                                 } else {
+                                    errorMessage = "Zoeken mislukt: ${response.code()} - ${response.errorBody()?.string()}"
                                     println("Search failed: ${response.code()} - ${response.errorBody()?.string()}")
                                 }
                                 isLoading = false
@@ -96,12 +106,15 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                         isLoading = false
                     }
                 } else {
+                    errorMessage = "Fout bij ophalen koerier: ${response.code()} - ${response.errorBody()?.string()}"
+                    println("Courier fetch failed: ${response.code()} - ${response.errorBody()?.string()}")
                     isLoading = false
                 }
             }
 
             override fun onFailure(call: Call<Courier>, t: Throwable) {
                 errorMessage = "Netwerkfout bij ophalen koerier: ${t.message}"
+                println("Courier network failure: ${t.message}")
                 isLoading = false
             }
         })
@@ -161,10 +174,7 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                         text = it,
                         color = GreenSustainable,
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        maxLines = 5
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
                 }
                 errorMessage?.let {
@@ -172,10 +182,7 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                         text = it,
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        maxLines = 5
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
                 }
 
@@ -211,12 +218,11 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                                             return@PackageCard
                                         }
 
-                                        // Maak een nieuwe DeliveryRequest
                                         val deliveryRequest = DeliveryRequest(
                                             user_id = userId,
                                             package_id = packageId,
-                                            start_address = startAddress ?: Address(), // Gebruik simulatie voor nu
-                                            destination_address = destinationAddress ?: Address(), // Gebruik simulatie voor nu
+                                            start_address = startAddress ?: Address(),
+                                            destination_address = destinationAddress ?: Address(),
                                             pickup_radius = null,
                                             dropoff_radius = null
                                         )
@@ -224,7 +230,6 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                                         apiService.createDelivery(deliveryRequest).enqueue(object : Callback<Delivery> {
                                             override fun onResponse(call: Call<Delivery>, response: Response<Delivery>) {
                                                 if (response.isSuccessful) {
-                                                    // Update de pakketstatus naar "assigned"
                                                     val updatedPackage = PackageRequest(
                                                         user_id = userId,
                                                         description = packageItem.description,
@@ -237,28 +242,29 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                                                             if (response.isSuccessful) {
                                                                 successMessage = "Pakket succesvol geaccepteerd!"
                                                                 errorMessage = null
-                                                                // Navigeer naar "Mijn Leveringen"
                                                                 navController.navigate("viewDeliveries/$userId") {
                                                                     popUpTo("searchPackages/$userId") { inclusive = true }
                                                                 }
                                                             } else {
-                                                                successMessage = null
+                                                                errorMessage = "Fout bij updaten pakket: ${response.code()} - ${response.errorBody()?.string()}"
+                                                                println("Package update failed: ${response.code()} - ${response.errorBody()?.string()}")
                                                             }
                                                         }
 
                                                         override fun onFailure(call: Call<Package>, t: Throwable) {
                                                             errorMessage = "Netwerkfout bij updaten pakket: ${t.message}"
-                                                            successMessage = null
+                                                            println("Package update network failure: ${t.message}")
                                                         }
                                                     })
                                                 } else {
-                                                    successMessage = null
+                                                    errorMessage = "Fout bij aanmaken levering: ${response.code()} - ${response.errorBody()?.string()}"
+                                                    println("Delivery creation failed: ${response.code()} - ${response.errorBody()?.string()}")
                                                 }
                                             }
 
                                             override fun onFailure(call: Call<Delivery>, t: Throwable) {
                                                 errorMessage = "Netwerkfout bij aanmaken levering: ${t.message}"
-                                                successMessage = null
+                                                println("Delivery creation network failure: ${t.message}")
                                             }
                                         })
                                     }

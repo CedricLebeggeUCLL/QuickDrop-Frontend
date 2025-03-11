@@ -16,6 +16,7 @@ animation = "1.6.7"
 ui-text = "1.6.7"
 maps-compose = "2.11.0"
 play-services-maps = "19.1.0"
+datastore = "1.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -41,6 +42,7 @@ androidx-material-icons-extended = { group = "androidx.compose.material", name =
 androidx-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
 maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "maps-compose" }
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "play-services-maps" }
+datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

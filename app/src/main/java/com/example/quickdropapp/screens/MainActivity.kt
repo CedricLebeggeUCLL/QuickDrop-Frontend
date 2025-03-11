@@ -1,14 +1,19 @@
+// MainActivity.kt
 package com.example.quickdropapp.screens
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.quickdropapp.data.AuthDataStore
 import com.example.quickdropapp.ui.theme.QuickDropAppTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -17,7 +22,28 @@ class MainActivity : ComponentActivity() {
         setContent {
             QuickDropAppTheme {
                 val navController = rememberNavController()
-                NavHost(navController = navController, startDestination = "welcome") {
+                val context = LocalContext.current
+                val scope = rememberCoroutineScope()
+
+                // State voor inlogstatus en userId
+                var isLoggedIn by remember { mutableStateOf(false) }
+                var initialUserId by remember { mutableStateOf(-1) }
+
+                // Controleer inlogstatus bij opstarten met LaunchedEffect
+                LaunchedEffect(Unit) {
+                    isLoggedIn = AuthDataStore.isLoggedIn(context)
+                    initialUserId = AuthDataStore.getUserId(context) ?: -1
+                    if (isLoggedIn && initialUserId != -1) {
+                        navController.navigate("home/$initialUserId") {
+                            popUpTo("welcome") { inclusive = true }
+                        }
+                    }
+                }
+
+                NavHost(
+                    navController = navController,
+                    startDestination = "welcome"
+                ) {
                     composable("welcome") { WelcomeScreen(navController) }
                     composable("login") { LoginScreen(navController) }
                     composable("register") { RegisterScreen(navController) }
@@ -30,6 +56,9 @@ class MainActivity : ComponentActivity() {
                             navController = navController,
                             userId = userId,
                             onLogout = {
+                                scope.launch {
+                                    AuthDataStore.clearAuthData(context)
+                                }
                                 navController.popBackStack("welcome", inclusive = false)
                                 navController.navigate("welcome")
                             }

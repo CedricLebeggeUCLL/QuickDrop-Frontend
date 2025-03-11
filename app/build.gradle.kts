@@ -74,4 +74,7 @@ dependencies {
     // Google Maps dependencies (via Version Catalog)
     implementation(libs.maps.compose)
     implementation(libs.play.services.maps)
+
+    // DataStore dependency
+    implementation(libs.datastore.preferences)
 }

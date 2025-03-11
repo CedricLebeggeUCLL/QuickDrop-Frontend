@@ -1,3 +1,4 @@
+// LoginScreen.kt
 package com.example.quickdropapp.screens
 
 import androidx.compose.foundation.background
@@ -8,20 +9,27 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.quickdropapp.data.AuthDataStore
 import com.example.quickdropapp.models.LoginRequest
 import com.example.quickdropapp.models.User
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 @Composable
 fun LoginScreen(navController: NavController) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -83,15 +91,26 @@ fun LoginScreen(navController: NavController) {
                 if (email.isNotEmpty() && password.isNotEmpty()) {
                     val loginRequest = LoginRequest(email, password)
                     val call = apiService.loginUser(loginRequest)
+                    println("LoginScreen: Sending login request with email=$email")
                     call.enqueue(object : Callback<User> {
                         override fun onResponse(call: Call<User>, response: Response<User>) {
+                            println("LoginScreen: Response received, code=${response.code()}")
                             if (response.isSuccessful) {
                                 val user = response.body()
+                                println("LoginScreen: User response=$user")
                                 val userId = user?.id ?: 0
                                 if (userId > 0) {
-                                    navController.navigate("home/$userId")
+                                    scope.launch {
+                                        println("LoginScreen: Saving auth data for userId=$userId")
+                                        AuthDataStore.saveAuthData(context, userId)
+                                        println("LoginScreen: Navigating to home/$userId")
+                                        navController.navigate("home/$userId") {
+                                            popUpTo("welcome") { inclusive = true }
+                                        }
+                                    }
                                 } else {
                                     errorMessage = "Gebruikers-ID niet gevonden in de respons"
+                                    println("LoginScreen: Error - User ID not found in response")
                                 }
                             } else {
                                 errorMessage = when (response.code()) {
@@ -99,15 +118,18 @@ fun LoginScreen(navController: NavController) {
                                     500 -> "Serverfout, probeer het later opnieuw"
                                     else -> "Inloggen mislukt: ${response.message()}"
                                 }
+                                println("LoginScreen: Error - $errorMessage")
                             }
                         }
 
                         override fun onFailure(call: Call<User>, t: Throwable) {
                             errorMessage = "Netwerkfout: ${t.message}"
+                            println("LoginScreen: Network failure - ${t.message}")
                         }
                     })
                 } else {
                     errorMessage = "Vul e-mail en wachtwoord in"
+                    println("LoginScreen: Error - Email or password empty")
                 }
             },
             colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable),

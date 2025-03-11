@@ -7,20 +7,19 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.quickdropapp.composables.DeliveryInfoCard // Nieuwe import
 import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.models.DeliveryUpdate
 import com.example.quickdropapp.network.ApiService
@@ -31,7 +30,6 @@ import com.example.quickdropapp.ui.theme.SandBeige
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
@@ -136,174 +134,19 @@ fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
                                 enter = fadeIn(animationSpec = tween(durationMillis = 500)),
                                 exit = fadeOut(animationSpec = tween(durationMillis = 500))
                             ) {
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .background(
-                                            brush = Brush.verticalGradient(
-                                                colors = listOf(
-                                                    SandBeige.copy(alpha = 0.95f),
-                                                    GreenSustainable.copy(alpha = 0.1f),
-                                                    Color.White.copy(alpha = 0.9f)
-                                                )
-                                            )
-                                        ),
-                                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Geen schaduw
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp)
-                                    ) {
-                                        Text(
-                                            text = "Levering ID: ${del.id}",
-                                            fontSize = 20.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = DarkGreen
-                                        )
-                                        Spacer(modifier = Modifier.height(12.dp))
-                                        Text(
-                                            text = "Pakket ID: ${del.package_id}",
-                                            fontSize = 16.sp,
-                                            color = DarkGreen.copy(alpha = 0.9f)
-                                        )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
-                                            text = "Ophaallocatie: [${del.pickupLocation?.joinToString(", ")}]",
-                                            fontSize = 14.sp,
-                                            color = DarkGreen.copy(alpha = 0.8f)
-                                        )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
-                                            text = "Afleverlocatie: [${del.dropoffLocation?.joinToString(", ")}]",
-                                            fontSize = 14.sp,
-                                            color = DarkGreen.copy(alpha = 0.8f)
-                                        )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
-                                            text = "Status: ${del.status?.uppercase() ?: "ASSIGNED"}",
-                                            fontSize = 16.sp,
-                                            color = DarkGreen.copy(alpha = 0.9f)
-                                        )
-                                        del.pickupTime?.let {
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            Text(
-                                                text = "Opgehaald: $it",
-                                                fontSize = 14.sp,
-                                                color = DarkGreen.copy(alpha = 0.7f)
-                                            )
-                                        }
-                                        del.deliveryTime?.let {
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            Text(
-                                                text = "Afgeleverd: $it",
-                                                fontSize = 14.sp,
-                                                color = DarkGreen.copy(alpha = 0.7f)
-                                            )
-                                        }
-
-                                        Spacer(modifier = Modifier.height(16.dp))
-
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceEvenly
-                                        ) {
-                                            AnimatedVisibility(
-                                                visible = del.status == "assigned",
-                                                enter = fadeIn(animationSpec = tween(durationMillis = 400)),
-                                                exit = fadeOut(animationSpec = tween(durationMillis = 400))
-                                            ) {
-                                                Button(
-                                                    onClick = {
-                                                        println("Ophalen knop geklikt")
-                                                        val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())
-                                                        updateDeliveryStatus(apiService, deliveryId, "picked_up", currentTime, null, navController) { newDelivery ->
-                                                            delivery = newDelivery
-                                                            if (newDelivery.status == "picked_up") {
-                                                                navController.popBackStack()
-                                                            }
-                                                        }
-                                                    },
-                                                    enabled = true,
-                                                    colors = ButtonDefaults.buttonColors(
-                                                        containerColor = GreenSustainable,
-                                                        contentColor = SandBeige
-                                                    ),
-                                                    shape = RoundedCornerShape(12.dp),
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .padding(horizontal = 4.dp)
-                                                ) {
-                                                    Text(
-                                                        text = "Ophalen",
-                                                        fontSize = 16.sp,
-                                                        fontWeight = FontWeight.Medium
-                                                    )
-                                                }
-                                            }
-                                            AnimatedVisibility(
-                                                visible = del.status == "picked_up",
-                                                enter = fadeIn(animationSpec = tween(durationMillis = 400)),
-                                                exit = fadeOut(animationSpec = tween(durationMillis = 400))
-                                            ) {
-                                                Button(
-                                                    onClick = {
-                                                        println("Afleveren knop geklikt")
-                                                        val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(Date())
-                                                        updateDeliveryStatus(apiService, deliveryId, "delivered", null, currentTime, navController) { newDelivery ->
-                                                            delivery = newDelivery
-                                                            if (newDelivery.status == "delivered") {
-                                                                navController.popBackStack()
-                                                            }
-                                                        }
-                                                    },
-                                                    enabled = true,
-                                                    colors = ButtonDefaults.buttonColors(
-                                                        containerColor = GreenSustainable,
-                                                        contentColor = SandBeige
-                                                    ),
-                                                    shape = RoundedCornerShape(12.dp),
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .padding(horizontal = 4.dp)
-                                                ) {
-                                                    Text(
-                                                        text = "Afleveren",
-                                                        fontSize = 16.sp,
-                                                        fontWeight = FontWeight.Medium
-                                                    )
-                                                }
-                                            }
-                                            AnimatedVisibility(
-                                                visible = del.status != "delivered",
-                                                enter = fadeIn(animationSpec = tween(durationMillis = 400)),
-                                                exit = fadeOut(animationSpec = tween(durationMillis = 400))
-                                            ) {
-                                                Button(
-                                                    onClick = {
-                                                        cancelDelivery(apiService, deliveryId, navController)
-                                                    },
-                                                    colors = ButtonDefaults.buttonColors(
-                                                        containerColor = MaterialTheme.colorScheme.error,
-                                                        contentColor = SandBeige
-                                                    ),
-                                                    shape = RoundedCornerShape(12.dp),
-                                                    modifier = Modifier
-                                                        .weight(1f)
-                                                        .padding(horizontal = 4.dp)
-                                                ) {
-                                                    Text(
-                                                        text = "Annuleren",
-                                                        fontSize = 16.sp,
-                                                        fontWeight = FontWeight.Medium
-                                                    )
-                                                }
-                                            }
+                                DeliveryInfoCard(
+                                    delivery = del,
+                                    onUpdateStatus = ::updateDeliveryStatus,
+                                    onCancel = ::cancelDelivery,
+                                    apiService = apiService,
+                                    navController = navController,
+                                    onDeliveryUpdated = { newDelivery ->
+                                        delivery = newDelivery
+                                        if (newDelivery.status == "picked_up" || newDelivery.status == "delivered") {
+                                            navController.popBackStack()
                                         }
                                     }
-                                }
+                                )
                             }
                         }
                     }
@@ -313,7 +156,7 @@ fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
     }
 }
 
-// Helper-functie om de status bij te werken (ongewijzigd)
+// Helper-functie om de status bij te werken
 fun updateDeliveryStatus(
     apiService: ApiService,
     deliveryId: Int,
@@ -324,7 +167,7 @@ fun updateDeliveryStatus(
     onUpdate: (Delivery) -> Unit
 ) {
     println("Updating delivery $deliveryId to status $newStatus with pickupTime: $pickupTime, deliveryTime: $deliveryTime")
-    val deliveryUpdate = DeliveryUpdate(id = deliveryId, status = newStatus, pickupTime = pickupTime, deliveryTime = deliveryTime)
+    val deliveryUpdate = DeliveryUpdate(status = newStatus, pickup_time = pickupTime, delivery_time = deliveryTime)
     apiService.updateDelivery(deliveryId, deliveryUpdate).enqueue(object : Callback<Delivery> {
         override fun onResponse(call: Call<Delivery>, response: Response<Delivery>) {
             if (response.isSuccessful) {
@@ -343,7 +186,7 @@ fun updateDeliveryStatus(
     })
 }
 
-// Helper-functie om de levering te annuleren (ongewijzigd)
+// Helper-functie om de levering te annuleren
 fun cancelDelivery(
     apiService: ApiService,
     deliveryId: Int,

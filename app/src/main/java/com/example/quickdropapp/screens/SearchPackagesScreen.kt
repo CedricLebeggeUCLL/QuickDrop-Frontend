@@ -4,22 +4,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.models.Delivery
-import com.example.quickdropapp.models.Package
-import com.example.quickdropapp.network.ApiService
+import com.example.quickdropapp.composables.PackageCard // Nieuwe import
+import com.example.quickdropapp.models.*
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -35,6 +32,8 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
     var successMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var courierId by remember { mutableStateOf<Int?>(null) }
+    var startAddress by remember { mutableStateOf<Address?>(null) }
+    var destinationAddress by remember { mutableStateOf<Address?>(null) }
 
     val apiService = RetrofitClient.instance
 
@@ -45,35 +44,48 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
             return@LaunchedEffect
         }
 
-        apiService.getCourierByUserId(userId).enqueue(object : Callback<com.example.quickdropapp.models.Courier> {
-            override fun onResponse(call: Call<com.example.quickdropapp.models.Courier>, response: Response<com.example.quickdropapp.models.Courier>) {
+        // Haal de koerier op om de adressen te verkrijgen
+        apiService.getCourierByUserId(userId).enqueue(object : Callback<Courier> {
+            override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
                 if (response.isSuccessful) {
                     val courier = response.body()
                     if (courier != null) {
                         courierId = courier.id
-                        val searchRequest = ApiService.SearchRequest(
+                        // Simuleer start- en destination-adressen (in echte app haal je deze op via courier.start_address_id en courier.destination_address_id)
+                        startAddress = Address(
+                            street_name = "Startstraat",
+                            house_number = "1",
+                            postal_code = "1000"
+                        )
+                        destinationAddress = Address(
+                            street_name = "Eindstraat",
+                            house_number = "2",
+                            postal_code = "2000"
+                        )
+
+                        val searchRequest = SearchRequest(
                             user_id = userId,
-                            start_location = courier.current_location ?: listOf(0.0, 0.0),
-                            destination = courier.destination ?: listOf(0.0, 0.0),
-                            pickup_radius = courier.pickup_radius ?: 5.0,
-                            dropoff_radius = courier.dropoff_radius ?: 5.0
+                            start_address = startAddress ?: Address(),
+                            destination_address = destinationAddress ?: Address(),
+                            pickup_radius = (courier.pickup_radius ?: 5.0f).toDouble(),
+                            dropoff_radius = (courier.dropoff_radius ?: 5.0f).toDouble(),
+                            use_current_as_start = false
                         )
 
                         println("Searching packages with request: $searchRequest")
 
-                        apiService.searchPackages(searchRequest).enqueue(object : Callback<ApiService.SearchResponse> {
-                            override fun onResponse(call: Call<ApiService.SearchResponse>, response: Response<ApiService.SearchResponse>) {
+                        apiService.searchPackages(searchRequest).enqueue(object : Callback<SearchResponse> {
+                            override fun onResponse(call: Call<SearchResponse>, response: Response<SearchResponse>) {
                                 if (response.isSuccessful) {
                                     packages = response.body()?.packages?.filterNotNull() ?: emptyList()
                                     errorMessage = null
                                 } else {
-                                    errorMessage = "Fout bij zoeken: ${response.code()} - ${response.errorBody()?.string() ?: "Geen details"}"
                                     println("Search failed: ${response.code()} - ${response.errorBody()?.string()}")
                                 }
                                 isLoading = false
                             }
 
-                            override fun onFailure(call: Call<ApiService.SearchResponse>, t: Throwable) {
+                            override fun onFailure(call: Call<SearchResponse>, t: Throwable) {
                                 errorMessage = "Netwerkfout bij zoeken: ${t.message}"
                                 println("Network failure: ${t.message}")
                                 isLoading = false
@@ -84,12 +96,11 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                         isLoading = false
                     }
                 } else {
-                    errorMessage = "Kon koerier niet ophalen: ${response.code()} - ${response.errorBody()?.string() ?: "Geen details"}"
                     isLoading = false
                 }
             }
 
-            override fun onFailure(call: Call<com.example.quickdropapp.models.Courier>, t: Throwable) {
+            override fun onFailure(call: Call<Courier>, t: Throwable) {
                 errorMessage = "Netwerkfout bij ophalen koerier: ${t.message}"
                 isLoading = false
             }
@@ -200,24 +211,27 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                                             return@PackageCard
                                         }
 
-                                        // Maak een nieuwe Delivery
-                                        val delivery = Delivery(
-                                            id = null, // Wordt door backend ingevuld
+                                        // Maak een nieuwe DeliveryRequest
+                                        val deliveryRequest = DeliveryRequest(
+                                            user_id = userId,
                                             package_id = packageId,
-                                            courier_id = courierId!!, // Non-null assertion na de check
-                                            user_id = userId, // Voeg user_id toe
-                                            pickupLocation = packageItem.pickupLocation,
-                                            dropoffLocation = packageItem.dropoffLocation,
-                                            pickupTime = null,
-                                            deliveryTime = null,
-                                            status = "assigned"
+                                            start_address = startAddress ?: Address(), // Gebruik simulatie voor nu
+                                            destination_address = destinationAddress ?: Address(), // Gebruik simulatie voor nu
+                                            pickup_radius = null,
+                                            dropoff_radius = null
                                         )
 
-                                        apiService.createDelivery(delivery).enqueue(object : Callback<Delivery> {
+                                        apiService.createDelivery(deliveryRequest).enqueue(object : Callback<Delivery> {
                                             override fun onResponse(call: Call<Delivery>, response: Response<Delivery>) {
                                                 if (response.isSuccessful) {
                                                     // Update de pakketstatus naar "assigned"
-                                                    val updatedPackage = packageItem.copy(status = "assigned")
+                                                    val updatedPackage = PackageRequest(
+                                                        user_id = userId,
+                                                        description = packageItem.description,
+                                                        pickup_address = startAddress ?: Address(),
+                                                        dropoff_address = destinationAddress ?: Address(),
+                                                        status = "assigned"
+                                                    )
                                                     apiService.updatePackage(packageId, updatedPackage).enqueue(object : Callback<Package> {
                                                         override fun onResponse(call: Call<Package>, response: Response<Package>) {
                                                             if (response.isSuccessful) {
@@ -228,7 +242,6 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                                                                     popUpTo("searchPackages/$userId") { inclusive = true }
                                                                 }
                                                             } else {
-                                                                errorMessage = "Fout bij updaten pakket: ${response.code()} - ${response.errorBody()?.string() ?: "Geen details"}"
                                                                 successMessage = null
                                                             }
                                                         }
@@ -239,7 +252,6 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                                                         }
                                                     })
                                                 } else {
-                                                    errorMessage = "Fout bij aanmaken levering: ${response.code()} - ${response.errorBody()?.string() ?: "Geen details"}"
                                                     successMessage = null
                                                 }
                                             }
@@ -254,99 +266,6 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                             }
                         }
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun PackageCard(packageItem: Package, onAccept: (Int) -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .shadow(8.dp, RoundedCornerShape(12.dp)),
-        colors = CardDefaults.cardColors(
-            containerColor = SandBeige,
-            contentColor = DarkGreen
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp,
-            pressedElevation = 8.dp
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Pakket ID: ${packageItem.id ?: "Onbekend"}",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DarkGreen
-                )
-                Text(
-                    text = packageItem.status?.uppercase() ?: "PENDING",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (packageItem.status == "pending") GreenSustainable else DarkGreen.copy(alpha = 0.6f),
-                    modifier = Modifier
-                        .background(
-                            color = if (packageItem.status == "pending") GreenSustainable.copy(alpha = 0.1f) else SandBeige,
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Beschrijving: ${packageItem.description ?: "Geen beschrijving"}",
-                fontSize = 14.sp,
-                color = DarkGreen.copy(alpha = 0.8f)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Ophaallocatie: ${packageItem.pickupLocation.let { loc ->
-                    if (loc.size >= 2) "(${loc[0]}, ${loc[1]})" else "Onbekend"
-                }}",
-                fontSize = 14.sp,
-                color = DarkGreen.copy(alpha = 0.8f)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Afleverlocatie: ${packageItem.dropoffLocation.let { loc ->
-                    if (loc.size >= 2) "(${loc[0]}, ${loc[1]})" else "Onbekend"
-                }}",
-                fontSize = 14.sp,
-                color = DarkGreen.copy(alpha = 0.8f)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            if (packageItem.status == "pending") {
-                Button(
-                    onClick = {
-                        packageItem.id?.let { onAccept(it) }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = GreenSustainable,
-                        contentColor = SandBeige
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = "Accepteren",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
                 }
             }
         }

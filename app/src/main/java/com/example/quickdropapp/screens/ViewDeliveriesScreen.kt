@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.quickdropapp.composables.DeliveryItem // Nieuwe import
 import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
@@ -168,86 +169,6 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                             }
                         }
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun DeliveryItem(delivery: Delivery, navController: NavController) {
-    AnimatedVisibility(
-        visible = true,
-        enter = fadeIn(animationSpec = tween(durationMillis = 400)),
-        exit = fadeOut(animationSpec = tween(durationMillis = 400))
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            SandBeige.copy(alpha = 0.95f),
-                            GreenSustainable.copy(alpha = 0.1f),
-                            Color.White.copy(alpha = 0.9f)
-                        )
-                    )
-                )
-                .clickable {
-                    navController.navigate("deliveryInfo/${delivery.id}")
-                },
-            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Geen schaduw
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        text = "Levering ID: ${delivery.id}",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = DarkGreen
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Status: ${delivery.status?.uppercase() ?: "ASSIGNED"}",
-                        fontSize = 14.sp,
-                        color = DarkGreen.copy(alpha = 0.8f)
-                    )
-                    if (delivery.status == "delivered" && delivery.deliveryTime != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Afgeleverd: ${delivery.deliveryTime}",
-                            fontSize = 12.sp,
-                            color = DarkGreen.copy(alpha = 0.6f)
-                        )
-                    } else if (delivery.pickupTime != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Opgehaald: ${delivery.pickupTime}",
-                            fontSize = 12.sp,
-                            color = DarkGreen.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-                IconButton(
-                    onClick = { navController.navigate("trackDelivery/${delivery.id}") },
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(GreenSustainable.copy(alpha = 0.15f), CircleShape)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.LocationOn,
-                        contentDescription = "Track",
-                        tint = GreenSustainable,
-                        modifier = Modifier.size(20.dp)
-                    )
                 }
             }
         }

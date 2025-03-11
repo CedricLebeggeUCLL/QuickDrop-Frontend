@@ -27,7 +27,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.models.Package
+import com.example.quickdropapp.composables.AddressInputField // Nieuwe import
+import com.example.quickdropapp.models.*
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -39,12 +40,8 @@ import retrofit2.Response
 @Composable
 fun SendPackageScreen(navController: NavController, userId: Int) {
     var recipientName by remember { mutableStateOf("") }
-    var recipientAddress by remember { mutableStateOf("") }
-    var pickupAddress by remember { mutableStateOf("") }
-    var pickupLat by remember { mutableStateOf("") }
-    var pickupLng by remember { mutableStateOf("") }
-    var dropoffLat by remember { mutableStateOf("") }
-    var dropoffLng by remember { mutableStateOf("") }
+    var pickupAddress by remember { mutableStateOf(Address()) }
+    var dropoffAddress by remember { mutableStateOf(Address()) }
     var packageDescription by remember { mutableStateOf("") }
     var packageWeight by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -59,7 +56,7 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
     val apiService = RetrofitClient.instance
 
-    // Log de userId voor debugging (blijft behouden)
+    // Log de userId voor debugging
     LaunchedEffect(userId) {
         println("Received userId: $userId")
     }
@@ -106,7 +103,7 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                     .padding(horizontal = 20.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Subtitel met instructie (geen userId meer)
+                // Subtitel met instructie
                 Text(
                     text = "Vul de details in om je pakket duurzaam te versturen",
                     style = MaterialTheme.typography.titleMedium,
@@ -145,124 +142,20 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                         Spacer(modifier = Modifier.height(12.dp))
 
                         // Ophaaladres
-                        OutlinedTextField(
-                            value = pickupAddress,
-                            onValueChange = { pickupAddress = it },
-                            label = { Text("Adres waar je het ophaalt") },
-                            placeholder = { Text("Bijv. Hoofdstraat 12, 1000 Brussel") },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = GreenSustainable,
-                                unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                cursorColor = GreenSustainable,
-                                focusedLabelColor = GreenSustainable
-                            ),
-                            shape = RoundedCornerShape(12.dp)
+                        AddressInputField(
+                            label = "Adres waar je het ophaalt",
+                            address = pickupAddress,
+                            onAddressChange = { pickupAddress = it }
                         )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Ophaalcoördinaten
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            OutlinedTextField(
-                                value = pickupLat,
-                                onValueChange = { pickupLat = it.filter { char -> char.isDigit() || char == '.' || char == '-' } },
-                                label = { Text("Breedtegraad ophaalpunt") },
-                                placeholder = { Text("Bijv. 50.8503") },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(end = 4.dp),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenSustainable,
-                                    unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                    cursorColor = GreenSustainable,
-                                    focusedLabelColor = GreenSustainable
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            OutlinedTextField(
-                                value = pickupLng,
-                                onValueChange = { pickupLng = it.filter { char -> char.isDigit() || char == '.' || char == '-' } },
-                                label = { Text("Lengtegraad ophaalpunt") },
-                                placeholder = { Text("Bijv. 4.3517") },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(start = 4.dp),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenSustainable,
-                                    unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                    cursorColor = GreenSustainable,
-                                    focusedLabelColor = GreenSustainable
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                        }
 
                         Spacer(modifier = Modifier.height(12.dp))
 
                         // Afleveradres
-                        OutlinedTextField(
-                            value = recipientAddress,
-                            onValueChange = { recipientAddress = it },
-                            label = { Text("Adres waar het naartoe gaat") },
-                            placeholder = { Text("Bijv. Marktplein 5, 2000 Antwerpen") },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = GreenSustainable,
-                                unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                cursorColor = GreenSustainable,
-                                focusedLabelColor = GreenSustainable
-                            ),
-                            shape = RoundedCornerShape(12.dp)
+                        AddressInputField(
+                            label = "Adres waar het naartoe gaat",
+                            address = dropoffAddress,
+                            onAddressChange = { dropoffAddress = it }
                         )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Aflevercoördinaten
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            OutlinedTextField(
-                                value = dropoffLat,
-                                onValueChange = { dropoffLat = it.filter { char -> char.isDigit() || char == '.' || char == '-' } },
-                                label = { Text("Breedtegraad afleverpunt") },
-                                placeholder = { Text("Bijv. 51.2178") },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(end = 4.dp),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenSustainable,
-                                    unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                    cursorColor = GreenSustainable,
-                                    focusedLabelColor = GreenSustainable
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            OutlinedTextField(
-                                value = dropoffLng,
-                                onValueChange = { dropoffLng = it.filter { char -> char.isDigit() || char == '.' || char == '-' } },
-                                label = { Text("Lengtegraad afleverpunt") },
-                                placeholder = { Text("Bijv. 4.4203") },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(start = 4.dp),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenSustainable,
-                                    unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                    cursorColor = GreenSustainable,
-                                    focusedLabelColor = GreenSustainable
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                        }
 
                         Spacer(modifier = Modifier.height(12.dp))
 
@@ -313,25 +206,20 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             errorMessage = "De naam van de ontvanger is verplicht"
                             return@Button
                         }
-                        if (pickupAddress.isBlank() || recipientAddress.isBlank()) {
-                            errorMessage = "Ophaal- en afleveradres zijn verplicht"
+                        if (pickupAddress.street_name.isBlank() || pickupAddress.house_number.isBlank() || pickupAddress.postal_code.isBlank()) {
+                            errorMessage = "Een geldig ophaaladres is verplicht (straat, huisnummer en postcode)"
+                            return@Button
+                        }
+                        if (dropoffAddress.street_name.isBlank() || dropoffAddress.house_number.isBlank() || dropoffAddress.postal_code.isBlank()) {
+                            errorMessage = "Een geldig afleveradres is verplicht (straat, huisnummer en postcode)"
                             return@Button
                         }
                         if (packageDescription.isBlank()) {
                             errorMessage = "Een beschrijving van het pakket is verplicht"
                             return@Button
                         }
-                        if (packageWeight.isBlank()) {
-                            errorMessage = "Het gewicht van het pakket is verplicht"
-                            return@Button
-                        }
-                        val pickupLatValue = pickupLat.toDoubleOrNull()
-                        val pickupLngValue = pickupLng.toDoubleOrNull()
-                        val dropoffLatValue = dropoffLat.toDoubleOrNull()
-                        val dropoffLngValue = dropoffLng.toDoubleOrNull()
-
-                        if (pickupLatValue == null || pickupLngValue == null || dropoffLatValue == null || dropoffLngValue == null) {
-                            errorMessage = "Vul geldige coördinaten in (bijv. 50.8503)"
+                        if (packageWeight.isBlank() || packageWeight.toDoubleOrNull() == null) {
+                            errorMessage = "Het gewicht van het pakket is verplicht en moet een geldig getal zijn"
                             return@Button
                         }
 
@@ -343,23 +231,20 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                         // Combineer gegevens in de beschrijving
                         val fullDescription = "$packageDescription - Ontvanger: $recipientName, Gewicht: $packageWeight kg"
 
-                        // Maak pakket object
-                        val packageData = Package(
+                        // Maak PackageRequest object
+                        val packageRequest = PackageRequest(
                             user_id = userId,
                             description = fullDescription,
-                            pickupLocation = listOf(pickupLatValue, pickupLngValue),
-                            dropoffLocation = listOf(dropoffLatValue, dropoffLngValue),
-                            pickupAddress = pickupAddress,
-                            dropoffAddress = recipientAddress,
-                            status = "pending" // Status voor delivery search
+                            pickup_address = pickupAddress,
+                            dropoff_address = dropoffAddress
                         )
 
                         // Log de data voor debugging
-                        println("Sending package: $packageData")
+                        println("Sending package request: $packageRequest")
                         println("Sending with userId: $userId")
 
                         // Verstuur naar backend
-                        val call = apiService.addPackage(packageData)
+                        val call = apiService.addPackage(packageRequest)
                         call.enqueue(object : Callback<Package> {
                             override fun onResponse(call: Call<Package>, response: Response<Package>) {
                                 if (response.isSuccessful) {
@@ -368,12 +253,8 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                                     errorMessage = null
                                     // Reset form
                                     recipientName = ""
-                                    recipientAddress = ""
-                                    pickupAddress = ""
-                                    pickupLat = ""
-                                    pickupLng = ""
-                                    dropoffLat = ""
-                                    dropoffLng = ""
+                                    pickupAddress = Address()
+                                    dropoffAddress = Address()
                                     packageDescription = ""
                                     packageWeight = ""
                                     // Terug naar HomeScreen
@@ -408,9 +289,16 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                         containerColor = Color.Transparent,
                         contentColor = SandBeige
                     ),
-                    enabled = recipientName.isNotBlank() && recipientAddress.isNotBlank() && pickupAddress.isNotBlank() &&
-                            packageDescription.isNotBlank() && packageWeight.isNotBlank() && pickupLat.isNotBlank() &&
-                            pickupLng.isNotBlank() && dropoffLat.isNotBlank() && dropoffLng.isNotBlank(),
+                    enabled = recipientName.isNotBlank() &&
+                            pickupAddress.street_name.isNotBlank() &&
+                            pickupAddress.house_number.isNotBlank() &&
+                            pickupAddress.postal_code.isNotBlank() &&
+                            dropoffAddress.street_name.isNotBlank() &&
+                            dropoffAddress.house_number.isNotBlank() &&
+                            dropoffAddress.postal_code.isNotBlank() &&
+                            packageDescription.isNotBlank() &&
+                            packageWeight.isNotBlank() &&
+                            packageWeight.toDoubleOrNull() != null,
                     interactionSource = interactionSource,
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 4.dp,

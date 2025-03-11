@@ -18,8 +18,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.models.Courier
-import com.example.quickdropapp.network.ApiService
+import com.example.quickdropapp.composables.AddressInputField // Nieuwe import
+import com.example.quickdropapp.models.*
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -30,16 +30,14 @@ import retrofit2.Response
 
 @Composable
 fun StartDeliveryScreen(navController: NavController, userId: Int) {
-    var currentLatitude by remember { mutableStateOf("") }
-    var currentLongitude by remember { mutableStateOf("") }
-    var destinationLatitude by remember { mutableStateOf("") }
-    var destinationLongitude by remember { mutableStateOf("") }
+    var startAddress by remember { mutableStateOf(Address()) }
+    var destinationAddress by remember { mutableStateOf(Address()) }
     var pickupRadius by remember { mutableStateOf("5.0") }
     var dropoffRadius by remember { mutableStateOf("5.0") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
     var courierId by remember { mutableStateOf<Int?>(null) }
-    var currentCourier by remember { mutableStateOf<Courier?>(null) } // Huidige koerierdata
+    var currentCourier by remember { mutableStateOf<Courier?>(null) }
 
     val apiService = RetrofitClient.instance
 
@@ -54,7 +52,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                 if (response.isSuccessful) {
                     val courier = response.body()
                     courierId = courier?.id
-                    currentCourier = courier // Sla de huidige koerierdata op
+                    currentCourier = courier
                     println("Fetched courierId: $courierId for userId: $userId, data: $courier")
                 } else {
                     errorMessage = "Kon koerier niet vinden: ${response.code()} - ${response.errorBody()?.string() ?: "Geen details"}"
@@ -124,73 +122,21 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            OutlinedTextField(
-                                value = currentLatitude,
-                                onValueChange = { currentLatitude = it.filter { char -> char.isDigit() || char == '.' || char == '-' } },
-                                label = { Text("Huidige Latitude") },
-                                placeholder = { Text("Bijv. 50.8503") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                modifier = Modifier.weight(1f),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenSustainable,
-                                    unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                    cursorColor = GreenSustainable,
-                                    focusedLabelColor = GreenSustainable
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            OutlinedTextField(
-                                value = currentLongitude,
-                                onValueChange = { currentLongitude = it.filter { char -> char.isDigit() || char == '.' || char == '-' } },
-                                label = { Text("Huidige Longitude") },
-                                placeholder = { Text("Bijv. 4.3517") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                modifier = Modifier.weight(1f),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenSustainable,
-                                    unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                    cursorColor = GreenSustainable,
-                                    focusedLabelColor = GreenSustainable
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                        }
+                        // Startadres
+                        AddressInputField(
+                            label = "Startadres",
+                            address = startAddress,
+                            onAddressChange = { startAddress = it }
+                        )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            OutlinedTextField(
-                                value = destinationLatitude,
-                                onValueChange = { destinationLatitude = it.filter { char -> char.isDigit() || char == '.' || char == '-' } },
-                                label = { Text("Bestemming Latitude") },
-                                placeholder = { Text("Bijv. 51.2178") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                modifier = Modifier.weight(1f),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenSustainable,
-                                    unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                    cursorColor = GreenSustainable,
-                                    focusedLabelColor = GreenSustainable
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            OutlinedTextField(
-                                value = destinationLongitude,
-                                onValueChange = { destinationLongitude = it.filter { char -> char.isDigit() || char == '.' || char == '-' } },
-                                label = { Text("Bestemming Longitude") },
-                                placeholder = { Text("Bijv. 4.4203") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                modifier = Modifier.weight(1f),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenSustainable,
-                                    unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                    cursorColor = GreenSustainable,
-                                    focusedLabelColor = GreenSustainable
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                        }
+                        // Bestemmingsadres
+                        AddressInputField(
+                            label = "Bestemmingsadres",
+                            address = destinationAddress,
+                            onAddressChange = { destinationAddress = it }
+                        )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
@@ -258,55 +204,37 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
                 Button(
                     onClick = {
-                        println("Button clicked - Checking state: courierId=$courierId, inputs: lat=$currentLatitude, lng=$currentLongitude, destLat=$destinationLatitude, destLng=$destinationLongitude, pickupRad=$pickupRadius, dropoffRad=$dropoffRadius")
+                        println("Button clicked - Checking state: courierId=$courierId, inputs: startAddress=$startAddress, destinationAddress=$destinationAddress, pickupRad=$pickupRadius, dropoffRad=$dropoffRadius")
                         if (courierId == null || currentCourier == null) {
                             errorMessage = "Koerier-ID of koerierdata niet geladen, probeer opnieuw"
                             println("Crash point: Courier ID or data is null")
                             return@Button
                         }
 
-                        val currentLat = currentLatitude.toDoubleOrNull()
-                        val currentLng = currentLongitude.toDoubleOrNull()
-                        val destLat = destinationLatitude.toDoubleOrNull()
-                        val destLng = destinationLongitude.toDoubleOrNull()
                         val pickupRad = pickupRadius.toDoubleOrNull()
                         val dropoffRad = dropoffRadius.toDoubleOrNull()
 
-                        if (currentLat == null || currentLng == null || destLat == null || destLng == null || pickupRad == null || dropoffRad == null) {
-                            errorMessage = "Vul geldige coördinaten en radius in: currentLat=$currentLat, currentLng=$currentLng, destLat=$destLat, destLng=$destLng, pickupRad=$pickupRad, dropoffRad=$dropoffRad"
-                            println("Crash point: Invalid input detected")
+                        if (pickupRad == null || dropoffRad == null) {
+                            errorMessage = "Vul geldige radius in: pickupRad=$pickupRad, dropoffRad=$dropoffRad"
+                            println("Crash point: Invalid radius detected")
                             return@Button
                         }
 
-                        // Vergelijk met huidige koerierdata
-                        val currentData = currentCourier!!
-                        val currentLocation = currentData.current_location
-                        val destination = currentData.destination
-
-                        val isSameData = currentLocation?.takeIf { it.size >= 2 } == listOf(currentLat, currentLng) &&
-                                destination?.takeIf { it.size >= 2 } == listOf(destLat, destLng) &&
-                                currentData.pickup_radius == pickupRad &&
-                                currentData.dropoff_radius == dropoffRad &&
-                                currentData.availability
-
-                        if (isSameData) {
-                            // Als de data hetzelfde is, geen update nodig, direct navigeren
-                            println("Data is unchanged, skipping update and navigating directly")
-                            successMessage = "Data ongewijzigd, direct doorgestuurd!"
-                            errorMessage = null
-                            navController.navigate("searchPackages/$userId") {
-                                popUpTo("startDelivery/$userId") { inclusive = false }
-                                launchSingleTop = true
-                            }
+                        if (startAddress.street_name.isBlank() || startAddress.house_number.isBlank() || startAddress.postal_code.isBlank()) {
+                            errorMessage = "Een geldig startadres is verplicht (straat, huisnummer en postcode)"
+                            return@Button
+                        }
+                        if (destinationAddress.street_name.isBlank() || destinationAddress.house_number.isBlank() || destinationAddress.postal_code.isBlank()) {
+                            errorMessage = "Een geldig bestemmingsadres is verplicht (straat, huisnummer en postcode)"
                             return@Button
                         }
 
-                        // Als de data verschilt, voer de update uit
-                        val updateData = ApiService.CourierUpdateRequest(
-                            current_location = listOf(currentLat, currentLng),
-                            destination = listOf(destLat, destLng),
-                            pickup_radius = pickupRad,
-                            dropoff_radius = dropoffRad,
+                        // Update de koerier met de nieuwe adressen
+                        val updateData = CourierUpdateRequest(
+                            start_address = startAddress,
+                            destination_address = destinationAddress,
+                            pickup_radius = pickupRad.toFloat(),
+                            dropoff_radius = dropoffRad.toFloat(),
                             availability = true
                         )
 
@@ -319,7 +247,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                     successMessage = "Locatie en radius succesvol ingesteld!"
                                     errorMessage = null
                                     println("Courier updated successfully: ${response.body()}")
-                                    currentCourier = response.body() // Update de huidige koerierdata
+                                    currentCourier = response.body()
                                     try {
                                         navController.navigate("searchPackages/$userId") {
                                             popUpTo("startDelivery/$userId") { inclusive = false }
@@ -349,9 +277,14 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                         .height(56.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable),
                     shape = RoundedCornerShape(16.dp),
-                    enabled = currentLatitude.isNotBlank() && currentLongitude.isNotBlank() &&
-                            destinationLatitude.isNotBlank() && destinationLongitude.isNotBlank() &&
-                            pickupRadius.isNotBlank() && dropoffRadius.isNotBlank() && courierId != null && currentCourier != null
+                    enabled = startAddress.street_name.isNotBlank() &&
+                            startAddress.house_number.isNotBlank() &&
+                            startAddress.postal_code.isNotBlank() &&
+                            destinationAddress.street_name.isNotBlank() &&
+                            destinationAddress.house_number.isNotBlank() &&
+                            destinationAddress.postal_code.isNotBlank() &&
+                            pickupRadius.isNotBlank() && dropoffRadius.isNotBlank() &&
+                            courierId != null && currentCourier != null
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(

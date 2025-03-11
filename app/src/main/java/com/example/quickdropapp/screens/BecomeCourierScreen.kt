@@ -4,19 +4,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.BikeScooter
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
+import com.example.quickdropapp.models.Courier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.models.Courier
+import com.example.quickdropapp.composables.CourierRegistrationForm
+import com.example.quickdropapp.composables.CustomTopBar
+import com.example.quickdropapp.models.CourierRequest
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -41,31 +41,11 @@ fun BecomeCourierScreen(navController: NavController, userId: Int) {
                 .padding(paddingValues)
                 .background(SandBeige)
         ) {
-            // Custom Top Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(SandBeige)
-                    .shadow(4.dp)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBackIosNew,
-                        contentDescription = "Terug",
-                        tint = GreenSustainable
-                    )
-                }
-                Text(
-                    text = "Word Koerier",
-                    color = GreenSustainable,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp
-                )
-                Spacer(modifier = Modifier.width(48.dp)) // Balans
-            }
+            // Gebruik CustomTopBar
+            CustomTopBar(
+                title = "Word Koerier",
+                navController = navController
+            )
 
             Column(
                 modifier = Modifier
@@ -83,48 +63,13 @@ fun BecomeCourierScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Formuliervelden
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp)),
-                    colors = CardDefaults.cardColors(containerColor = SandBeige),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        // Itsme Verificatiecode
-                        OutlinedTextField(
-                            value = itsmeCode,
-                            onValueChange = { itsmeCode = it },
-                            label = { Text("Itsme Verificatiecode") },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = GreenSustainable,
-                                unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                cursorColor = GreenSustainable,
-                                focusedLabelColor = GreenSustainable
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Rijbewijsnummer (optioneel)
-                        OutlinedTextField(
-                            value = licenseNumber,
-                            onValueChange = { licenseNumber = it },
-                            label = { Text("Rijbewijsnummer of ID (optioneel)") },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = GreenSustainable,
-                                unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                cursorColor = GreenSustainable,
-                                focusedLabelColor = GreenSustainable
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                    }
-                }
+                // Gebruik CourierRegistrationForm
+                CourierRegistrationForm(
+                    itsmeCode = itsmeCode,
+                    onItsmeCodeChange = { itsmeCode = it },
+                    licenseNumber = licenseNumber,
+                    onLicenseNumberChange = { licenseNumber = it }
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -162,18 +107,17 @@ fun BecomeCourierScreen(navController: NavController, userId: Int) {
                             return@Button
                         }
 
-                        // Maak courierData met itsme_code en license_number
-                        val courierData = Courier(
+                        // Gebruik CourierRequest in plaats van Courier
+                        val courierRequest = CourierRequest(
                             user_id = userId,
                             itsme_code = itsmeCode,
                             license_number = if (licenseNumber.isBlank()) null else licenseNumber
-                            // Geen locatie of radius bij registratie, backend vult defaults in
                         )
 
                         // Log voor debugging
-                        println("Sending courier data: $courierData")
+                        println("Sending courier request: $courierRequest")
 
-                        val call = apiService.becomeCourier(courierData)
+                        val call = apiService.becomeCourier(courierRequest) // Gebruik CourierRequest
                         call.enqueue(object : Callback<Courier> {
                             override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
                                 if (response.isSuccessful) {

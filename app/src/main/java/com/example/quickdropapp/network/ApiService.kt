@@ -32,10 +32,10 @@ interface ApiService {
     fun getPackageById(@Path("id") id: Int): Call<Package>
 
     @POST("packages")
-    fun addPackage(@Body packageData: Package): Call<Package>
+    fun addPackage(@Body packageData: PackageRequest): Call<Package>
 
     @PUT("packages/{id}")
-    fun updatePackage(@Path("id") id: Int, @Body packageData: Package): Call<Package>
+    fun updatePackage(@Path("id") id: Int, @Body packageData: PackageRequest): Call<Package>
 
     @DELETE("packages/{id}")
     fun deletePackage(@Path("id") id: Int): Call<Void>
@@ -56,8 +56,8 @@ interface ApiService {
     @GET("couriers/user/{userId}")
     fun getCourierByUserId(@Path("userId") userId: Int): Call<Courier>
 
-    @POST("couriers")
-    fun becomeCourier(@Body courier: Courier): Call<Courier>
+    @POST("couriers/become")
+    fun becomeCourier(@Body courier: CourierRequest): Call<Courier>
 
     @PUT("couriers/{id}")
     fun updateCourier(@Path("id") id: Int, @Body courierData: CourierUpdateRequest): Call<Courier>
@@ -73,7 +73,7 @@ interface ApiService {
     fun getDeliveryById(@Path("id") id: Int): Call<Delivery>
 
     @POST("deliveries")
-    fun createDelivery(@Body delivery: Delivery): Call<Delivery>
+    fun createDelivery(@Body delivery: DeliveryRequest): Call<Delivery>
 
     @PUT("deliveries/{id}")
     fun updateDelivery(@Path("id") id: Int, @Body delivery: DeliveryUpdate): Call<Delivery>
@@ -81,32 +81,9 @@ interface ApiService {
     @DELETE("deliveries/{id}")
     fun cancelDelivery(@Path("id") id: Int): Call<Void>
 
-    @GET("deliveries/users/{userId}")
-    fun getDeliveryHistory(@Path("userId") id: Int): Call<List<Delivery>>
+    @GET("deliveries/history/{userId}")
+    fun getDeliveryHistory(@Path("userId") userId: Int): Call<List<Delivery>>
 
-    @GET("deliveries/couriers/{userId}")
-    fun getCourierDeliveries(@Path("userId") id: Int): Call<List<Delivery>>
-
-    // Search Request and Response
-    data class SearchRequest(
-        val user_id: Int,
-        val start_location: List<Double>,
-        val destination: List<Double>,
-        val pickup_radius: Double,
-        val dropoff_radius: Double
-    )
-
-    data class SearchResponse(
-        val message: String,
-        val packages: List<Package>
-    )
-
-    // Nieuwe dataklasse voor Courier Update Request
-    data class CourierUpdateRequest(
-        val current_location: List<Double>,
-        val destination: List<Double>,
-        val pickup_radius: Double,
-        val dropoff_radius: Double,
-        val availability: Boolean
-    )
+    @GET("deliveries/courier/{userId}")
+    fun getCourierDeliveries(@Path("userId") userId: Int): Call<List<Delivery>>
 }

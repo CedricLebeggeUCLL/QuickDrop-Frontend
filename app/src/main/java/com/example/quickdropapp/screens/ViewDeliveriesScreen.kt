@@ -1,6 +1,11 @@
 package com.example.quickdropapp.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,11 +19,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.clickable
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.network.RetrofitClient
@@ -69,11 +74,21 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                 .padding(paddingValues)
                 .background(SandBeige)
         ) {
+            // Sleek header with gradient
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(SandBeige)
-                    .shadow(4.dp)
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                GreenSustainable.copy(alpha = 0.15f),
+                                Color(0xFF2E7D32).copy(alpha = 0.4f),
+                                GreenSustainable.copy(alpha = 0.2f)
+                            ),
+                            startX = 0f,
+                            endX = Float.POSITIVE_INFINITY
+                        )
+                    )
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -82,49 +97,59 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBackIosNew,
                         contentDescription = "Terug",
-                        tint = GreenSustainable
+                        tint = Color.White,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                            .padding(6.dp)
                     )
                 }
                 Text(
                     text = "Mijn Leveringen",
-                    color = GreenSustainable,
+                    color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp
+                    fontSize = 24.sp,
+                    modifier = Modifier.padding(end = 16.dp)
                 )
-                Spacer(modifier = Modifier.width(48.dp))
+                Spacer(modifier = Modifier.width(16.dp))
             }
 
+            // Content
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                    .padding(horizontal = 16.dp, vertical = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "Bekijk je leveringen",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = DarkGreen.copy(alpha = 0.8f)
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DarkGreen,
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
-
-                Spacer(modifier = Modifier.height(16.dp))
 
                 when {
                     isLoading -> {
-                        CircularProgressIndicator(color = GreenSustainable)
+                        CircularProgressIndicator(
+                            color = GreenSustainable,
+                            modifier = Modifier.size(40.dp)
+                        )
                     }
                     errorMessage != null -> {
                         Text(
                             text = errorMessage!!,
                             color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(8.dp)
                         )
                     }
                     deliveries == null || deliveries?.isEmpty() == true -> {
                         Text(
                             text = "Geen leveringen gevonden",
                             color = DarkGreen,
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(8.dp)
                         )
                     }
                     else -> {
@@ -132,7 +157,8 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(bottom = 16.dp)
                         ) {
                             items(deliveries!!) { delivery ->
                                 DeliveryItem(
@@ -150,56 +176,77 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
 
 @Composable
 fun DeliveryItem(delivery: Delivery, navController: NavController) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .shadow(4.dp)
-            .clickable {
-                navController.navigate("deliveryInfo/${delivery.id}")
-            },
-        colors = CardDefaults.cardColors(containerColor = SandBeige)
+    AnimatedVisibility(
+        visible = true,
+        enter = fadeIn(animationSpec = tween(durationMillis = 400)),
+        exit = fadeOut(animationSpec = tween(durationMillis = 400))
     ) {
-        Row(
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .clip(RoundedCornerShape(16.dp))
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            SandBeige.copy(alpha = 0.95f),
+                            GreenSustainable.copy(alpha = 0.1f),
+                            Color.White.copy(alpha = 0.9f)
+                        )
+                    )
+                )
+                .clickable {
+                    navController.navigate("deliveryInfo/${delivery.id}")
+                },
+            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Geen schaduw
         ) {
-            Column {
-                Text(
-                    text = "Levering ID: ${delivery.id}",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DarkGreen
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Status: ${delivery.status?.uppercase() ?: "ASSIGNED"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-                delivery.pickupTime?.let {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "Levering ID: ${delivery.id}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = DarkGreen
+                    )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Opgehaald: $it",
-                        fontSize = 12.sp,
-                        color = DarkGreen.copy(alpha = 0.6f)
+                        text = "Status: ${delivery.status?.uppercase() ?: "ASSIGNED"}",
+                        fontSize = 14.sp,
+                        color = DarkGreen.copy(alpha = 0.8f)
                     )
+                    if (delivery.status == "delivered" && delivery.deliveryTime != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Afgeleverd: ${delivery.deliveryTime}",
+                            fontSize = 12.sp,
+                            color = DarkGreen.copy(alpha = 0.6f)
+                        )
+                    } else if (delivery.pickupTime != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Opgehaald: ${delivery.pickupTime}",
+                            fontSize = 12.sp,
+                            color = DarkGreen.copy(alpha = 0.6f)
+                        )
+                    }
                 }
-            }
-            if (delivery.deliveryTime == null) {
                 IconButton(
                     onClick = { navController.navigate("trackDelivery/${delivery.id}") },
                     modifier = Modifier
                         .size(40.dp)
-                        .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
+                        .background(GreenSustainable.copy(alpha = 0.15f), CircleShape)
                 ) {
                     Icon(
                         imageVector = Icons.Filled.LocationOn,
                         contentDescription = "Track",
-                        tint = GreenSustainable
+                        tint = GreenSustainable,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }

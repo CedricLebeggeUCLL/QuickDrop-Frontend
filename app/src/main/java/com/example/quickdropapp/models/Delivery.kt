@@ -11,14 +11,9 @@ data class Delivery(
     val status: String? = "assigned"
 )
 
-// Request dataklasse voor het aanmaken van een delivery
 data class DeliveryRequest(
     val user_id: Int,
-    val package_id: Int,
-    val start_address: Address,
-    val destination_address: Address,
-    val pickup_radius: Float? = null,
-    val dropoff_radius: Float? = null
+    val package_id: Int
 )
 
 // Update dataklasse voor het bijwerken van een delivery

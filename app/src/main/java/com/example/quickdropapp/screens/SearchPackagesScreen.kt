@@ -32,7 +32,7 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
     var packages by remember { mutableStateOf<List<Package>>(emptyList()) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
-    val navBackStackEntry by navController.currentBackStackEntryAsState() // Nu correct geïmporteerd
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
     val noPackages = navBackStackEntry?.arguments?.getBoolean("noPackages") ?: false
     val hasError = navBackStackEntry?.arguments?.getBoolean("error") ?: false
 
@@ -117,34 +117,32 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                 onAccept = { packageId ->
                     val deliveryRequest = DeliveryRequest(
                         user_id = userId,
-                        package_id = packageId,
-                        start_address = Address(),
-                        destination_address = Address(),
-                        pickup_radius = null,
-                        dropoff_radius = null
+                        package_id = packageId
                     )
 
                     apiService.createDelivery(deliveryRequest).enqueue(object : Callback<Delivery> {
                         override fun onResponse(call: Call<Delivery>, response: Response<Delivery>) {
                             if (response.isSuccessful) {
+                                println("Delivery created successfully: ${response.body()}")
                                 navController.navigate("viewDeliveries/$userId") {
                                     popUpTo("searchPackages/$userId") { inclusive = true }
+                                    launchSingleTop = true
                                 }
                             } else {
-                                errorMessage = "Fout bij aanmaken levering: ${response.code()}"
+                                val errorBody = response.errorBody()?.string() ?: "No error details available"
+                                errorMessage = "Fout bij aanmaken levering: ${response.code()} - $errorBody"
+                                println("Error creating delivery: ${response.code()} - $errorBody")
+                                println("Raw response: ${response.raw()}")
                             }
                         }
 
                         override fun onFailure(call: Call<Delivery>, t: Throwable) {
                             errorMessage = "Netwerkfout bij aanmaken levering: ${t.message}"
+                            println("Network failure creating delivery: ${t.message}")
                         }
                     })
                 }
             )
         }
     }
-}
-
-fun NavController.getBackStackEntry(route: String): NavBackStackEntry {
-    return getBackStackEntry(route)
 }

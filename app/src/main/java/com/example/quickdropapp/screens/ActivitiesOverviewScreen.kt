@@ -70,7 +70,7 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "QuickDrop Activities",
+                    text = "Activities",
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = GreenSustainable

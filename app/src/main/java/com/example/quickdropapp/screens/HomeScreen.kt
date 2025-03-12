@@ -71,7 +71,7 @@ fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) 
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "QuickDrop Dashboard",
+                    text = "Dashboard",
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = GreenSustainable

@@ -16,7 +16,7 @@ interface ApiService {
     fun registerUser(@Body user: User): Call<User>
 
     @POST("users/login")
-    fun loginUser(@Body loginRequest: LoginRequest): Call<User>
+    fun loginUser(@Body loginRequest: LoginRequest): Call<LoginResponse>
 
     @PUT("users/{id}")
     fun updateUser(@Path("id") id: Int, @Body user: User): Call<User>

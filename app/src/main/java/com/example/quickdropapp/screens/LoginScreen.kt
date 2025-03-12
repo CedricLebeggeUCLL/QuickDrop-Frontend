@@ -1,4 +1,4 @@
-// LoginScreen.kt
+// com.example.quickdropapp.screens/LoginScreen.kt
 package com.example.quickdropapp.screens
 
 import androidx.compose.foundation.background
@@ -14,12 +14,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.quickdropapp.data.AuthDataStore
 import com.example.quickdropapp.models.LoginRequest
-import com.example.quickdropapp.models.User
+import com.example.quickdropapp.models.LoginResponse
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import retrofit2.Call
@@ -92,25 +91,25 @@ fun LoginScreen(navController: NavController) {
                     val loginRequest = LoginRequest(email, password)
                     val call = apiService.loginUser(loginRequest)
                     println("LoginScreen: Sending login request with email=$email")
-                    call.enqueue(object : Callback<User> {
-                        override fun onResponse(call: Call<User>, response: Response<User>) {
+                    call.enqueue(object : Callback<LoginResponse> { // Wijzig naar LoginResponse
+                        override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                             println("LoginScreen: Response received, code=${response.code()}")
                             if (response.isSuccessful) {
-                                val user = response.body()
-                                println("LoginScreen: User response=$user")
-                                val userId = user?.id ?: 0
-                                if (userId > 0) {
-                                    scope.launch {
-                                        println("LoginScreen: Saving auth data for userId=$userId")
-                                        AuthDataStore.saveAuthData(context, userId)
-                                        println("LoginScreen: Navigating to home/$userId")
-                                        navController.navigate("home/$userId") {
-                                            popUpTo("welcome") { inclusive = true }
+                                val loginResponse = response.body()
+                                loginResponse?.let {
+                                    println("LoginScreen: Successful login - userId=${it.userId}, token=${it.token}")
+                                    scope.launch(Dispatchers.IO) {
+                                        AuthDataStore.saveAuthData(context, it.userId, it.token)
+                                        launch(Dispatchers.Main) {
+                                            println("LoginScreen: Navigating to home/${it.userId}")
+                                            navController.navigate("home/${it.userId}") {
+                                                popUpTo("welcome") { inclusive = true }
+                                            }
                                         }
                                     }
-                                } else {
-                                    errorMessage = "Gebruikers-ID niet gevonden in de respons"
-                                    println("LoginScreen: Error - User ID not found in response")
+                                } ?: run {
+                                    errorMessage = "Geen geldige respons ontvangen"
+                                    println("LoginScreen: Error - No valid response")
                                 }
                             } else {
                                 errorMessage = when (response.code()) {
@@ -122,7 +121,7 @@ fun LoginScreen(navController: NavController) {
                             }
                         }
 
-                        override fun onFailure(call: Call<User>, t: Throwable) {
+                        override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
                             errorMessage = "Netwerkfout: ${t.message}"
                             println("LoginScreen: Network failure - ${t.message}")
                         }

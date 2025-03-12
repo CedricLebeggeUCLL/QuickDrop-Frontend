@@ -107,6 +107,30 @@ class MainActivity : ComponentActivity() {
                         val deliveryId = backStackEntry.arguments?.getInt("deliveryId") ?: 0
                         DeliveryInfoScreen(navController, deliveryId)
                     }
+                    // Nieuwe routes toevoegen
+                    composable(
+                        route = "activitiesOverview/{userId}",
+                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                        ActivitiesOverviewScreen(
+                            navController = navController,
+                            userId = userId,
+                            onLogout = {
+                                scope.launch {
+                                    AuthDataStore.clearAuthData(context)
+                                }
+                                navController.popBackStack("welcome", inclusive = false)
+                                navController.navigate("welcome")
+                            }
+                        )
+                    }
+                    composable(
+                        route = "profile/{userId}",
+                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                    }
                 }
             }
         }

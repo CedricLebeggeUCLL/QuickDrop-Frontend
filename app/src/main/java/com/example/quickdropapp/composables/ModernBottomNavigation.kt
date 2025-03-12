@@ -5,10 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DoubleArrow
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
-import com.example.quickdropapp.ui.theme.SandBeige // Import toegevoegd
+import com.example.quickdropapp.ui.theme.SandBeige
 
 @Composable
 fun ModernBottomNavigation(navController: NavController, userId: Int) {
@@ -34,9 +34,8 @@ fun ModernBottomNavigation(navController: NavController, userId: Int) {
     ) {
         val items = listOf(
             Triple("home/$userId", Icons.Filled.Home, "Home"),
-            Triple("sendPackage/$userId", Icons.Filled.DoubleArrow, "Send"),
-            Triple("trackDelivery", Icons.Filled.LocationOn, "Track"),
-            Triple("viewDeliveries/$userId", Icons.Filled.FormatListNumbered, "Deliveries")
+            Triple("activitiesOverview/$userId", Icons.Filled.FormatListNumbered, "Activities"),
+            Triple("profile/$userId", Icons.Filled.AccountCircle, "Profile")
         )
         items.forEach { (route, icon, label) ->
             NavigationBarItem(

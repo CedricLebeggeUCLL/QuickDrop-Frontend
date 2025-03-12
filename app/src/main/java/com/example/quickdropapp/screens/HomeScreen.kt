@@ -1,29 +1,31 @@
+// com.example.quickdropapp.screens/HomeScreen.kt
 package com.example.quickdropapp.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.DoubleArrow
-import androidx.compose.material.icons.filled.DriveEta
-import androidx.compose.material.icons.filled.FormatListNumbered
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.composables.ModernActionCard
 import com.example.quickdropapp.composables.ModernBottomNavigation
 import com.example.quickdropapp.models.Courier
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
-import com.example.quickdropapp.ui.theme.SandBeige // Import voor SandBeige
+import com.example.quickdropapp.ui.theme.SandBeige
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.geometry.Size
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -42,7 +44,7 @@ fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) 
             }
 
             override fun onFailure(call: Call<Courier>, t: Throwable) {
-                isCourier = false // Als de aanroep faalt, gaan we ervan uit dat de gebruiker geen courier is
+                isCourier = false
             }
         })
     }
@@ -64,12 +66,12 @@ fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp),
+                    .padding(bottom = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "QuickDrop",
+                    text = "QuickDrop Dashboard",
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = GreenSustainable
@@ -88,69 +90,105 @@ fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) 
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Welkomsttekst
-            Text(
-                text = "Duurzaam. Snel. Simpel.",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = DarkGreen.copy(alpha = 0.8f)
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Actieknoppen in een schoner grid
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            // Statistische sectie
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .clip(RoundedCornerShape(12.dp)),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
-                ModernActionCard(
-                    title = "Pakket Versturen",
-                    description = "Verstuur duurzaam en snel",
-                    icon = Icons.Filled.DoubleArrow,
-                    onClick = { navController.navigate("sendPackage/$userId") },
-                    containerColor = GreenSustainable
-                )
-
-                // Toon een laad-indicator terwijl de courier-status wordt opgehaald
-                if (isCourier == null) {
-                    CircularProgressIndicator(
-                        color = GreenSustainable,
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Levering Statistieken",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = DarkGreen
                     )
-                } else if (isCourier == true) {
-                    ModernActionCard(
-                        title = "Start een Levering",
-                        description = "Stel je locatie en radius in",
-                        icon = Icons.Filled.DriveEta,
-                        onClick = { navController.navigate("startDelivery/$userId") },
-                        containerColor = DarkGreen
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Aantal Verzonden Pakketten: 45",
+                        fontSize = 16.sp,
+                        color = DarkGreen
                     )
-                } else {
-                    ModernActionCard(
-                        title = "Word Koerier",
-                        description = "Bezorg en verdien",
-                        icon = Icons.Filled.DriveEta,
-                        onClick = { navController.navigate("becomeCourier/$userId") },
-                        containerColor = DarkGreen
+                    Text(
+                        text = "Actieve Leveringen: 12",
+                        fontSize = 16.sp,
+                        color = DarkGreen
                     )
                 }
-
-                ModernActionCard(
-                    title = "Track Levering",
-                    description = "Volg live je pakket",
-                    icon = Icons.Filled.LocationOn,
-                    onClick = { navController.navigate("trackDelivery") },
-                    containerColor = GreenSustainable
-                )
-                ModernActionCard(
-                    title = "Mijn Leveringen",
-                    description = "Bekijk je historie",
-                    icon = Icons.Filled.FormatListNumbered,
-                    onClick = { navController.navigate("viewDeliveries/$userId") },
-                    containerColor = DarkGreen
-                )
             }
+
+            // Staafdiagram (mock)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .clip(RoundedCornerShape(12.dp)),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Verzendingen per Maand",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = DarkGreen
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Canvas(modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)) {
+                        val barWidth = size.width / 6
+                        val barHeightScale = size.height / 50f
+                        val data = listOf(10f, 20f, 15f, 25f, 30f, 18f) // Mock data
+                        data.forEachIndexed { index, value ->
+                            drawRect(
+                                color = GreenSustainable,
+                                topLeft = Offset(index * barWidth, size.height - value * barHeightScale),
+                                size = Size(barWidth * 0.8f, value * barHeightScale)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Taartdiagram (mock)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+                    .clip(RoundedCornerShape(12.dp)),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Pakket Categorieën",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = DarkGreen
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Canvas(modifier = Modifier
+                        .size(200.dp)
+                        .align(Alignment.CenterHorizontally)) {
+                        val total = 100f
+                        val slices = listOf(30f, 40f, 30f) // Mock data (percentages)
+                        var startAngle = 0f
+                        slices.forEach { slice ->
+                            drawArc(
+                                color = listOf(GreenSustainable, DarkGreen, Color.Gray)[slices.indexOf(slice)],
+                                startAngle = startAngle,
+                                sweepAngle = 360f * (slice / total),
+                                useCenter = true
+                            )
+                            startAngle += 360f * (slice / total)
+                        }
+                    }
+                }
+            }
+
+            // Placeholder voor extra info
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }

@@ -1,4 +1,6 @@
-package com.example.quickdropapp.models
+package com.example.quickdropapp.models.tracking
+
+import com.example.quickdropapp.models.Address
 
 data class TrackingInfo(
     val packageId: Int,

@@ -155,7 +155,7 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                     }
 
                     item {
-                        AnimatedSectionHeader(title = "Tracking") // Hernoemd naar "Tracking"
+                        AnimatedSectionHeader(title = "Tracking")
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -170,7 +170,7 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                                     title = "Track Pakketten",
                                     description = "Volg live je pakket",
                                     icon = Icons.Filled.LocationOn,
-                                    onClick = { navController.navigate("trackPackages/$userId") }, // Nieuwe route
+                                    onClick = { navController.navigate("trackPackages/$userId") },
                                     containerColor = GreenSustainable
                                 )
                             }
@@ -187,7 +187,7 @@ fun EnhancedHeaderActivities(onMenuClick: () -> Unit, onLogout: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp)
+            .padding(bottom = 16.dp)  // Aangepaste padding voor consistentie met HomeScreen en ProfileScreen
             .background(
                 brush = Brush.linearGradient(
                     colors = listOf(GreenSustainable.copy(alpha = 0.2f), SandBeige)

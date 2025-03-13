@@ -1,4 +1,3 @@
-// com.example.quickdropapp.composables/PackageItem.kt
 package com.example.quickdropapp.composables.packages
 
 import androidx.compose.foundation.background
@@ -17,13 +16,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.packages.Package
-import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.WhiteSmoke
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 @Composable
 fun PackageItem(
@@ -32,10 +27,7 @@ fun PackageItem(
     onDelete: (Int) -> Unit,
     onUpdate: (Int) -> Unit
 ) {
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    // Veilige toegang tot packageItem.id
+    // Safe access to packageItem.id
     val packageId = packageItem.id ?: return
 
     Card(
@@ -92,24 +84,8 @@ fun PackageItem(
                 ) {
                     IconButton(
                         onClick = {
-                            isLoading = true
-                            RetrofitClient.instance.trackPackage(packageId).enqueue(object : Callback<Map<String, Any>> {
-                                override fun onResponse(call: Call<Map<String, Any>>, response: Response<Map<String, Any>>) {
-                                    isLoading = false
-                                    if (response.isSuccessful) {
-                                        navController.navigate("trackPackage/$packageId")
-                                    } else {
-                                        errorMessage = "Tracking mislukt: ${response.message()}"
-                                    }
-                                }
-
-                                override fun onFailure(call: Call<Map<String, Any>>, t: Throwable) {
-                                    isLoading = false
-                                    errorMessage = "Netwerkfout: ${t.message}"
-                                }
-                            })
+                            navController.navigate("trackPackage/$packageId")
                         },
-                        enabled = !isLoading,
                         modifier = Modifier
                             .background(GreenSustainable.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
                             .size(36.dp)
@@ -117,13 +93,12 @@ fun PackageItem(
                         Icon(
                             imageVector = Icons.Filled.LocationOn,
                             contentDescription = "Track Pakket",
-                            tint = if (isLoading) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else GreenSustainable
+                            tint = GreenSustainable
                         )
                     }
 
                     IconButton(
                         onClick = { onUpdate(packageId) },
-                        enabled = !isLoading,
                         modifier = Modifier
                             .background(DarkGreen.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
                             .size(36.dp)
@@ -131,30 +106,14 @@ fun PackageItem(
                         Icon(
                             imageVector = Icons.Filled.Edit,
                             contentDescription = "Update Pakket",
-                            tint = if (isLoading) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else DarkGreen
+                            tint = DarkGreen
                         )
                     }
 
                     IconButton(
                         onClick = {
-                            isLoading = true
-                            RetrofitClient.instance.deletePackage(packageId).enqueue(object : Callback<Void> {
-                                override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                                    isLoading = false
-                                    if (response.isSuccessful) {
-                                        onDelete(packageId)
-                                    } else {
-                                        errorMessage = "Verwijderen mislukt: ${response.message()}"
-                                    }
-                                }
-
-                                override fun onFailure(call: Call<Void>, t: Throwable) {
-                                    isLoading = false
-                                    errorMessage = "Netwerkfout: ${t.message}"
-                                }
-                            })
+                            onDelete(packageId)
                         },
-                        enabled = !isLoading,
                         modifier = Modifier
                             .background(MaterialTheme.colorScheme.error.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
                             .size(36.dp)
@@ -162,20 +121,10 @@ fun PackageItem(
                         Icon(
                             imageVector = Icons.Filled.Delete,
                             contentDescription = "Verwijder Pakket",
-                            tint = if (isLoading) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.error
+                            tint = MaterialTheme.colorScheme.error
                         )
                     }
                 }
-            }
-
-            errorMessage?.let {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.End)
-                )
             }
         }
     }

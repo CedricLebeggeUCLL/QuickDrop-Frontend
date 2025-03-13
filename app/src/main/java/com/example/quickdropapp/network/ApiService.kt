@@ -48,7 +48,7 @@ interface ApiService {
     fun deletePackage(@Path("id") id: Int): Call<Void>
 
     @GET("packages/{id}/track")
-    fun trackPackage(@Path("id") id: Int): Call<Map<String, Any>>
+    fun trackPackage(@Path("id") id: Int): Call<TrackingInfo>
 
     @POST("packages/search")
     fun searchPackages(@Body searchRequest: SearchRequest): Call<SearchResponse>
@@ -102,4 +102,7 @@ interface ApiService {
 
     @GET("deliveries/stats/{userId}")
     fun getDeliveryStats(@Path("userId") userId: Int): Call<DeliveryStats>
+
+    @GET("deliveries/{id}/track")
+    fun trackDelivery(@Path("id") id: Int): Call<TrackingInfo>
 }

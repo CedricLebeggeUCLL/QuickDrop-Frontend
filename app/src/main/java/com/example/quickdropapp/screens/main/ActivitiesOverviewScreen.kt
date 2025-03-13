@@ -155,7 +155,7 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                     }
 
                     item {
-                        AnimatedSectionHeader(title = "Actieve Activiteiten")
+                        AnimatedSectionHeader(title = "Tracking") // Hernoemd naar "Tracking"
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -167,18 +167,11 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 ModernActionCard(
-                                    title = "Track Levering",
+                                    title = "Track Pakketten",
                                     description = "Volg live je pakket",
                                     icon = Icons.Filled.LocationOn,
-                                    onClick = { navController.navigate("trackDelivery") },
+                                    onClick = { navController.navigate("trackPackages/$userId") }, // Nieuwe route
                                     containerColor = GreenSustainable
-                                )
-                                ModernActionCard(
-                                    title = "Actieve Pakketten/Leveringen",
-                                    description = "Bekijk je actieve activiteiten",
-                                    icon = Icons.Filled.LocalActivity,
-                                    onClick = { navController.navigate("activeActivities/$userId") },
-                                    containerColor = DarkGreen
                                 )
                             }
                         }
@@ -194,7 +187,7 @@ fun EnhancedHeaderActivities(onMenuClick: () -> Unit, onLogout: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 16.dp)
+            .padding(vertical = 16.dp)
             .background(
                 brush = Brush.linearGradient(
                     colors = listOf(GreenSustainable.copy(alpha = 0.2f), SandBeige)

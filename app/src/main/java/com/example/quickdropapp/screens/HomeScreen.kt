@@ -215,6 +215,11 @@ fun AnimatedStatisticsCard(userRole: String?, packageStats: PackageStats?, deliv
 
     LaunchedEffect(Unit) { animateTrigger = true }
 
+    // Bereken actieve leveringen door statussen te filteren
+    val activeDeliveries = deliveryStats?.statusCounts?.filter {
+        it.status in listOf("assigned", "picked_up", "in_transit")
+    }?.sumOf { it.count } ?: 0
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -237,7 +242,7 @@ fun AnimatedStatisticsCard(userRole: String?, packageStats: PackageStats?, deliv
             ) {
                 StatItem(label = "Verzonden Pakketten", value = packageStats?.totalSent?.toString() ?: "0", animatedValue)
                 if (userRole == "courier" || userRole == "admin") {
-                    StatItem(label = "Actieve Leveringen", value = deliveryStats?.totalDeliveries?.toString() ?: "0", animatedValue)
+                    StatItem(label = "Actieve Leveringen", value = activeDeliveries.toString(), animatedValue)
                 }
             }
         }

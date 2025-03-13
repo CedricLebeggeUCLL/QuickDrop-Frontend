@@ -10,12 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.User
 import com.example.quickdropapp.network.RetrofitClient
@@ -33,6 +33,7 @@ fun SettingsScreen(navController: NavController, userId: Int) {
     var email by remember { mutableStateOf("") }
     var message by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    var isUsernameError by remember { mutableStateOf(false) }
     val apiService = RetrofitClient.instance
 
     LaunchedEffect(userId) {
@@ -62,24 +63,22 @@ fun SettingsScreen(navController: NavController, userId: Int) {
                 .padding(paddingValues)
                 .background(SandBeige)
         ) {
-            // Sleek header met gradiënt, exact zoals ViewPackagesScreen
+            // Sleek header met gradiënt en schaduw
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
                         brush = Brush.horizontalGradient(
                             colors = listOf(
-                                GreenSustainable.copy(alpha = 0.15f),
-                                Color(0xFF2E7D32).copy(alpha = 0.4f),
-                                GreenSustainable.copy(alpha = 0.2f)
-                            ),
-                            startX = 0f,
-                            endX = Float.POSITIVE_INFINITY
+                                GreenSustainable.copy(alpha = 0.1f),
+                                DarkGreen.copy(alpha = 0.3f),
+                                GreenSustainable.copy(alpha = 0.15f)
+                            )
                         )
                     )
+                    .shadow(4.dp)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
@@ -95,69 +94,71 @@ fun SettingsScreen(navController: NavController, userId: Int) {
                 Text(
                     text = "Instellingen",
                     color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                    modifier = Modifier.padding(end = 16.dp)
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(48.dp))
             }
 
             // Content
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(16.dp)
             ) {
                 Text(
                     text = "Beheer je profiel",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
                     color = DarkGreen,
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
-                when {
-                    isLoading -> {
+                if (isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(
                             color = GreenSustainable,
                             modifier = Modifier.size(40.dp)
                         )
                     }
-                    message != null -> {
+                } else {
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = {
+                            username = it
+                            isUsernameError = it.isEmpty()
+                        },
+                        label = { Text("Gebruikersnaam") },
+                        isError = isUsernameError,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = GreenSustainable,
+                            unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.5f),
+                            errorIndicatorColor = Color.Red
+                        )
+                    )
+                    if (isUsernameError) {
                         Text(
-                            text = message!!,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(8.dp)
+                            "Gebruikersnaam is verplicht",
+                            color = Color.Red,
+                            style = MaterialTheme.typography.bodyLarge
                         )
                     }
-                    else -> {
-                        OutlinedTextField(
-                            value = username,
-                            onValueChange = { username = it },
-                            label = { Text("Gebruikersnaam") },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = GreenSustainable,
-                                unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.5f)
-                            )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("E-mail") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = GreenSustainable,
+                            unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.5f)
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email = it },
-                            label = { Text("E-mail") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = TextFieldDefaults.colors(
-                                focusedIndicatorColor = GreenSustainable,
-                                unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.5f)
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Button(
-                            onClick = {
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = {
+                            if (!isUsernameError) {
                                 val updatedUser = User(userId, username, email, user?.password ?: "", user?.role ?: "user")
                                 apiService.updateUser(userId, updatedUser).enqueue(object : Callback<User> {
                                     override fun onResponse(call: Call<User>, response: Response<User>) {
@@ -168,18 +169,22 @@ fun SettingsScreen(navController: NavController, userId: Int) {
                                         message = "Fout bij opslaan: ${t.message}"
                                     }
                                 })
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable)
-                        ) {
-                            Text("Opslaan", color = Color.White, fontSize = 16.sp)
-                        }
-                        message?.let {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(it, color = if (it.contains("Fout")) Color.Red else DarkGreen)
-                        }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable)
+                    ) {
+                        Text("Opslaan", color = Color.White, style = MaterialTheme.typography.bodyLarge)
+                    }
+                    message?.let {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            it,
+                            color = if (it.contains("Fout")) Color.Red else DarkGreen,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
                     }
                 }
             }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,7 +17,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -31,24 +31,22 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                 .padding(paddingValues)
                 .background(SandBeige)
         ) {
-            // Sleek header met gradiënt, exact zoals ViewPackagesScreen
+            // Sleek header met gradiënt en schaduw
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
                         brush = Brush.horizontalGradient(
                             colors = listOf(
-                                GreenSustainable.copy(alpha = 0.15f),
-                                Color(0xFF2E7D32).copy(alpha = 0.4f),
-                                GreenSustainable.copy(alpha = 0.2f)
-                            ),
-                            startX = 0f,
-                            endX = Float.POSITIVE_INFINITY
+                                GreenSustainable.copy(alpha = 0.1f),
+                                DarkGreen.copy(alpha = 0.3f),
+                                GreenSustainable.copy(alpha = 0.15f)
+                            )
                         )
                     )
+                    .shadow(4.dp)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
@@ -64,24 +62,21 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                 Text(
                     text = "Help & Support",
                     color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                    modifier = Modifier.padding(end = 16.dp)
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(48.dp))
             }
 
             // Content
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp, vertical = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(16.dp)
             ) {
                 Text(
                     text = "Beheer je ondersteuning",
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
                     color = DarkGreen,
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
@@ -90,20 +85,19 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .shadow(4.dp),
+                        .shadow(6.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = "Veelgestelde Vragen",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.titleLarge,
                             color = DarkGreen
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         FAQItem("Hoe volg ik mijn pakket?", "Gebruik de 'Track'-functie op de homepage.")
                         FAQItem("Kan ik mijn adres wijzigen?", "Ja, ga naar Instellingen om je adres te updaten.")
-                        FAQItem("Wat als mijn pakket vertraagd is?", "Neem contact op met support via onderstaande gegevens.")
+                        FAQItem("Wat als mijn pakket vertraagd is?", "Neem contact op met support.")
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
@@ -111,19 +105,26 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .shadow(4.dp),
+                        .shadow(6.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = "Contactinformatie",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.titleLarge,
                             color = DarkGreen
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text("E-mail: support@quickdropapp.com", fontSize = 16.sp, color = DarkGreen.copy(alpha = 0.8f))
-                        Text("Telefoon: +32 123 456 789", fontSize = 16.sp, color = DarkGreen.copy(alpha = 0.8f))
+                        Text(
+                            "E-mail: support@quickdropapp.com",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = DarkGreen.copy(alpha = 0.8f)
+                        )
+                        Text(
+                            "Telefoon: +32 123 456 789",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = DarkGreen.copy(alpha = 0.8f)
+                        )
                     }
                 }
             }
@@ -133,8 +134,26 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
 
 @Composable
 fun FAQItem(question: String, answer: String) {
-    Column(modifier = Modifier.padding(bottom = 8.dp)) {
-        Text(question, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = DarkGreen)
-        Text(answer, fontSize = 14.sp, color = DarkGreen.copy(alpha = 0.7f))
+    Row(modifier = Modifier.padding(vertical = 8.dp)) {
+        Icon(
+            imageVector = Icons.Default.QuestionAnswer,
+            contentDescription = "Vraag",
+            tint = DarkGreen,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(
+                question,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = DarkGreen
+            )
+            Text(
+                answer,
+                style = MaterialTheme.typography.bodyLarge,
+                color = DarkGreen.copy(alpha = 0.7f)
+            )
+        }
     }
 }

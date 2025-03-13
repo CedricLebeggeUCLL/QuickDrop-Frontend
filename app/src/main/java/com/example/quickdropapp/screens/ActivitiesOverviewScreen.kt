@@ -203,7 +203,7 @@ fun EnhancedHeaderActivities(onMenuClick: () -> Unit, onLogout: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp)
+            .padding(bottom = 16.dp) // Consistent met HomeScreen
             .background(
                 brush = Brush.linearGradient(
                     colors = listOf(GreenSustainable.copy(alpha = 0.2f), SandBeige)
@@ -236,7 +236,8 @@ fun EnhancedHeaderActivities(onMenuClick: () -> Unit, onLogout: () -> Unit) {
                     text = "Activiteiten",
                     fontSize = 32.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = DarkGreen
+                    color = DarkGreen,
+                    modifier = Modifier.align(Alignment.CenterVertically)
                 )
             }
             IconButton(

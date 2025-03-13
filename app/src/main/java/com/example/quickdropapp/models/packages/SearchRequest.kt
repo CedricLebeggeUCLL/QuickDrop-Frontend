@@ -1,4 +1,6 @@
-package com.example.quickdropapp.models
+package com.example.quickdropapp.models.packages
+
+import com.example.quickdropapp.models.Address
 
 data class SearchRequest(
     val user_id: Int,

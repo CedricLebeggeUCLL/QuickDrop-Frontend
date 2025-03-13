@@ -1,5 +1,5 @@
 // com.example.quickdropapp.composables/ModernBottomNavigation.kt
-package com.example.quickdropapp.composables
+package com.example.quickdropapp.composables.nav
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -8,7 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier

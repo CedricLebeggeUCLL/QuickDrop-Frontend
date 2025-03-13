@@ -23,9 +23,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.composables.FlyoutMenu
-import com.example.quickdropapp.composables.ModernActionCard
-import com.example.quickdropapp.composables.ModernBottomNavigation
+import com.example.quickdropapp.composables.nav.FlyoutMenu
+import com.example.quickdropapp.composables.nav.ModernActionCard
+import com.example.quickdropapp.composables.nav.ModernBottomNavigation
 import com.example.quickdropapp.models.Courier
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen

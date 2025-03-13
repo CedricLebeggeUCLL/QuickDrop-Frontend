@@ -19,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.composables.DeliveryInfoCard // Nieuwe import
+import com.example.quickdropapp.composables.deliveries.DeliveryInfoCard // Nieuwe import
 import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.models.DeliveryUpdate
 import com.example.quickdropapp.network.ApiService

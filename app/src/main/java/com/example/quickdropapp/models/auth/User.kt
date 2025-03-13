@@ -1,4 +1,4 @@
-package com.example.quickdropapp.models
+package com.example.quickdropapp.models.auth
 
 data class User(
     val id: Int? = null,

@@ -1,5 +1,5 @@
 // com.example.quickdropapp.composables/PackageItem.kt
-package com.example.quickdropapp.composables
+package com.example.quickdropapp.composables.packages
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,7 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.quickdropapp.models.Package
+import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable

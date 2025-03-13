@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.composables.DeliveryItem // Nieuwe import
+import com.example.quickdropapp.composables.deliveries.DeliveryItem // Nieuwe import
 import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen

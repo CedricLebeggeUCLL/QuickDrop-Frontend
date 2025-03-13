@@ -1,4 +1,4 @@
-package com.example.quickdropapp.models
+package com.example.quickdropapp.models.packages
 
 data class SearchResponse(
     val message: String,

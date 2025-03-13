@@ -1,5 +1,5 @@
 // com.example.quickdropapp.composables/CustomTopBar.kt
-package com.example.quickdropapp.composables
+package com.example.quickdropapp.composables.nav
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

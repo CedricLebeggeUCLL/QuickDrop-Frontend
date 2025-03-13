@@ -14,8 +14,8 @@ import com.example.quickdropapp.models.Courier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.composables.CourierRegistrationForm
-import com.example.quickdropapp.composables.CustomTopBar
+import com.example.quickdropapp.composables.forms.CourierRegistrationForm
+import com.example.quickdropapp.composables.nav.CustomTopBar
 import com.example.quickdropapp.models.CourierRequest
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen

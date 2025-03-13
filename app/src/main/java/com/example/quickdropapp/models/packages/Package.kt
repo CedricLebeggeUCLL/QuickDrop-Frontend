@@ -1,5 +1,6 @@
-package com.example.quickdropapp.models
+package com.example.quickdropapp.models.packages
 
+import com.example.quickdropapp.models.Address
 import com.google.gson.annotations.SerializedName
 
 data class Package(

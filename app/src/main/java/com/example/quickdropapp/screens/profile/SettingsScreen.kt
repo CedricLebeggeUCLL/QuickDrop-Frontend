@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.quickdropapp.models.User
+import com.example.quickdropapp.models.auth.User
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable

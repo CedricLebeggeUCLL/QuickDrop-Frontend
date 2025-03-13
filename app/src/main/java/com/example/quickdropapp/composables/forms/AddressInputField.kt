@@ -1,5 +1,5 @@
 // com.example.quickdropapp.composables/AddressInputField.kt
-package com.example.quickdropapp.composables
+package com.example.quickdropapp.composables.forms
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape

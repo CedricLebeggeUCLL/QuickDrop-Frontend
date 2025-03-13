@@ -16,8 +16,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState // Toegevoegd
-import com.example.quickdropapp.composables.PackageCard
+import com.example.quickdropapp.composables.packages.PackageCard
 import com.example.quickdropapp.models.*
+import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable

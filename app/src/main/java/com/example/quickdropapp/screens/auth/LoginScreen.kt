@@ -13,8 +13,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.quickdropapp.data.AuthDataStore
-import com.example.quickdropapp.models.LoginRequest
-import com.example.quickdropapp.models.LoginResponse
+import com.example.quickdropapp.models.auth.LoginRequest
+import com.example.quickdropapp.models.auth.LoginResponse
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable

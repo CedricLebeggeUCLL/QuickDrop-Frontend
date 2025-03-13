@@ -1,5 +1,5 @@
 // com.example.quickdropapp.composables/DeliveryItem.kt
-package com.example.quickdropapp.composables
+package com.example.quickdropapp.composables.deliveries
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween

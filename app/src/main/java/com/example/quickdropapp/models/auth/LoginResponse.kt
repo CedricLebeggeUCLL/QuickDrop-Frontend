@@ -1,4 +1,4 @@
-package com.example.quickdropapp.models
+package com.example.quickdropapp.models.auth
 
 data class LoginResponse(
     val userId: Int,

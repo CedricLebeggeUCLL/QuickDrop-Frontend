@@ -1,5 +1,5 @@
 // com.example.quickdropapp.composables/ModernActionCard.kt
-package com.example.quickdropapp.composables
+package com.example.quickdropapp.composables.nav
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween

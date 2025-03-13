@@ -1,6 +1,13 @@
 package com.example.quickdropapp.network
 
 import com.example.quickdropapp.models.*
+import com.example.quickdropapp.models.auth.LoginRequest
+import com.example.quickdropapp.models.auth.LoginResponse
+import com.example.quickdropapp.models.auth.User
+import com.example.quickdropapp.models.packages.Package
+import com.example.quickdropapp.models.packages.PackageRequest
+import com.example.quickdropapp.models.packages.SearchRequest
+import com.example.quickdropapp.models.packages.SearchResponse
 import retrofit2.Call
 import retrofit2.http.*
 

@@ -1,5 +1,5 @@
 // com.example.quickdropapp.composables/PackageCard.kt
-package com.example.quickdropapp.composables
+package com.example.quickdropapp.composables.packages
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,7 +13,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.quickdropapp.models.Package
+import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige

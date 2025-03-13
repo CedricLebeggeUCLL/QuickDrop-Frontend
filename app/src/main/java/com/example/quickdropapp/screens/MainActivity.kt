@@ -154,7 +154,7 @@ class MainActivity : ComponentActivity() {
                         arguments = listOf(navArgument("packageId") { type = androidx.navigation.NavType.IntType })
                     ) { backStackEntry ->
                         val packageId = backStackEntry.arguments?.getInt("packageId") ?: 0
-                        //UpdatePackageScreen(navController, packageId) // Placeholder, implementeer later
+                        UpdatePackageScreen(navController, packageId)
                     }
                     composable(
                         route = "trackPackage/{packageId}",

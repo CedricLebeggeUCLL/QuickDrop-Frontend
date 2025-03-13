@@ -1,10 +1,12 @@
 // MainActivity.kt
 package com.example.quickdropapp.screens
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
@@ -16,6 +18,7 @@ import com.example.quickdropapp.ui.theme.QuickDropAppTheme
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -169,6 +172,27 @@ class MainActivity : ComponentActivity() {
                     ) { backStackEntry ->
                         val userId = backStackEntry.arguments?.getInt("userId") ?: 0
                         //ActiveActivitiesScreen(navController, userId) // Placeholder, implementeer later
+                    }
+                    composable(
+                        route = "settings/{userId}",
+                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                        SettingsScreen(navController, userId)
+                    }
+                    composable(
+                        route = "history/{userId}",
+                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                        HistoryScreen(navController, userId)
+                    }
+                    composable(
+                        route = "helpSupport/{userId}",
+                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                        HelpSupportScreen(navController, userId)
                     }
                 }
             }

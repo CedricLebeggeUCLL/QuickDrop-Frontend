@@ -1,6 +1,7 @@
 package com.example.quickdropapp.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -23,7 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.composables.FlyoutMenu
 import com.example.quickdropapp.composables.ModernBottomNavigation
-import com.example.quickdropapp.models.Courier
+import com.example.quickdropapp.models.User
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -35,23 +36,30 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(navController: NavController, userId: Int, onLogout: () -> Unit) {
-    var isCourier by remember { mutableStateOf<Boolean?>(null) }
-    var userRole by remember { mutableStateOf<String?>(null) }
+    var user by remember { mutableStateOf<User?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     val apiService = RetrofitClient.instance
 
     LaunchedEffect(userId) {
-        apiService.getCourierByUserId(userId).enqueue(object : Callback<Courier> {
-            override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
-                isCourier = response.isSuccessful && response.body() != null
-                userRole = if (isCourier == true) "courier" else "user"
+        apiService.getUserById(userId).enqueue(object : Callback<User> {
+            override fun onResponse(call: Call<User>, response: Response<User>) {
+                isLoading = false
+                if (response.isSuccessful) {
+                    user = response.body()
+                    if (user == null) {
+                        println("Geen gebruiker gevonden voor userId: $userId")
+                    }
+                } else {
+                    println("API fout: ${response.message()}")
+                }
             }
 
-            override fun onFailure(call: Call<Courier>, t: Throwable) {
-                isCourier = false
-                userRole = "user"
+            override fun onFailure(call: Call<User>, t: Throwable) {
+                isLoading = false
+                println("Netwerkfout: ${t.message}")
             }
         })
     }
@@ -62,7 +70,7 @@ fun ProfileScreen(navController: NavController, userId: Int, onLogout: () -> Uni
             FlyoutMenu(
                 navController = navController,
                 userId = userId,
-                userRole = userRole,
+                userRole = user?.role,
                 onClose = { scope.launch { drawerState.close() } },
                 onLogout = onLogout
             )
@@ -84,7 +92,11 @@ fun ProfileScreen(navController: NavController, userId: Int, onLogout: () -> Uni
                         onMenuClick = { scope.launch { drawerState.open() } },
                         onLogout = onLogout
                     )
-                    ProfileContent()
+                    if (isLoading) {
+                        CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                    } else {
+                        ProfileContent(user, userId, navController)
+                    }
                 }
             }
         }
@@ -150,21 +162,21 @@ fun EnhancedHeaderProfile(onMenuClick: () -> Unit, onLogout: () -> Unit) {
 }
 
 @Composable
-fun ProfileContent() {
+fun ProfileContent(user: User?, userId: Int, navController: NavController) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        ProfileInfoCard()
-        SettingsCard()
-        HistoryCard()
-        HelpSupportCard()
+        ProfileInfoCard(user)
+        SettingsCard(userId, navController)
+        HistoryCard(userId, navController)
+        HelpSupportCard(userId, navController)
         Spacer(modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
-fun ProfileInfoCard() {
+fun ProfileInfoCard(user: User?) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -193,29 +205,38 @@ fun ProfileInfoCard() {
                     fontWeight = FontWeight.SemiBold,
                     color = DarkGreen
                 )
-                Text(
-                    text = "Naam: Cedric Lebegge",
-                    fontSize = 16.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "E-mail: cedric@example.com",
-                    fontSize = 16.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
+                if (user == null) {
+                    Text(
+                        text = "Gegevens niet beschikbaar",
+                        fontSize = 16.sp,
+                        color = DarkGreen.copy(alpha = 0.8f)
+                    )
+                } else {
+                    Text(
+                        text = "Naam: ${user.username}",
+                        fontSize = 16.sp,
+                        color = DarkGreen.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = "E-mail: ${user.email}",
+                        fontSize = 16.sp,
+                        color = DarkGreen.copy(alpha = 0.8f)
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-fun SettingsCard() {
+fun SettingsCard(userId: Int, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
             .clip(RoundedCornerShape(16.dp))
-            .shadow(4.dp),
+            .shadow(4.dp)
+            .clickable { navController.navigate("settings/$userId") },
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
@@ -249,13 +270,14 @@ fun SettingsCard() {
 }
 
 @Composable
-fun HistoryCard() {
+fun HistoryCard(userId: Int, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
             .clip(RoundedCornerShape(16.dp))
-            .shadow(4.dp),
+            .shadow(4.dp)
+            .clickable { navController.navigate("history/$userId") },
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
@@ -279,7 +301,7 @@ fun HistoryCard() {
                     color = DarkGreen
                 )
                 Text(
-                    text = "Bekijk je eerdere leveringen",
+                    text = "Bekijk je activiteiten geschiedenis",
                     fontSize = 16.sp,
                     color = DarkGreen.copy(alpha = 0.8f)
                 )
@@ -289,13 +311,14 @@ fun HistoryCard() {
 }
 
 @Composable
-fun HelpSupportCard() {
+fun HelpSupportCard(userId: Int, navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
             .clip(RoundedCornerShape(16.dp))
-            .shadow(4.dp),
+            .shadow(4.dp)
+            .clickable { navController.navigate("helpSupport/$userId") },
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(

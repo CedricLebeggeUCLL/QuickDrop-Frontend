@@ -1,5 +1,7 @@
 package com.example.quickdropapp.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
@@ -41,6 +43,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import kotlinx.coroutines.launch
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) {
     var isCourier by remember { mutableStateOf<Boolean?>(null) }
@@ -259,10 +262,22 @@ fun StatItem(label: String, value: String, animatedValue: Float) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun InteractiveBarChartCard(shipmentsPerMonth: List<MonthlyCount>?) {
-    val data = shipmentsPerMonth?.map { it.count.toFloat() } ?: listOf(0f, 0f, 0f, 0f, 0f, 0f)
-    val labels = shipmentsPerMonth?.map { "${it.month}/${it.year}" } ?: listOf("Jan", "Feb", "Mar", "Apr", "Mei", "Jun")
+    val currentDate = java.time.LocalDate.now()
+    val months = List(6) { i ->
+        val date = currentDate.minusMonths(i.toLong())
+        "${date.monthValue}/${date.year}"
+    }.reversed()
+
+    val data = months.map { label ->
+        val monthYear = label.split("/")
+        val month = monthYear[0].toInt()
+        val year = monthYear[1].toInt()
+        shipmentsPerMonth?.find { it.month == month && it.year == year }?.count?.toFloat() ?: 0f
+    }
+
     val maxValue = data.maxOrNull() ?: 1f
 
     Card(
@@ -284,9 +299,9 @@ fun InteractiveBarChartCard(shipmentsPerMonth: List<MonthlyCount>?) {
             Canvas(modifier = Modifier
                 .fillMaxWidth()
                 .height(220.dp)) {
-                val barWidth = size.width / data.size
+                val barWidth = size.width / 6 // Altijd 6 balken, dus breedte is fixed
                 data.forEachIndexed { index, value ->
-                    val barHeight = (value / maxValue) * size.height * 0.85f
+                    val barHeight = if (maxValue > 0) (value / maxValue) * size.height * 0.85f else 0f
                     drawRect(
                         brush = Brush.verticalGradient(
                             colors = listOf(GreenSustainable, GreenSustainable.copy(alpha = 0.6f))
@@ -296,7 +311,7 @@ fun InteractiveBarChartCard(shipmentsPerMonth: List<MonthlyCount>?) {
                     )
                     drawContext.canvas.nativeCanvas.apply {
                         drawText(
-                            labels[index],
+                            months[index],
                             index * barWidth + barWidth / 2,
                             size.height + 20f,
                             android.graphics.Paint().apply {
@@ -413,10 +428,22 @@ fun StatusItem(label: String, value: String, color: Color) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DeliveriesBarChartCard(deliveriesPerMonth: List<MonthlyCount>?) {
-    val data = deliveriesPerMonth?.map { it.count.toFloat() } ?: listOf(0f, 0f, 0f, 0f, 0f, 0f)
-    val labels = deliveriesPerMonth?.map { "${it.month}/${it.year}" } ?: listOf("Jan", "Feb", "Mar", "Apr", "Mei", "Jun")
+    val currentDate = java.time.LocalDate.now()
+    val months = List(6) { i ->
+        val date = currentDate.minusMonths(i.toLong())
+        "${date.monthValue}/${date.year}"
+    }.reversed()
+
+    val data = months.map { label ->
+        val monthYear = label.split("/")
+        val month = monthYear[0].toInt()
+        val year = monthYear[1].toInt()
+        deliveriesPerMonth?.find { it.month == month && it.year == year }?.count?.toFloat() ?: 0f
+    }
+
     val maxValue = data.maxOrNull() ?: 1f
 
     Card(
@@ -438,9 +465,9 @@ fun DeliveriesBarChartCard(deliveriesPerMonth: List<MonthlyCount>?) {
             Canvas(modifier = Modifier
                 .fillMaxWidth()
                 .height(220.dp)) {
-                val barWidth = size.width / data.size
+                val barWidth = size.width / 6 // Altijd 6 balken, dus breedte is fixed
                 data.forEachIndexed { index, value ->
-                    val barHeight = (value / maxValue) * size.height * 0.85f
+                    val barHeight = if (maxValue > 0) (value / maxValue) * size.height * 0.85f else 0f
                     drawRect(
                         brush = Brush.verticalGradient(
                             colors = listOf(DarkGreen, DarkGreen.copy(alpha = 0.6f))
@@ -450,7 +477,7 @@ fun DeliveriesBarChartCard(deliveriesPerMonth: List<MonthlyCount>?) {
                     )
                     drawContext.canvas.nativeCanvas.apply {
                         drawText(
-                            labels[index],
+                            months[index],
                             index * barWidth + barWidth / 2,
                             size.height + 20f,
                             android.graphics.Paint().apply {

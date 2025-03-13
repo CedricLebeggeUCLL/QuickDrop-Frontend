@@ -167,7 +167,7 @@ fun ProfileContent(user: User?, userId: Int, navController: NavController) {
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        ProfileInfoCard(user)
+        ProfileInfoSection(user) // Statische sectie voor gebruikersinformatie
         SettingsCard(userId, navController)
         HistoryCard(userId, navController)
         HelpSupportCard(userId, navController)
@@ -176,54 +176,46 @@ fun ProfileContent(user: User?, userId: Int, navController: NavController) {
 }
 
 @Composable
-fun ProfileInfoCard(user: User?) {
-    Card(
+fun ProfileInfoSection(user: User?) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .shadow(4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Gebruiker",
-                tint = GreenSustainable,
-                modifier = Modifier.size(40.dp)
+            .background(
+                color = Color.White.copy(alpha = 0.5f), // Subtiele witte achtergrond
+                shape = RoundedCornerShape(8.dp) // Minder afgeronde hoeken
             )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column {
-                Text(
-                    text = "Gebruikersinformatie",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DarkGreen
-                )
-                if (user == null) {
-                    Text(
-                        text = "Gegevens niet beschikbaar",
-                        fontSize = 16.sp,
-                        color = DarkGreen.copy(alpha = 0.8f)
-                    )
-                } else {
-                    Text(
-                        text = "Naam: ${user.username}",
-                        fontSize = 16.sp,
-                        color = DarkGreen.copy(alpha = 0.8f)
-                    )
-                    Text(
-                        text = "E-mail: ${user.email}",
-                        fontSize = 16.sp,
-                        color = DarkGreen.copy(alpha = 0.8f)
-                    )
-                }
-            }
+            .padding(16.dp), // Interne padding
+        horizontalAlignment = Alignment.Start
+    ) {
+        // Titel met subtiele styling
+        Text(
+            text = "Gebruikersinformatie",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium,
+            color = DarkGreen.copy(alpha = 0.7f) // Lichtere kleur voor titel
+        )
+        Spacer(modifier = Modifier.height(8.dp)) // Ruimte tussen titel en info
+
+        if (user == null) {
+            Text(
+                text = "Gegevens niet beschikbaar",
+                fontSize = 16.sp,
+                color = DarkGreen.copy(alpha = 0.6f)
+            )
+        } else {
+            // Naam en e-mail met subtiele styling
+            Text(
+                text = "Naam: ${user.username}",
+                fontSize = 16.sp,
+                color = DarkGreen.copy(alpha = 0.8f)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "E-mail: ${user.email}",
+                fontSize = 16.sp,
+                color = DarkGreen.copy(alpha = 0.8f)
+            )
         }
     }
 }

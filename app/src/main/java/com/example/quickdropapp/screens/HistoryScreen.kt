@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -35,6 +36,8 @@ fun HistoryScreen(navController: NavController, userId: Int) {
     var user by remember { mutableStateOf<User?>(null) }
     var packages by remember { mutableStateOf<List<Package>>(emptyList()) }
     var deliveries by remember { mutableStateOf<List<Delivery>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     val apiService = RetrofitClient.instance
 
     LaunchedEffect(userId) {
@@ -49,10 +52,12 @@ fun HistoryScreen(navController: NavController, userId: Int) {
                             if (response.isSuccessful) {
                                 packages = response.body()?.filter { it.status == "delivered" } ?: emptyList()
                             }
+                            isLoading = false
                         }
 
                         override fun onFailure(call: Call<List<Package>>, t: Throwable) {
-                            // Log error
+                            errorMessage = "Fout bij laden pakketten: ${t.message}"
+                            isLoading = false
                         }
                     })
 
@@ -65,95 +70,144 @@ fun HistoryScreen(navController: NavController, userId: Int) {
                             }
 
                             override fun onFailure(call: Call<List<Delivery>>, t: Throwable) {
-                                // Log error
+                                errorMessage = "Fout bij laden leveringen: ${t.message}"
                             }
                         })
                     }
+                } else {
+                    errorMessage = "Fout bij laden gebruiker"
                 }
+                isLoading = false
             }
 
             override fun onFailure(call: Call<User>, t: Throwable) {
-                // Log error
+                errorMessage = "Netwerkfout: ${t.message}"
+                isLoading = false
             }
         })
     }
 
-    Scaffold(
-        containerColor = SandBeige,
-        topBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(GreenSustainable.copy(alpha = 0.2f), SandBeige)
-                        ),
-                        shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
-                    )
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBackIosNew,
-                            contentDescription = "Terug",
-                            tint = DarkGreen
-                        )
-                    }
-                    Text(
-                        text = "Geschiedenis",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = DarkGreen
-                    )
-                    Spacer(modifier = Modifier.width(48.dp))
-                }
-            }
-        }
-    ) { paddingValues ->
+    Scaffold(containerColor = SandBeige) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .background(SandBeige)
         ) {
-            if (packages.isEmpty() && deliveries.isEmpty()) {
-                Text("Geen geschiedenis beschikbaar", color = DarkGreen, fontSize = 16.sp)
-            } else {
-                LazyColumn {
-                    if (packages.isNotEmpty()) {
-                        item {
-                            Text(
-                                "Pakketgeschiedenis",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = DarkGreen,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                        }
-                        items(packages) { pkg ->
-                            PackageItem(pkg)
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                    }
+            // Sleek header met gradiënt, exact zoals ViewPackagesScreen
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                GreenSustainable.copy(alpha = 0.15f),
+                                Color(0xFF2E7D32).copy(alpha = 0.4f),
+                                GreenSustainable.copy(alpha = 0.2f)
+                            ),
+                            startX = 0f,
+                            endX = Float.POSITIVE_INFINITY
+                        )
+                    )
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBackIosNew,
+                        contentDescription = "Terug",
+                        tint = Color.White,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                            .padding(6.dp)
+                    )
+                }
+                Text(
+                    text = "Geschiedenis",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp,
+                    modifier = Modifier.padding(end = 16.dp)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+            }
 
-                    if (deliveries.isNotEmpty() && (user?.role == "courier" || user?.role == "admin")) {
-                        item {
-                            Text(
-                                "Leveringsgeschiedenis",
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = DarkGreen,
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                        }
-                        items(deliveries) { delivery ->
-                            DeliveryItem(delivery)
-                            Spacer(modifier = Modifier.height(8.dp))
+            // Content
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Beheer je geschiedenis",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DarkGreen,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                when {
+                    isLoading -> {
+                        CircularProgressIndicator(
+                            color = GreenSustainable,
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                    errorMessage != null -> {
+                        Text(
+                            text = errorMessage!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                    packages.isEmpty() && deliveries.isEmpty() -> {
+                        Text(
+                            text = "Geen geschiedenis gevonden",
+                            color = DarkGreen,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(bottom = 16.dp)
+                        ) {
+                            if (packages.isNotEmpty()) {
+                                item {
+                                    Text(
+                                        "Pakketgeschiedenis",
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = DarkGreen,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                }
+                                items(packages) { pkg ->
+                                    PackageItem(pkg)
+                                }
+                            }
+                            if (deliveries.isNotEmpty() && (user?.role == "courier" || user?.role == "admin")) {
+                                item {
+                                    Text(
+                                        "Leveringsgeschiedenis",
+                                        fontSize = 20.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = DarkGreen,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                }
+                                items(deliveries) { delivery ->
+                                    DeliveryItem(delivery)
+                                }
+                            }
                         }
                     }
                 }

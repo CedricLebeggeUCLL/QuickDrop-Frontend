@@ -2,7 +2,7 @@ package com.example.quickdropapp.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -10,8 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +32,7 @@ fun SettingsScreen(navController: NavController, userId: Int) {
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var message by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
     val apiService = RetrofitClient.instance
 
     LaunchedEffect(userId) {
@@ -43,120 +42,144 @@ fun SettingsScreen(navController: NavController, userId: Int) {
                     user = response.body()
                     username = user?.username ?: ""
                     email = user?.email ?: ""
+                } else {
+                    message = "Fout bij het laden van gegevens"
                 }
+                isLoading = false
             }
 
             override fun onFailure(call: Call<User>, t: Throwable) {
-                message = "Fout bij het laden van gegevens"
+                message = "Netwerkfout: ${t.message}"
+                isLoading = false
             }
         })
     }
 
-    Scaffold(
-        containerColor = SandBeige,
-        topBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        brush = Brush.linearGradient(
-                            colors = listOf(GreenSustainable.copy(alpha = 0.2f), SandBeige)
-                        ),
-                        shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
-                    )
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBackIosNew,
-                            contentDescription = "Terug",
-                            tint = DarkGreen
-                        )
-                    }
-                    Text(
-                        text = "Instellingen",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = DarkGreen
-                    )
-                    Spacer(modifier = Modifier.width(48.dp))
-                }
-            }
-        }
-    ) { paddingValues ->
+    Scaffold(containerColor = SandBeige) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(SandBeige)
         ) {
-            Card(
+            // Sleek header met gradiënt, exact zoals ViewPackagesScreen
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .shadow(4.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
+                    .background(
+                        brush = Brush.horizontalGradient(
+                            colors = listOf(
+                                GreenSustainable.copy(alpha = 0.15f),
+                                Color(0xFF2E7D32).copy(alpha = 0.4f),
+                                GreenSustainable.copy(alpha = 0.2f)
+                            ),
+                            startX = 0f,
+                            endX = Float.POSITIVE_INFINITY
+                        )
+                    )
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Profiel Bewerken",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = DarkGreen
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = username,
-                        onValueChange = { username = it },
-                        label = { Text("Gebruikersnaam") },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = GreenSustainable,
-                            unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.5f)
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("E-mail") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = GreenSustainable,
-                            unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.5f)
-                        )
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(
-                        onClick = {
-                            val updatedUser = User(userId, username, email, user?.password ?: "", user?.role ?: "user")
-                            apiService.updateUser(userId, updatedUser).enqueue(object : Callback<User> {
-                                override fun onResponse(call: Call<User>, response: Response<User>) {
-                                    message = if (response.isSuccessful) "Gegevens opgeslagen!" else "Fout bij opslaan"
-                                }
-
-                                override fun onFailure(call: Call<User>, t: Throwable) {
-                                    message = "Fout bij opslaan: ${t.message}"
-                                }
-                            })
-                        },
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowBackIosNew,
+                        contentDescription = "Terug",
+                        tint = Color.White,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable)
-                    ) {
-                        Text("Opslaan", color = Color.White, fontSize = 16.sp)
+                            .size(32.dp)
+                            .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                            .padding(6.dp)
+                    )
+                }
+                Text(
+                    text = "Instellingen",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp,
+                    modifier = Modifier.padding(end = 16.dp)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+            }
+
+            // Content
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp, vertical = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Beheer je profiel",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DarkGreen,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                when {
+                    isLoading -> {
+                        CircularProgressIndicator(
+                            color = GreenSustainable,
+                            modifier = Modifier.size(40.dp)
+                        )
                     }
-                    message?.let {
+                    message != null -> {
+                        Text(
+                            text = message!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                    else -> {
+                        OutlinedTextField(
+                            value = username,
+                            onValueChange = { username = it },
+                            label = { Text("Gebruikersnaam") },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = GreenSustainable,
+                                unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.5f)
+                            )
+                        )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(it, color = if (it.contains("Fout")) Color.Red else DarkGreen)
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("E-mail") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = TextFieldDefaults.colors(
+                                focusedIndicatorColor = GreenSustainable,
+                                unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.5f)
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = {
+                                val updatedUser = User(userId, username, email, user?.password ?: "", user?.role ?: "user")
+                                apiService.updateUser(userId, updatedUser).enqueue(object : Callback<User> {
+                                    override fun onResponse(call: Call<User>, response: Response<User>) {
+                                        message = if (response.isSuccessful) "Gegevens opgeslagen!" else "Fout bij opslaan"
+                                    }
+
+                                    override fun onFailure(call: Call<User>, t: Throwable) {
+                                        message = "Fout bij opslaan: ${t.message}"
+                                    }
+                                })
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable)
+                        ) {
+                            Text("Opslaan", color = Color.White, fontSize = 16.sp)
+                        }
+                        message?.let {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(it, color = if (it.contains("Fout")) Color.Red else DarkGreen)
+                        }
                     }
                 }
             }

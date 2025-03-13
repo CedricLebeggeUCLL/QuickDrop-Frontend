@@ -59,9 +59,13 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            FlyoutMenu(navController, userId, userRole) {
-                scope.launch { drawerState.close() }
-            }
+            FlyoutMenu(
+                navController = navController,
+                userId = userId,
+                userRole = userRole,
+                onClose = { scope.launch { drawerState.close() } },
+                onLogout = onLogout
+            )
         },
         content = {
             Scaffold(

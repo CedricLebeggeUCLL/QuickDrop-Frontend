@@ -1,5 +1,7 @@
 package com.example.quickdropapp.screens
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,7 +16,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,7 +34,6 @@ import com.example.quickdropapp.ui.theme.SandBeige
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-
 import kotlinx.coroutines.launch
 
 @Composable
@@ -76,54 +79,21 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
+                            )
+                        ),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(
-                                    onClick = { scope.launch { drawerState.open() } },
-                                    modifier = Modifier.size(40.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Menu,
-                                        contentDescription = "Menu",
-                                        tint = GreenSustainable
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Activiteiten",
-                                    fontSize = 28.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = GreenSustainable
-                                )
-                            }
-                            IconButton(
-                                onClick = onLogout,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                                    contentDescription = "Uitloggen",
-                                    tint = GreenSustainable
-                                )
-                            }
-                        }
+                        EnhancedHeaderActivities(onMenuClick = { scope.launch { drawerState.open() } }, onLogout = onLogout)
                     }
 
                     item {
-                        SectionHeader(title = "Pakketten")
+                        AnimatedSectionHeader(title = "Pakketten")
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -163,7 +133,7 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
 
                     if (userRole != null && (userRole == "courier" || userRole == "admin")) {
                         item {
-                            SectionHeader(title = "Leveringen")
+                            AnimatedSectionHeader(title = "Leveringen")
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -194,7 +164,7 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                     }
 
                     item {
-                        SectionHeader(title = "Actieve Activiteiten")
+                        AnimatedSectionHeader(title = "Actieve Activiteiten")
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -229,11 +199,78 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
 }
 
 @Composable
-fun SectionHeader(title: String) {
+fun EnhancedHeaderActivities(onMenuClick: () -> Unit, onLogout: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp)
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(GreenSustainable.copy(alpha = 0.2f), SandBeige)
+                ),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = onMenuClick,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .shadow(2.dp, CircleShape)
+                        .background(Color.White)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Menu,
+                        contentDescription = "Menu",
+                        tint = GreenSustainable
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Activiteiten",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = DarkGreen
+                )
+            }
+            IconButton(
+                onClick = onLogout,
+                modifier = Modifier
+                    .size(48.dp)
+                    .shadow(2.dp, CircleShape)
+                    .background(Color.White)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                    contentDescription = "Uitloggen",
+                    tint = GreenSustainable
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AnimatedSectionHeader(title: String) {
+    var animateTrigger by remember { mutableStateOf(false) }
+    val animatedValue by animateFloatAsState(
+        targetValue = if (animateTrigger) 1f else 0f,
+        animationSpec = tween(durationMillis = 800, easing = { it * it * (3 - 2 * it) })
+    )
+
+    LaunchedEffect(Unit) { animateTrigger = true }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .graphicsLayer(alpha = animatedValue, scaleY = animatedValue),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(

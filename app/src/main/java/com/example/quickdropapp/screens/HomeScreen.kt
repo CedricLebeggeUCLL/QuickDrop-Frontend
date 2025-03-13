@@ -266,15 +266,17 @@ fun StatItem(label: String, value: String, animatedValue: Float) {
 @Composable
 fun InteractiveBarChartCard(shipmentsPerMonth: List<MonthlyCount>?) {
     val currentDate = java.time.LocalDate.now()
+    val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM ''yy", java.util.Locale.getDefault())
+
     val months = List(6) { i ->
         val date = currentDate.minusMonths(i.toLong())
-        "${date.monthValue}/${date.year}"
+        date.format(formatter) // Bijv. "Nov '24"
     }.reversed()
 
     val data = months.map { label ->
-        val monthYear = label.split("/")
-        val month = monthYear[0].toInt()
-        val year = monthYear[1].toInt()
+        val date = java.time.LocalDate.parse("01 $label", java.time.format.DateTimeFormatter.ofPattern("dd MMM ''yy"))
+        val month = date.monthValue
+        val year = date.year
         shipmentsPerMonth?.find { it.month == month && it.year == year }?.count?.toFloat() ?: 0f
     }
 
@@ -299,7 +301,7 @@ fun InteractiveBarChartCard(shipmentsPerMonth: List<MonthlyCount>?) {
             Canvas(modifier = Modifier
                 .fillMaxWidth()
                 .height(220.dp)) {
-                val barWidth = size.width / 6 // Altijd 6 balken, dus breedte is fixed
+                val barWidth = size.width / 6
                 data.forEachIndexed { index, value ->
                     val barHeight = if (maxValue > 0) (value / maxValue) * size.height * 0.85f else 0f
                     drawRect(
@@ -313,7 +315,7 @@ fun InteractiveBarChartCard(shipmentsPerMonth: List<MonthlyCount>?) {
                         drawText(
                             months[index],
                             index * barWidth + barWidth / 2,
-                            size.height + 20f,
+                            size.height + 40f,
                             android.graphics.Paint().apply {
                                 textSize = 28f
                                 textAlign = android.graphics.Paint.Align.CENTER
@@ -432,15 +434,22 @@ fun StatusItem(label: String, value: String, color: Color) {
 @Composable
 fun DeliveriesBarChartCard(deliveriesPerMonth: List<MonthlyCount>?) {
     val currentDate = java.time.LocalDate.now()
+    val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM ''yy", java.util.Locale.ENGLISH)
+
+    // Genereer de afgelopen 6 maanden
     val months = List(6) { i ->
         val date = currentDate.minusMonths(i.toLong())
-        "${date.monthValue}/${date.year}"
+        date.format(formatter) // Bijv. "Mar '24"
     }.reversed()
 
+    // Koppel de data aan de gegenereerde maanden
     val data = months.map { label ->
-        val monthYear = label.split("/")
-        val month = monthYear[0].toInt()
-        val year = monthYear[1].toInt()
+        val date = java.time.LocalDate.parse(
+            "01 $label",
+            java.time.format.DateTimeFormatter.ofPattern("dd MMM ''yy", java.util.Locale.ENGLISH)
+        )
+        val month = date.monthValue // Bijv. 3 voor maart
+        val year = date.year // Bijv. 2024
         deliveriesPerMonth?.find { it.month == month && it.year == year }?.count?.toFloat() ?: 0f
     }
 
@@ -462,10 +471,12 @@ fun DeliveriesBarChartCard(deliveriesPerMonth: List<MonthlyCount>?) {
                 color = DarkGreen
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Canvas(modifier = Modifier
-                .fillMaxWidth()
-                .height(220.dp)) {
-                val barWidth = size.width / 6 // Altijd 6 balken, dus breedte is fixed
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp)
+            ) {
+                val barWidth = size.width / 6
                 data.forEachIndexed { index, value ->
                     val barHeight = if (maxValue > 0) (value / maxValue) * size.height * 0.85f else 0f
                     drawRect(
@@ -479,7 +490,7 @@ fun DeliveriesBarChartCard(deliveriesPerMonth: List<MonthlyCount>?) {
                         drawText(
                             months[index],
                             index * barWidth + barWidth / 2,
-                            size.height + 20f,
+                            size.height + 40f, // Meer ruimte voor labels
                             android.graphics.Paint().apply {
                                 textSize = 28f
                                 textAlign = android.graphics.Paint.Align.CENTER

@@ -1,4 +1,3 @@
-// com.example.quickdropapp.screens/HomeScreen.kt
 package com.example.quickdropapp.screens
 
 import androidx.compose.foundation.background
@@ -6,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.quickdropapp.composables.FlyoutMenu
 import com.example.quickdropapp.composables.ModernBottomNavigation
 import com.example.quickdropapp.models.Courier
 import com.example.quickdropapp.network.RetrofitClient
@@ -29,166 +30,187 @@ import androidx.compose.ui.geometry.Size
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) {
     var isCourier by remember { mutableStateOf<Boolean?>(null) }
+    var userRole by remember { mutableStateOf<String?>(null) }
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
     val apiService = RetrofitClient.instance
 
-    // Check of de gebruiker een courier is
     LaunchedEffect(userId) {
         apiService.getCourierByUserId(userId).enqueue(object : Callback<Courier> {
             override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
                 isCourier = response.isSuccessful && response.body() != null
+                userRole = if (isCourier == true) "courier" else "user"
             }
 
             override fun onFailure(call: Call<Courier>, t: Throwable) {
                 isCourier = false
+                userRole = "user"
             }
         })
     }
 
-    Scaffold(
-        bottomBar = {
-            ModernBottomNavigation(navController, userId)
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            FlyoutMenu(navController, userId, userRole) {
+                scope.launch { drawerState.close() }
+            }
         },
-        containerColor = SandBeige
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Header met uitlogknop
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Dashboard",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = GreenSustainable
-                )
-                IconButton(
-                    onClick = onLogout,
+        content = {
+            Scaffold(
+                bottomBar = { ModernBottomNavigation(navController, userId) },
+                containerColor = SandBeige
+            ) { paddingValues ->
+                Column(
                     modifier = Modifier
-                        .size(40.dp)
-                        .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                        contentDescription = "Uitloggen",
-                        tint = GreenSustainable
-                    )
-                }
-            }
-
-            // Statistische sectie
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Levering Statistieken",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = DarkGreen
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Aantal Verzonden Pakketten: 45",
-                        fontSize = 16.sp,
-                        color = DarkGreen
-                    )
-                    Text(
-                        text = "Actieve Leveringen: 12",
-                        fontSize = 16.sp,
-                        color = DarkGreen
-                    )
-                }
-            }
-
-            // Staafdiagram (mock)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Verzendingen per Maand",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = DarkGreen
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Canvas(modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)) {
-                        val barWidth = size.width / 6
-                        val barHeightScale = size.height / 50f
-                        val data = listOf(10f, 20f, 15f, 25f, 30f, 18f) // Mock data
-                        data.forEachIndexed { index, value ->
-                            drawRect(
-                                color = GreenSustainable,
-                                topLeft = Offset(index * barWidth, size.height - value * barHeightScale),
-                                size = Size(barWidth * 0.8f, value * barHeightScale)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = { scope.launch { drawerState.open() } },
+                                modifier = Modifier.size(40.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Menu,
+                                    contentDescription = "Menu",
+                                    tint = GreenSustainable
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Dashboard",
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = GreenSustainable
+                            )
+                        }
+                        IconButton(
+                            onClick = onLogout,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                contentDescription = "Uitloggen",
+                                tint = GreenSustainable
                             )
                         }
                     }
-                }
-            }
 
-            // Taartdiagram (mock)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Pakket Categorieën",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = DarkGreen
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Canvas(modifier = Modifier
-                        .size(200.dp)
-                        .align(Alignment.CenterHorizontally)) {
-                        val total = 100f
-                        val slices = listOf(30f, 40f, 30f) // Mock data (percentages)
-                        var startAngle = 0f
-                        slices.forEach { slice ->
-                            drawArc(
-                                color = listOf(GreenSustainable, DarkGreen, Color.Gray)[slices.indexOf(slice)],
-                                startAngle = startAngle,
-                                sweepAngle = 360f * (slice / total),
-                                useCenter = true
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Levering Statistieken",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = DarkGreen
                             )
-                            startAngle += 360f * (slice / total)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Aantal Verzonden Pakketten: 45",
+                                fontSize = 16.sp,
+                                color = DarkGreen
+                            )
+                            Text(
+                                text = "Actieve Leveringen: 12",
+                                fontSize = 16.sp,
+                                color = DarkGreen
+                            )
                         }
                     }
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Verzendingen per Maand",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = DarkGreen
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Canvas(modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)) {
+                                val barWidth = size.width / 6
+                                val barHeightScale = size.height / 50f
+                                val data = listOf(10f, 20f, 15f, 25f, 30f, 18f)
+                                data.forEachIndexed { index, value ->
+                                    drawRect(
+                                        color = GreenSustainable,
+                                        topLeft = Offset(index * barWidth, size.height - value * barHeightScale),
+                                        size = Size(barWidth * 0.8f, value * barHeightScale)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Pakket Categorieën",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = DarkGreen
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Canvas(modifier = Modifier
+                                .size(200.dp)
+                                .align(Alignment.CenterHorizontally)) {
+                                val total = 100f
+                                val slices = listOf(30f, 40f, 30f)
+                                var startAngle = 0f
+                                slices.forEach { slice ->
+                                    drawArc(
+                                        color = listOf(GreenSustainable, DarkGreen, Color.Gray)[slices.indexOf(slice)],
+                                        startAngle = startAngle,
+                                        sweepAngle = 360f * (slice / total),
+                                        useCenter = true
+                                    )
+                                    startAngle += 360f * (slice / total)
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
                 }
             }
-
-            // Placeholder voor extra info
-            Spacer(modifier = Modifier.weight(1f))
         }
-    }
+    )
 }

@@ -44,11 +44,13 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
             override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
                 isCourier = response.isSuccessful && response.body() != null
                 userRole = if (isCourier == true) "courier" else "user" // Simuleer admin later
+                println("ActivitiesOverviewScreen: User role set to $userRole for userId $userId")
             }
 
             override fun onFailure(call: Call<Courier>, t: Throwable) {
                 isCourier = false
                 userRole = "user"
+                println("ActivitiesOverviewScreen: Failed to fetch courier status for userId $userId: ${t.message}")
             }
         })
     }

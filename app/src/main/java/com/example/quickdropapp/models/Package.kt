@@ -3,7 +3,7 @@ package com.example.quickdropapp.models
 import com.google.gson.annotations.SerializedName
 
 data class Package(
-    val id: Int? = null,
+    val id: Int,
     val user_id: Int,
     val description: String? = null,
     val pickup_address_id: Int,

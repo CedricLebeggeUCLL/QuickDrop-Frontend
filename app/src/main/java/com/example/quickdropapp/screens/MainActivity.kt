@@ -141,6 +141,35 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
+                    // Nieuwe routes toegevoegd
+                    composable(
+                        route = "viewPackages/{userId}",
+                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                        ViewPackagesScreen(navController, userId)
+                    }
+                    composable(
+                        route = "updatePackage/{packageId}",
+                        arguments = listOf(navArgument("packageId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val packageId = backStackEntry.arguments?.getInt("packageId") ?: 0
+                        //UpdatePackageScreen(navController, packageId) // Placeholder, implementeer later
+                    }
+                    composable(
+                        route = "trackPackage/{packageId}",
+                        arguments = listOf(navArgument("packageId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val packageId = backStackEntry.arguments?.getInt("packageId") ?: 0
+                        //TrackPackageScreen(navController, packageId) // Placeholder, implementeer later
+                    }
+                    composable(
+                        route = "activeActivities/{userId}",
+                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                        //ActiveActivitiesScreen(navController, userId) // Placeholder, implementeer later
+                    }
                 }
             }
         }

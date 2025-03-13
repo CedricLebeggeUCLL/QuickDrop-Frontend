@@ -46,6 +46,9 @@ interface ApiService {
     @POST("packages/search")
     fun searchPackages(@Body searchRequest: SearchRequest): Call<SearchResponse>
 
+    @GET("packages/user/{userId}")
+    fun getPackagesByUserId(@Path("userId") userId: Int): Call<List<Package>>
+
     // Couriers Endpoints
     @GET("couriers")
     fun getCouriers(): Call<List<Courier>>

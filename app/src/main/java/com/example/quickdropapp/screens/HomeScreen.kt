@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.composables.FlyoutMenu
 import com.example.quickdropapp.composables.ModernBottomNavigation
-import com.example.quickdropapp.models.User
+import com.example.quickdropapp.models.Courier // Import Courier model
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -39,24 +39,23 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) {
+    var isCourier by remember { mutableStateOf<Boolean?>(null) }
     var userRole by remember { mutableStateOf<String?>(null) }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     val apiService = RetrofitClient.instance
 
-    // Fetch user role using ApiService
+    // Fetch user role using the same logic as ActivitiesOverviewScreen
     LaunchedEffect(userId) {
-        apiService.getUserById(userId).enqueue(object : Callback<User> {
-            override fun onResponse(call: Call<User>, response: Response<User>) {
-                if (response.isSuccessful) {
-                    userRole = response.body()?.role ?: "user"
-                } else {
-                    userRole = "user" // Fallback to "user" if fetch fails
-                }
+        apiService.getCourierByUserId(userId).enqueue(object : Callback<Courier> {
+            override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
+                isCourier = response.isSuccessful && response.body() != null
+                userRole = if (isCourier == true) "courier" else "user"
             }
 
-            override fun onFailure(call: Call<User>, t: Throwable) {
+            override fun onFailure(call: Call<Courier>, t: Throwable) {
+                isCourier = false
                 userRole = "user" // Fallback to "user" on network failure
             }
         })
@@ -96,8 +95,8 @@ fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) 
                     InteractiveBarChartCard() // "Verzendingen per Maand"
                     ShipmentStatusChart()     // New composable for all users under "Verzendingen per Maand"
                     if (userRole == "courier" || userRole == "admin") {
-                        DeliveryStatusChart() // Updated with "assigned", "active", "delivered"
                         DeliveriesBarChartCard()
+                        DeliveryStatusChart() // Updated with "assigned", "active", "delivered"
                     }
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -106,6 +105,7 @@ fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) 
     )
 }
 
+// Rest of the composables remain unchanged
 @Composable
 fun EnhancedHeader(onMenuClick: () -> Unit, onLogout: () -> Unit) {
     Box(

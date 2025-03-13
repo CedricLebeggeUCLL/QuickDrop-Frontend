@@ -40,7 +40,6 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
 
     val apiService = RetrofitClient.instance
 
-    // Haal de lijst van pakketten op bij het laden van de pagina
     LaunchedEffect(userId) {
         apiService.getPackagesByUserId(userId).enqueue(object : Callback<List<Package>> {
             override fun onResponse(call: Call<List<Package>>, response: Response<List<Package>>) {
@@ -60,7 +59,6 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
         })
     }
 
-    // Haal trackinginformatie op wanneer een pakket is geselecteerd
     LaunchedEffect(selectedPackageId) {
         selectedPackageId?.let { packageId ->
             apiService.trackPackage(packageId).enqueue(object : Callback<TrackingInfo> {
@@ -87,7 +85,6 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                 .padding(paddingValues)
                 .background(SandBeige)
         ) {
-            // Custom Top Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -113,7 +110,6 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                 Spacer(modifier = Modifier.width(48.dp))
             }
 
-            // Laad-, fout- of succesweergave
             when {
                 isLoading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -126,12 +122,11 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                     }
                 }
                 else -> {
-                    // Kaart bovenaan
                     val cameraPositionState = rememberCameraPositionState {
                         position = CameraPosition.fromLatLngZoom(
                             trackingInfo?.currentLocation?.let {
                                 com.google.android.gms.maps.model.LatLng(it.lat, it.lng)
-                            } ?: com.google.android.gms.maps.model.LatLng(52.3676, 4.9041), // Standaard Amsterdam
+                            } ?: com.google.android.gms.maps.model.LatLng(52.3676, 4.9041),
                             14f
                         )
                     }
@@ -172,14 +167,14 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Lijst van pakketten
+                        // Gefilterde lijst van pakketten
                         LazyColumn(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            items(packages) { pkg ->
+                            items(packages.filter { it.status in listOf("assigned", "in_transit", "delivered") }) { pkg ->
                                 val pickupCity = pkg.pickupAddress?.city ?: "Onbekend"
                                 val dropoffCity = pkg.dropoffAddress?.city ?: "Onbekend"
                                 Button(
@@ -195,7 +190,6 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                             }
                         }
 
-                        // Statusinformatie onderaan
                         trackingInfo?.let { info ->
                             Spacer(modifier = Modifier.height(16.dp))
                             Card(

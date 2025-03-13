@@ -24,7 +24,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.composables.FlyoutMenu
 import com.example.quickdropapp.composables.ModernBottomNavigation
-import com.example.quickdropapp.models.Courier // Import Courier model
+import com.example.quickdropapp.models.Courier
+import com.example.quickdropapp.models.PackageStats
+import com.example.quickdropapp.models.DeliveryStats
+import com.example.quickdropapp.models.StatusCount
+import com.example.quickdropapp.models.MonthlyCount
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -41,12 +45,14 @@ import kotlinx.coroutines.launch
 fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) {
     var isCourier by remember { mutableStateOf<Boolean?>(null) }
     var userRole by remember { mutableStateOf<String?>(null) }
+    var packageStats by remember { mutableStateOf<PackageStats?>(null) }
+    var deliveryStats by remember { mutableStateOf<DeliveryStats?>(null) }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     val apiService = RetrofitClient.instance
 
-    // Fetch user role using the same logic as ActivitiesOverviewScreen
+    // Fetch user role
     LaunchedEffect(userId) {
         apiService.getCourierByUserId(userId).enqueue(object : Callback<Courier> {
             override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
@@ -56,9 +62,41 @@ fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) 
 
             override fun onFailure(call: Call<Courier>, t: Throwable) {
                 isCourier = false
-                userRole = "user" // Fallback to "user" on network failure
+                userRole = "user"
             }
         })
+    }
+
+    // Fetch package stats
+    LaunchedEffect(userId) {
+        apiService.getPackageStats(userId).enqueue(object : Callback<PackageStats> {
+            override fun onResponse(call: Call<PackageStats>, response: Response<PackageStats>) {
+                if (response.isSuccessful) {
+                    packageStats = response.body()
+                }
+            }
+
+            override fun onFailure(call: Call<PackageStats>, t: Throwable) {
+                // Log error or handle failure
+            }
+        })
+    }
+
+    // Fetch delivery stats if user is courier
+    if (userRole == "courier" || userRole == "admin") {
+        LaunchedEffect(userId) {
+            apiService.getDeliveryStats(userId).enqueue(object : Callback<DeliveryStats> {
+                override fun onResponse(call: Call<DeliveryStats>, response: Response<DeliveryStats>) {
+                    if (response.isSuccessful) {
+                        deliveryStats = response.body()
+                    }
+                }
+
+                override fun onFailure(call: Call<DeliveryStats>, t: Throwable) {
+                    // Log error or handle failure
+                }
+            })
+        }
     }
 
     ModalNavigationDrawer(
@@ -91,12 +129,12 @@ fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) 
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     EnhancedHeader(onMenuClick = { scope.launch { drawerState.open() } }, onLogout = onLogout)
-                    AnimatedStatisticsCard(userRole = userRole)
-                    InteractiveBarChartCard() // "Verzendingen per Maand"
-                    ShipmentStatusChart()     // New composable for all users under "Verzendingen per Maand"
+                    AnimatedStatisticsCard(userRole = userRole, packageStats = packageStats, deliveryStats = deliveryStats)
+                    InteractiveBarChartCard(shipmentsPerMonth = packageStats?.shipmentsPerMonth)
+                    ShipmentStatusChart(statusCounts = packageStats?.statusCounts)
                     if (userRole == "courier" || userRole == "admin") {
-                        DeliveriesBarChartCard()
-                        DeliveryStatusChart() // Updated with "assigned", "active", "delivered"
+                        DeliveriesBarChartCard(deliveriesPerMonth = deliveryStats?.deliveriesPerMonth)
+                        DeliveryStatusChart(statusCounts = deliveryStats?.statusCounts)
                     }
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -105,7 +143,6 @@ fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) 
     )
 }
 
-// Rest of the composables remain unchanged
 @Composable
 fun EnhancedHeader(onMenuClick: () -> Unit, onLogout: () -> Unit) {
     Box(
@@ -166,7 +203,7 @@ fun EnhancedHeader(onMenuClick: () -> Unit, onLogout: () -> Unit) {
 }
 
 @Composable
-fun AnimatedStatisticsCard(userRole: String?) {
+fun AnimatedStatisticsCard(userRole: String?, packageStats: PackageStats?, deliveryStats: DeliveryStats?) {
     var animateTrigger by remember { mutableStateOf(false) }
     val animatedValue by animateFloatAsState(
         targetValue = if (animateTrigger) 1f else 0f,
@@ -195,9 +232,9 @@ fun AnimatedStatisticsCard(userRole: String?) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = if (userRole == "courier" || userRole == "admin") Arrangement.SpaceBetween else Arrangement.Center
             ) {
-                StatItem(label = "Verzonden Pakketten", value = "45", animatedValue)
+                StatItem(label = "Verzonden Pakketten", value = packageStats?.totalSent?.toString() ?: "0", animatedValue)
                 if (userRole == "courier" || userRole == "admin") {
-                    StatItem(label = "Actieve Leveringen", value = "12", animatedValue)
+                    StatItem(label = "Actieve Leveringen", value = deliveryStats?.totalDeliveries?.toString() ?: "0", animatedValue)
                 }
             }
         }
@@ -223,9 +260,9 @@ fun StatItem(label: String, value: String, animatedValue: Float) {
 }
 
 @Composable
-fun InteractiveBarChartCard() {
-    val data = listOf(10f, 20f, 15f, 25f, 30f, 18f)
-    val labels = listOf("Jan", "Feb", "Mar", "Apr", "Mei", "Jun")
+fun InteractiveBarChartCard(shipmentsPerMonth: List<MonthlyCount>?) {
+    val data = shipmentsPerMonth?.map { it.count.toFloat() } ?: listOf(0f, 0f, 0f, 0f, 0f, 0f)
+    val labels = shipmentsPerMonth?.map { "${it.month}/${it.year}" } ?: listOf("Jan", "Feb", "Mar", "Apr", "Mei", "Jun")
     val maxValue = data.maxOrNull() ?: 1f
 
     Card(
@@ -286,11 +323,10 @@ fun InteractiveBarChartCard() {
 }
 
 @Composable
-fun ShipmentStatusChart() {
-    // Mock data (replace with actual data from API if available)
-    val activeShipments = 10
-    val pendingShipments = 15
-    val deliveredShipments = 30
+fun ShipmentStatusChart(statusCounts: List<StatusCount>?) {
+    val active = statusCounts?.find { it.status == "in_transit" }?.count ?: 0
+    val pending = statusCounts?.find { it.status == "pending" }?.count ?: 0
+    val delivered = statusCounts?.find { it.status == "delivered" }?.count ?: 0
 
     Card(
         modifier = Modifier
@@ -311,20 +347,19 @@ fun ShipmentStatusChart() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatusItem(label = "Active", value = activeShipments.toString(), color = Color(0xFFFFA726))
-                StatusItem(label = "Pending", value = pendingShipments.toString(), color = Color(0xFF42A5F5))
-                StatusItem(label = "Delivered", value = deliveredShipments.toString(), color = Color(0xFF66BB6A))
+                StatusItem(label = "Active", value = active.toString(), color = Color(0xFFFFA726))
+                StatusItem(label = "Pending", value = pending.toString(), color = Color(0xFF42A5F5))
+                StatusItem(label = "Delivered", value = delivered.toString(), color = Color(0xFF66BB6A))
             }
         }
     }
 }
 
 @Composable
-fun DeliveryStatusChart() {
-    // Mock data (replace with actual data from API if available)
-    val assignedDeliveries = 5
-    val activeDeliveries = 12
-    val deliveredDeliveries = 45
+fun DeliveryStatusChart(statusCounts: List<StatusCount>?) {
+    val assigned = statusCounts?.find { it.status == "assigned" }?.count ?: 0
+    val active = statusCounts?.find { it.status == "picked_up" || it.status == "in_transit" }?.count ?: 0
+    val delivered = statusCounts?.find { it.status == "delivered" }?.count ?: 0
 
     Card(
         modifier = Modifier
@@ -345,9 +380,9 @@ fun DeliveryStatusChart() {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatusItem(label = "Assigned", value = assignedDeliveries.toString(), color = Color(0xFF42A5F5))
-                StatusItem(label = "Active", value = activeDeliveries.toString(), color = Color(0xFF66BB6A))
-                StatusItem(label = "Delivered", value = deliveredDeliveries.toString(), color = Color(0xFF8BC34A))
+                StatusItem(label = "Assigned", value = assigned.toString(), color = Color(0xFF42A5F5))
+                StatusItem(label = "Active", value = active.toString(), color = Color(0xFF66BB6A))
+                StatusItem(label = "Delivered", value = delivered.toString(), color = Color(0xFF8BC34A))
             }
         }
     }
@@ -379,9 +414,9 @@ fun StatusItem(label: String, value: String, color: Color) {
 }
 
 @Composable
-fun DeliveriesBarChartCard() {
-    val data = listOf(5f, 15f, 10f, 20f, 25f, 12f)
-    val labels = listOf("Jan", "Feb", "Mar", "Apr", "Mei", "Jun")
+fun DeliveriesBarChartCard(deliveriesPerMonth: List<MonthlyCount>?) {
+    val data = deliveriesPerMonth?.map { it.count.toFloat() } ?: listOf(0f, 0f, 0f, 0f, 0f, 0f)
+    val labels = deliveriesPerMonth?.map { "${it.month}/${it.year}" } ?: listOf("Jan", "Feb", "Mar", "Apr", "Mei", "Jun")
     val maxValue = data.maxOrNull() ?: 1f
 
     Card(

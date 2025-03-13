@@ -49,6 +49,9 @@ interface ApiService {
     @GET("packages/user/{userId}")
     fun getPackagesByUserId(@Path("userId") userId: Int): Call<List<Package>>
 
+    @GET("packages/stats/{userId}")
+    fun getPackageStats(@Path("userId") userId: Int): Call<PackageStats>
+
     // Couriers Endpoints
     @GET("couriers")
     fun getCouriers(): Call<List<Courier>>
@@ -89,4 +92,7 @@ interface ApiService {
 
     @GET("deliveries/courier/{userId}")
     fun getCourierDeliveries(@Path("userId") userId: Int): Call<List<Delivery>>
+
+    @GET("deliveries/stats/{userId}")
+    fun getDeliveryStats(@Path("userId") userId: Int): Call<DeliveryStats>
 }

@@ -43,6 +43,7 @@ fun ProfileScreen(navController: NavController, userId: Int, onLogout: () -> Uni
 
     val apiService = RetrofitClient.instance
 
+    // Haal gebruikersgegevens op met de userId
     LaunchedEffect(userId) {
         apiService.getUserById(userId).enqueue(object : Callback<User> {
             override fun onResponse(call: Call<User>, response: Response<User>) {
@@ -53,7 +54,7 @@ fun ProfileScreen(navController: NavController, userId: Int, onLogout: () -> Uni
                         println("Geen gebruiker gevonden voor userId: $userId")
                     }
                 } else {
-                    println("API fout: ${response.message()}")
+                    println("API fout: ${response.code()} - ${response.message()}")
                 }
             }
 
@@ -89,13 +90,14 @@ fun ProfileScreen(navController: NavController, userId: Int, onLogout: () -> Uni
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     EnhancedHeaderProfile(
+                        user = user,
                         onMenuClick = { scope.launch { drawerState.open() } },
                         onLogout = onLogout
                     )
                     if (isLoading) {
                         CircularProgressIndicator(modifier = Modifier.padding(16.dp))
                     } else {
-                        ProfileContent(user, userId, navController)
+                        ProfileContent(userId, navController)
                     }
                 }
             }
@@ -104,7 +106,7 @@ fun ProfileScreen(navController: NavController, userId: Int, onLogout: () -> Uni
 }
 
 @Composable
-fun EnhancedHeaderProfile(onMenuClick: () -> Unit, onLogout: () -> Unit) {
+fun EnhancedHeaderProfile(user: User?, onMenuClick: () -> Unit, onLogout: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -117,44 +119,69 @@ fun EnhancedHeaderProfile(onMenuClick: () -> Unit, onLogout: () -> Unit) {
             )
             .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onMenuClick,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .shadow(2.dp, CircleShape)
+                            .background(Color.White)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Menu",
+                            tint = GreenSustainable
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Profiel",
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = DarkGreen
+                    )
+                }
                 IconButton(
-                    onClick = onMenuClick,
+                    onClick = onLogout,
                     modifier = Modifier
                         .size(48.dp)
                         .shadow(2.dp, CircleShape)
                         .background(Color.White)
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Menu,
-                        contentDescription = "Menu",
+                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                        contentDescription = "Uitloggen",
                         tint = GreenSustainable
                     )
                 }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Profiel",
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = DarkGreen
-                )
             }
-            IconButton(
-                onClick = onLogout,
-                modifier = Modifier
-                    .size(48.dp)
-                    .shadow(2.dp, CircleShape)
-                    .background(Color.White)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                    contentDescription = "Uitloggen",
-                    tint = GreenSustainable
+            if (user != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Column {
+                    Text(
+                        text = user.username,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = DarkGreen.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = user.email,
+                        fontSize = 14.sp,
+                        color = DarkGreen.copy(alpha = 0.6f)
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Gebruiker niet gevonden",
+                    fontSize = 16.sp,
+                    color = Color.Red
                 )
             }
         }
@@ -162,61 +189,15 @@ fun EnhancedHeaderProfile(onMenuClick: () -> Unit, onLogout: () -> Unit) {
 }
 
 @Composable
-fun ProfileContent(user: User?, userId: Int, navController: NavController) {
+fun ProfileContent(userId: Int, navController: NavController) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        ProfileInfoSection(user) // Statische sectie voor gebruikersinformatie
         SettingsCard(userId, navController)
         HistoryCard(userId, navController)
         HelpSupportCard(userId, navController)
         Spacer(modifier = Modifier.weight(1f))
-    }
-}
-
-@Composable
-fun ProfileInfoSection(user: User?) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .background(
-                color = Color.White.copy(alpha = 0.5f), // Subtiele witte achtergrond
-                shape = RoundedCornerShape(8.dp) // Minder afgeronde hoeken
-            )
-            .padding(16.dp), // Interne padding
-        horizontalAlignment = Alignment.Start
-    ) {
-        // Titel met subtiele styling
-        Text(
-            text = "Gebruikersinformatie",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium,
-            color = DarkGreen.copy(alpha = 0.7f) // Lichtere kleur voor titel
-        )
-        Spacer(modifier = Modifier.height(8.dp)) // Ruimte tussen titel en info
-
-        if (user == null) {
-            Text(
-                text = "Gegevens niet beschikbaar",
-                fontSize = 16.sp,
-                color = DarkGreen.copy(alpha = 0.6f)
-            )
-        } else {
-            // Naam en e-mail met subtiele styling
-            Text(
-                text = "Naam: ${user.username}",
-                fontSize = 16.sp,
-                color = DarkGreen.copy(alpha = 0.8f)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "E-mail: ${user.email}",
-                fontSize = 16.sp,
-                color = DarkGreen.copy(alpha = 0.8f)
-            )
-        }
     }
 }
 

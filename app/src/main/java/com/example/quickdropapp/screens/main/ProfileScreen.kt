@@ -43,7 +43,7 @@ fun ProfileScreen(navController: NavController, userId: Int, onLogout: () -> Uni
 
     val apiService = RetrofitClient.instance
 
-    // Haal gebruikersgegevens op met de userId
+    // Fetch user data using userId
     LaunchedEffect(userId) {
         apiService.getUserById(userId).enqueue(object : Callback<User> {
             override fun onResponse(call: Call<User>, response: Response<User>) {
@@ -97,7 +97,7 @@ fun ProfileScreen(navController: NavController, userId: Int, onLogout: () -> Uni
                     if (isLoading) {
                         CircularProgressIndicator(modifier = Modifier.padding(16.dp))
                     } else {
-                        ProfileContent(userId, navController)
+                        ProfileContent(user = user, userId = userId, navController = navController)
                     }
                 }
             }
@@ -189,15 +189,60 @@ fun EnhancedHeaderProfile(user: User?, onMenuClick: () -> Unit, onLogout: () -> 
 }
 
 @Composable
-fun ProfileContent(userId: Int, navController: NavController) {
+fun ProfileContent(user: User?, userId: Int, navController: NavController) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Show BecomeCourierCard only if the user is not a courier or admin
+        if (user?.role == "user") {
+            BecomeCourierCard(userId, navController)
+        }
         SettingsCard(userId, navController)
         HistoryCard(userId, navController)
         HelpSupportCard(userId, navController)
         Spacer(modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+fun BecomeCourierCard(userId: Int, navController: NavController) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .shadow(4.dp)
+            .clickable { navController.navigate("becomeCourier/$userId") },
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Filled.DriveEta,
+                contentDescription = "Word Koerier",
+                tint = DarkGreen,
+                modifier = Modifier.size(40.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(
+                    text = "Word Koerier",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = DarkGreen
+                )
+                Text(
+                    text = "Bezorg en verdien",
+                    fontSize = 16.sp,
+                    color = DarkGreen.copy(alpha = 0.8f)
+                )
+            }
+        }
     }
 }
 

@@ -118,15 +118,6 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                                     onClick = { navController.navigate("viewPackages/$userId") },
                                     containerColor = DarkGreen
                                 )
-                                if (isCourier == false) {
-                                    ModernActionCard(
-                                        title = "Word Koerier",
-                                        description = "Bezorg en verdien",
-                                        icon = Icons.Filled.DriveEta,
-                                        onClick = { navController.navigate("becomeCourier/$userId") },
-                                        containerColor = DarkGreen
-                                    )
-                                }
                             }
                         }
                     }
@@ -203,7 +194,7 @@ fun EnhancedHeaderActivities(onMenuClick: () -> Unit, onLogout: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 16.dp) // Consistent met HomeScreen
+            .padding(bottom = 16.dp)
             .background(
                 brush = Brush.linearGradient(
                     colors = listOf(GreenSustainable.copy(alpha = 0.2f), SandBeige)

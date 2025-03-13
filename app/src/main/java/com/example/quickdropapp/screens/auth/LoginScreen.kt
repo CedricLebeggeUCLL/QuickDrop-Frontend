@@ -1,4 +1,5 @@
-package com.example.quickdropapp.screens
+// com.example.quickdropapp.screens/LoginScreen.kt
+package com.example.quickdropapp.screens.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -8,20 +9,26 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.quickdropapp.models.User
+import com.example.quickdropapp.data.AuthDataStore
+import com.example.quickdropapp.models.LoginRequest
+import com.example.quickdropapp.models.LoginResponse
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 @Composable
-fun RegisterScreen(navController: NavController) {
-    var username by remember { mutableStateOf("") }
+fun LoginScreen(navController: NavController) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -37,23 +44,10 @@ fun RegisterScreen(navController: NavController) {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Registreer",
+            text = "Inloggen",
             style = MaterialTheme.typography.displayMedium,
             color = GreenSustainable,
             modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("Gebruikersnaam", color = GreenSustainable) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = GreenSustainable,
-                unfocusedBorderColor = DarkGreen
-            )
         )
 
         OutlinedTextField(
@@ -93,24 +87,48 @@ fun RegisterScreen(navController: NavController) {
 
         Button(
             onClick = {
-                if (username.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()) {
-                    val user = User(username = username, email = email, password = password, role = "user")
-                    val call = apiService.registerUser(user)
-                    call.enqueue(object : Callback<User> {
-                        override fun onResponse(call: Call<User>, response: Response<User>) {
+                if (email.isNotEmpty() && password.isNotEmpty()) {
+                    val loginRequest = LoginRequest(email, password)
+                    val call = apiService.loginUser(loginRequest)
+                    println("LoginScreen: Sending login request with email=$email")
+                    call.enqueue(object : Callback<LoginResponse> { // Wijzig naar LoginResponse
+                        override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
+                            println("LoginScreen: Response received, code=${response.code()}")
                             if (response.isSuccessful) {
-                                navController.navigate("login") // Navigeer naar inlogscherm na succes
+                                val loginResponse = response.body()
+                                loginResponse?.let {
+                                    println("LoginScreen: Successful login - userId=${it.userId}, token=${it.token}")
+                                    scope.launch(Dispatchers.IO) {
+                                        AuthDataStore.saveAuthData(context, it.userId, it.token)
+                                        launch(Dispatchers.Main) {
+                                            println("LoginScreen: Navigating to home/${it.userId}")
+                                            navController.navigate("home/${it.userId}") {
+                                                popUpTo("welcome") { inclusive = true }
+                                            }
+                                        }
+                                    }
+                                } ?: run {
+                                    errorMessage = "Geen geldige respons ontvangen"
+                                    println("LoginScreen: Error - No valid response")
+                                }
                             } else {
-                                errorMessage = "Registratie mislukt: ${response.message()}"
+                                errorMessage = when (response.code()) {
+                                    401 -> "Ongeldige e-mail of wachtwoord"
+                                    500 -> "Serverfout, probeer het later opnieuw"
+                                    else -> "Inloggen mislukt: ${response.message()}"
+                                }
+                                println("LoginScreen: Error - $errorMessage")
                             }
                         }
 
-                        override fun onFailure(call: Call<User>, t: Throwable) {
-                            errorMessage = "Fout: ${t.message}"
+                        override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
+                            errorMessage = "Netwerkfout: ${t.message}"
+                            println("LoginScreen: Network failure - ${t.message}")
                         }
                     })
                 } else {
-                    errorMessage = "Vul alle velden in"
+                    errorMessage = "Vul e-mail en wachtwoord in"
+                    println("LoginScreen: Error - Email or password empty")
                 }
             },
             colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable),
@@ -120,7 +138,7 @@ fun RegisterScreen(navController: NavController) {
                 .clip(RoundedCornerShape(12.dp))
         ) {
             Text(
-                text = "Registreer",
+                text = "Inloggen",
                 style = MaterialTheme.typography.titleLarge,
                 color = SandBeige
             )
@@ -128,11 +146,11 @@ fun RegisterScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(8.dp))
 
         TextButton(
-            onClick = { navController.navigate("login") },
+            onClick = { navController.navigate("register") },
             modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text(
-                text = "Al een account? Log in hier",
+                text = "Ben je nieuw? Registreer hier",
                 color = DarkGreen,
                 style = MaterialTheme.typography.bodyMedium
             )

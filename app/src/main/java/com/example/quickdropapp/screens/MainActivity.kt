@@ -14,6 +14,24 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.quickdropapp.data.AuthDataStore
+import com.example.quickdropapp.screens.activities.deliveries.DeliveryInfoScreen
+import com.example.quickdropapp.screens.activities.deliveries.StartDeliveryScreen
+import com.example.quickdropapp.screens.activities.deliveries.ViewDeliveriesScreen
+import com.example.quickdropapp.screens.activities.packages.SearchPackagesScreen
+import com.example.quickdropapp.screens.activities.packages.SendPackageScreen
+import com.example.quickdropapp.screens.activities.packages.UpdatePackageScreen
+import com.example.quickdropapp.screens.activities.packages.ViewPackagesScreen
+import com.example.quickdropapp.screens.activities.tracking.TrackDeliveryScreen
+import com.example.quickdropapp.screens.auth.LoginScreen
+import com.example.quickdropapp.screens.auth.RegisterScreen
+import com.example.quickdropapp.screens.auth.WelcomeScreen
+import com.example.quickdropapp.screens.main.ActivitiesOverviewScreen
+import com.example.quickdropapp.screens.main.HomeScreen
+import com.example.quickdropapp.screens.main.ProfileScreen
+import com.example.quickdropapp.screens.profile.BecomeCourierScreen
+import com.example.quickdropapp.screens.profile.HelpSupportScreen
+import com.example.quickdropapp.screens.profile.HistoryScreen
+import com.example.quickdropapp.screens.profile.SettingsScreen
 import com.example.quickdropapp.ui.theme.QuickDropAppTheme
 import kotlinx.coroutines.launch
 

@@ -1,4 +1,4 @@
-package com.example.quickdropapp.screens
+package com.example.quickdropapp.screens.main
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

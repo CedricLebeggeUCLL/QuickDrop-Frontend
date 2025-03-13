@@ -1,32 +1,25 @@
-package com.example.quickdropapp.screens
+// com.example.quickdropapp.screens/ViewPackagesScreen.kt
+package com.example.quickdropapp.screens.activities.packages
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.composables.DeliveryItem // Nieuwe import
-import com.example.quickdropapp.models.Delivery
+import com.example.quickdropapp.composables.PackageItem
+import com.example.quickdropapp.models.Package
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -36,8 +29,8 @@ import retrofit2.Callback
 import retrofit2.Response
 
 @Composable
-fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
-    var deliveries by remember { mutableStateOf<List<Delivery>?>(null) }
+fun ViewPackagesScreen(navController: NavController, userId: Int) {
+    var packages by remember { mutableStateOf<List<Package>?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
@@ -50,19 +43,19 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
             return@LaunchedEffect
         }
 
-        apiService.getCourierDeliveries(userId).enqueue(object : Callback<List<Delivery>> {
-            override fun onResponse(call: Call<List<Delivery>>, response: Response<List<Delivery>>) {
+        apiService.getPackagesByUserId(userId).enqueue(object : Callback<List<Package>> {
+            override fun onResponse(call: Call<List<Package>>, response: Response<List<Package>>) {
                 if (response.isSuccessful) {
-                    deliveries = response.body()
+                    packages = response.body()
                     isLoading = false
                 } else {
-                    errorMessage = "Fout bij het laden van leveringen: ${response.code()} - ${response.message()}"
+                    errorMessage = "Fout bij het laden van pakketten: ${response.code()} - ${response.message()}"
                     isLoading = false
                 }
             }
 
-            override fun onFailure(call: Call<List<Delivery>>, t: Throwable) {
-                errorMessage = "Netwerkfout bij het laden van leveringen: ${t.message}"
+            override fun onFailure(call: Call<List<Package>>, t: Throwable) {
+                errorMessage = "Netwerkfout bij het laden van pakketten: ${t.message}"
                 isLoading = false
             }
         })
@@ -106,7 +99,7 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                     )
                 }
                 Text(
-                    text = "Mijn Leveringen",
+                    text = "Mijn Pakketten",
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,
@@ -123,7 +116,7 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Bekijk je leveringen",
+                    text = "Beheer je pakketten",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = DarkGreen,
@@ -145,9 +138,9 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                             modifier = Modifier.padding(8.dp)
                         )
                     }
-                    deliveries == null || deliveries?.isEmpty() == true -> {
+                    packages == null || packages?.isEmpty() == true -> {
                         Text(
-                            text = "Geen leveringen gevonden",
+                            text = "Geen pakketten gevonden",
                             color = DarkGreen,
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.padding(8.dp)
@@ -161,10 +154,16 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             contentPadding = PaddingValues(bottom = 16.dp)
                         ) {
-                            items(deliveries!!) { delivery ->
-                                DeliveryItem(
-                                    delivery = delivery,
-                                    navController = navController
+                            items(packages!!) { packageItem ->
+                                PackageItem(
+                                    packageItem = packageItem,
+                                    navController = navController,
+                                    onDelete = { id ->
+                                        packages = packages?.filter { it.id != id }
+                                    },
+                                    onUpdate = { id ->
+                                        navController.navigate("updatePackage/$id")
+                                    }
                                 )
                             }
                         }

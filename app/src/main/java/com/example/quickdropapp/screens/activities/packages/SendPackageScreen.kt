@@ -1,4 +1,4 @@
-package com.example.quickdropapp.screens
+package com.example.quickdropapp.screens.activities.packages
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween

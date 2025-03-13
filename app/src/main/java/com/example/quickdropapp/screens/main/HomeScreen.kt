@@ -1,4 +1,4 @@
-package com.example.quickdropapp.screens
+package com.example.quickdropapp.screens.main
 
 import android.os.Build
 import androidx.annotation.RequiresApi

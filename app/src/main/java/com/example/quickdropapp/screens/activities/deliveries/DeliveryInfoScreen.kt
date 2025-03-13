@@ -1,33 +1,28 @@
-// com.example.quickdropapp.screens/ViewPackagesScreen.kt
-package com.example.quickdropapp.screens
+package com.example.quickdropapp.screens.activities.deliveries
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.composables.PackageItem
-import com.example.quickdropapp.models.Package
+import com.example.quickdropapp.composables.DeliveryInfoCard // Nieuwe import
+import com.example.quickdropapp.models.Delivery
+import com.example.quickdropapp.models.DeliveryUpdate
+import com.example.quickdropapp.network.ApiService
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -37,33 +32,26 @@ import retrofit2.Callback
 import retrofit2.Response
 
 @Composable
-fun ViewPackagesScreen(navController: NavController, userId: Int) {
-    var packages by remember { mutableStateOf<List<Package>?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
+    var delivery by remember { mutableStateOf<Delivery?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
     val apiService = RetrofitClient.instance
 
-    LaunchedEffect(userId) {
-        if (userId <= 0) {
-            errorMessage = "Ongeldige user ID: $userId"
-            isLoading = false
-            return@LaunchedEffect
-        }
-
-        apiService.getPackagesByUserId(userId).enqueue(object : Callback<List<Package>> {
-            override fun onResponse(call: Call<List<Package>>, response: Response<List<Package>>) {
+    LaunchedEffect(deliveryId) {
+        apiService.getDeliveryById(deliveryId).enqueue(object : Callback<Delivery> {
+            override fun onResponse(call: Call<Delivery>, response: Response<Delivery>) {
                 if (response.isSuccessful) {
-                    packages = response.body()
+                    delivery = response.body()
                     isLoading = false
                 } else {
-                    errorMessage = "Fout bij het laden van pakketten: ${response.code()} - ${response.message()}"
+                    println("Fout bij het laden van levering: ${response.code()} - ${response.message()}")
                     isLoading = false
                 }
             }
 
-            override fun onFailure(call: Call<List<Package>>, t: Throwable) {
-                errorMessage = "Netwerkfout bij het laden van pakketten: ${t.message}"
+            override fun onFailure(call: Call<Delivery>, t: Throwable) {
+                println("Netwerkfout bij het laden van levering: ${t.message}")
                 isLoading = false
             }
         })
@@ -107,7 +95,7 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
                     )
                 }
                 Text(
-                    text = "Mijn Pakketten",
+                    text = "Levering Details",
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,
@@ -116,21 +104,13 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
                 Spacer(modifier = Modifier.width(16.dp))
             }
 
-            // Content
+            // Content with animated card
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp, vertical = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "Beheer je pakketten",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DarkGreen,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-
                 when {
                     isLoading -> {
                         CircularProgressIndicator(
@@ -138,39 +118,32 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
                             modifier = Modifier.size(40.dp)
                         )
                     }
-                    errorMessage != null -> {
+                    delivery == null -> {
                         Text(
-                            text = errorMessage!!,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(8.dp)
-                        )
-                    }
-                    packages == null || packages?.isEmpty() == true -> {
-                        Text(
-                            text = "Geen pakketten gevonden",
+                            text = "Levering niet gevonden",
                             color = DarkGreen,
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier.padding(8.dp)
                         )
                     }
                     else -> {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(bottom = 16.dp)
-                        ) {
-                            items(packages!!) { packageItem ->
-                                PackageItem(
-                                    packageItem = packageItem,
+                        delivery?.let { del ->
+                            AnimatedVisibility(
+                                visible = true,
+                                enter = fadeIn(animationSpec = tween(durationMillis = 500)),
+                                exit = fadeOut(animationSpec = tween(durationMillis = 500))
+                            ) {
+                                DeliveryInfoCard(
+                                    delivery = del,
+                                    onUpdateStatus = ::updateDeliveryStatus,
+                                    onCancel = ::cancelDelivery,
+                                    apiService = apiService,
                                     navController = navController,
-                                    onDelete = { id ->
-                                        packages = packages?.filter { it.id != id }
-                                    },
-                                    onUpdate = { id ->
-                                        navController.navigate("updatePackage/$id")
+                                    onDeliveryUpdated = { newDelivery ->
+                                        delivery = newDelivery
+                                        if (newDelivery.status == "picked_up" || newDelivery.status == "delivered") {
+                                            navController.popBackStack()
+                                        }
                                     }
                                 )
                             }
@@ -180,4 +153,56 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
             }
         }
     }
+}
+
+// Helper-functie om de status bij te werken
+fun updateDeliveryStatus(
+    apiService: ApiService,
+    deliveryId: Int,
+    newStatus: String,
+    pickupTime: String? = null,
+    deliveryTime: String? = null,
+    navController: NavController,
+    onUpdate: (Delivery) -> Unit
+) {
+    println("Updating delivery $deliveryId to status $newStatus with pickupTime: $pickupTime, deliveryTime: $deliveryTime")
+    val deliveryUpdate = DeliveryUpdate(status = newStatus, pickup_time = pickupTime, delivery_time = deliveryTime)
+    apiService.updateDelivery(deliveryId, deliveryUpdate).enqueue(object : Callback<Delivery> {
+        override fun onResponse(call: Call<Delivery>, response: Response<Delivery>) {
+            if (response.isSuccessful) {
+                response.body()?.let { newDelivery ->
+                    println("Status succesvol bijgewerkt naar $newStatus: $newDelivery")
+                    onUpdate(newDelivery)
+                } ?: println("Response body is null")
+            } else {
+                println("Fout bij het updaten van de status: ${response.code()} - ${response.message()}")
+            }
+        }
+
+        override fun onFailure(call: Call<Delivery>, t: Throwable) {
+            println("Netwerkfout bij het updaten van de status: ${t.message}")
+        }
+    })
+}
+
+// Helper-functie om de levering te annuleren
+fun cancelDelivery(
+    apiService: ApiService,
+    deliveryId: Int,
+    navController: NavController
+) {
+    apiService.cancelDelivery(deliveryId).enqueue(object : Callback<Void> {
+        override fun onResponse(call: Call<Void>, response: Response<Void>) {
+            if (response.isSuccessful) {
+                println("Levering succesvol geannuleerd!")
+                navController.popBackStack()
+            } else {
+                println("Fout bij het annuleren: ${response.code()} - ${response.message()}")
+            }
+        }
+
+        override fun onFailure(call: Call<Void>, t: Throwable) {
+            println("Netwerkfout bij het annuleren: ${t.message}")
+        }
+    })
 }

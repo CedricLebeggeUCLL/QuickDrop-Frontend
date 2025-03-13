@@ -1,4 +1,4 @@
-package com.example.quickdropapp.screens
+package com.example.quickdropapp.screens.auth
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background

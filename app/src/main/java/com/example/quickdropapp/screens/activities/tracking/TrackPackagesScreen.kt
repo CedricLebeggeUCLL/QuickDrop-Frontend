@@ -1,8 +1,10 @@
 package com.example.quickdropapp.screens.activities.tracking
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,6 +26,7 @@ import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.maps.android.compose.*
 import retrofit2.Call
@@ -40,6 +43,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
 
     val apiService = RetrofitClient.instance
 
+    // Haal pakketten op bij initialisatie
     LaunchedEffect(userId) {
         apiService.getPackagesByUserId(userId).enqueue(object : Callback<List<Package>> {
             override fun onResponse(call: Call<List<Package>>, response: Response<List<Package>>) {
@@ -59,6 +63,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
         })
     }
 
+    // Haal trackinginformatie op bij pakketselectie
     LaunchedEffect(selectedPackageId) {
         selectedPackageId?.let { packageId ->
             apiService.trackPackage(packageId).enqueue(object : Callback<TrackingInfo> {
@@ -85,6 +90,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                 .padding(paddingValues)
                 .background(SandBeige)
         ) {
+            // Header met terug-knop en titel
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -122,13 +128,30 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                     }
                 }
                 else -> {
+                    // Kaartconfiguratie
                     val cameraPositionState = rememberCameraPositionState {
                         position = CameraPosition.fromLatLngZoom(
                             trackingInfo?.currentLocation?.let {
                                 com.google.android.gms.maps.model.LatLng(it.lat, it.lng)
-                            } ?: com.google.android.gms.maps.model.LatLng(52.3676, 4.9041),
+                            } ?: com.google.android.gms.maps.model.LatLng(52.3676, 4.9041), // Amsterdam als default
                             14f
                         )
+                    }
+
+                    // Automatisch navigeren naar pakketlocatie
+                    LaunchedEffect(trackingInfo) {
+                        trackingInfo?.let {
+                            cameraPositionState.animate(
+                                update = CameraUpdateFactory.newLatLngZoom(
+                                    com.google.android.gms.maps.model.LatLng(
+                                        it.currentLocation.lat,
+                                        it.currentLocation.lng
+                                    ),
+                                    15f
+                                ),
+                                durationMs = 1000
+                            )
+                        }
                     }
 
                     Column(
@@ -138,12 +161,14 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                             .padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        // Moderne en grotere kaart
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f)
-                                .clip(RoundedCornerShape(16.dp)),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                                .weight(2f)
+                                .clip(RoundedCornerShape(16.dp))
+                                .shadow(8.dp, RoundedCornerShape(16.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
                             GoogleMap(
                                 modifier = Modifier.fillMaxSize(),
@@ -167,35 +192,28 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Gefilterde lijst van pakketten
-                        LazyColumn(
+                        // Creatieve pakketweergave met LazyRow
+                        LazyRow(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             items(packages.filter { it.status in listOf("assigned", "in_transit", "delivered") }) { pkg ->
-                                val pickupCity = pkg.pickupAddress?.city ?: "Onbekend"
-                                val dropoffCity = pkg.dropoffAddress?.city ?: "Onbekend"
-                                Button(
-                                    onClick = { selectedPackageId = pkg.id },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable)
-                                ) {
-                                    Text(
-                                        text = "Track Pakket #${pkg.id}: ${pkg.description ?: "Geen beschrijving"} - Van $pickupCity naar $dropoffCity",
-                                        color = Color.White
-                                    )
+                                PackageCard(pkg, selectedPackageId == pkg.id) {
+                                    selectedPackageId = pkg.id
                                 }
                             }
                         }
 
+                        // Trackinginformatie met animatie
                         trackingInfo?.let { info ->
                             Spacer(modifier = Modifier.height(16.dp))
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp)),
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .animateContentSize(),
                                 colors = CardDefaults.cardColors(containerColor = SandBeige),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                             ) {
@@ -233,6 +251,46 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                     }
                 }
             }
+        }
+    }
+}
+
+// Composable voor pakketkaarten
+@Composable
+fun PackageCard(pkg: Package, isSelected: Boolean, onClick: () -> Unit) {
+    val pickupCity = pkg.pickupAddress?.city ?: "Onbekend"
+    val dropoffCity = pkg.dropoffAddress?.city ?: "Onbekend"
+
+    Card(
+        modifier = Modifier
+            .width(200.dp)
+            .height(100.dp)
+            .clickable { onClick() }
+            .shadow(if (isSelected) 8.dp else 4.dp, RoundedCornerShape(16.dp)),
+        colors = CardDefaults.cardColors(containerColor = if (isSelected) GreenSustainable else Color.White)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Pakket #${pkg.id}",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) Color.White else DarkGreen
+            )
+            Text(
+                text = pkg.description ?: "Geen beschrijving",
+                fontSize = 14.sp,
+                color = if (isSelected) Color.White.copy(alpha = 0.8f) else DarkGreen.copy(alpha = 0.8f)
+            )
+            Text(
+                text = "Van $pickupCity naar $dropoffCity",
+                fontSize = 12.sp,
+                color = if (isSelected) Color.White.copy(alpha = 0.6f) else DarkGreen.copy(alpha = 0.6f)
+            )
         }
     }
 }

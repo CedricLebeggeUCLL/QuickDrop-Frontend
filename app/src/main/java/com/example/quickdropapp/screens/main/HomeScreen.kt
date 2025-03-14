@@ -346,7 +346,7 @@ fun InteractiveBarChartCard(shipmentsPerMonth: List<MonthlyCount>?) {
 
 @Composable
 fun ShipmentStatusChart(statusCounts: List<StatusCount>?) {
-    val active = statusCounts?.find { it.status == "in_transit" }?.count ?: 0
+    val active = statusCounts?.filter { it.status in listOf("in_transit", "assigned") }?.sumOf { it.count } ?: 0
     val pending = statusCounts?.find { it.status == "pending" }?.count ?: 0
     val delivered = statusCounts?.find { it.status == "delivered" }?.count ?: 0
 
@@ -380,7 +380,7 @@ fun ShipmentStatusChart(statusCounts: List<StatusCount>?) {
 @Composable
 fun DeliveryStatusChart(statusCounts: List<StatusCount>?) {
     val assigned = statusCounts?.find { it.status == "assigned" }?.count ?: 0
-    val active = statusCounts?.find { it.status == "picked_up" || it.status == "in_transit" }?.count ?: 0
+    val active = statusCounts?.find { it.status == "picked_up"}?.count ?: 0
     val delivered = statusCounts?.find { it.status == "delivered" }?.count ?: 0
 
     Card(

@@ -4,11 +4,12 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,10 +30,12 @@ import com.example.quickdropapp.ui.theme.SandBeige
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.maps.android.compose.*
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TrackPackagesScreen(navController: NavController, userId: Int) {
     var packages by remember { mutableStateOf<List<Package>>(emptyList()) }
@@ -40,6 +43,10 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
     var trackingInfo by remember { mutableStateOf<TrackingInfo?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Bottom sheet state management
+    val scaffoldState = rememberBottomSheetScaffoldState()
+    val scope = rememberCoroutineScope()
 
     val apiService = RetrofitClient.instance
 
@@ -83,89 +90,124 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
         }
     }
 
-    Scaffold(containerColor = SandBeige) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(SandBeige)
-        ) {
-            // Header met terug-knop en titel
-            Row(
+    // BottomSheetScaffold voor de nieuwe lay-out
+    BottomSheetScaffold(
+        scaffoldState = scaffoldState,
+        sheetContent = {
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(SandBeige)
-                    .shadow(4.dp)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBackIosNew,
-                        contentDescription = "Terug",
-                        tint = GreenSustainable
-                    )
+                items(packages.filter { it.status in listOf("assigned", "in_transit", "delivered") }) { pkg ->
+                    PackageCard(pkg, isSelected = selectedPackageId == pkg.id) {
+                        selectedPackageId = pkg.id
+                        // Bottom sheet blijft open na selectie
+                    }
                 }
-                Text(
-                    text = "Track Pakketten",
-                    color = GreenSustainable,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp
-                )
-                Spacer(modifier = Modifier.width(48.dp))
             }
-
-            when {
-                isLoading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+        },
+        sheetPeekHeight = 0.dp, // Bottom sheet is standaard gesloten
+        sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        sheetContainerColor = SandBeige
+    ) {
+        Scaffold(
+            containerColor = SandBeige,
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = {
+                        scope.launch {
+                            if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
+                                scaffoldState.bottomSheetState.hide()
+                            } else {
+                                scaffoldState.bottomSheetState.expand()
+                            }
+                        }
+                    },
+                    containerColor = GreenSustainable,
+                    contentColor = Color.White,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Icon(Icons.Filled.Inbox, contentDescription = "Pakkettenlijst")
                 }
-                errorMessage != null -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(errorMessage!!, color = Color.Red, fontSize = 16.sp)
-                    }
-                }
-                else -> {
-                    // Kaartconfiguratie
-                    val cameraPositionState = rememberCameraPositionState {
-                        position = CameraPosition.fromLatLngZoom(
-                            trackingInfo?.currentLocation?.let {
-                                com.google.android.gms.maps.model.LatLng(it.lat, it.lng)
-                            } ?: com.google.android.gms.maps.model.LatLng(52.3676, 4.9041), // Amsterdam als default
-                            14f
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .background(SandBeige)
+            ) {
+                // Header met terug-knop en titel
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(SandBeige)
+                        .shadow(4.dp)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBackIosNew,
+                            contentDescription = "Terug",
+                            tint = GreenSustainable
                         )
                     }
+                    Text(
+                        text = "Track Pakketten",
+                        color = GreenSustainable,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp
+                    )
+                    Spacer(modifier = Modifier.width(48.dp))
+                }
 
-                    // Automatisch navigeren naar pakketlocatie
-                    LaunchedEffect(trackingInfo) {
-                        trackingInfo?.let {
-                            cameraPositionState.animate(
-                                update = CameraUpdateFactory.newLatLngZoom(
-                                    com.google.android.gms.maps.model.LatLng(
-                                        it.currentLocation.lat,
-                                        it.currentLocation.lng
-                                    ),
-                                    15f
-                                ),
-                                durationMs = 1000
-                            )
+                when {
+                    isLoading -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
                         }
                     }
+                    errorMessage != null -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(errorMessage!!, color = Color.Red, fontSize = 16.sp)
+                        }
+                    }
+                    else -> {
+                        // Kaartconfiguratie
+                        val cameraPositionState = rememberCameraPositionState {
+                            position = CameraPosition.fromLatLngZoom(
+                                trackingInfo?.currentLocation?.let {
+                                    com.google.android.gms.maps.model.LatLng(it.lat, it.lng)
+                                } ?: com.google.android.gms.maps.model.LatLng(52.3676, 4.9041), // Amsterdam als default
+                                14f
+                            )
+                        }
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        // Moderne en grotere kaart
+                        // Automatisch navigeren naar pakketlocatie
+                        LaunchedEffect(trackingInfo) {
+                            trackingInfo?.let {
+                                cameraPositionState.animate(
+                                    update = CameraUpdateFactory.newLatLngZoom(
+                                        com.google.android.gms.maps.model.LatLng(
+                                            it.currentLocation.lat,
+                                            it.currentLocation.lng
+                                        ),
+                                        15f
+                                    ),
+                                    durationMs = 1000
+                                )
+                            }
+                        }
+
+                        // Kaart die het hele scherm vult
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(2f)
+                                .weight(1f)
                                 .clip(RoundedCornerShape(16.dp))
                                 .shadow(8.dp, RoundedCornerShape(16.dp)),
                             colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -190,23 +232,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Creatieve pakketweergave met LazyRow
-                        LazyRow(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            items(packages.filter { it.status in listOf("assigned", "in_transit", "delivered") }) { pkg ->
-                                PackageCard(pkg, selectedPackageId == pkg.id) {
-                                    selectedPackageId = pkg.id
-                                }
-                            }
-                        }
-
-                        // Trackinginformatie met animatie
+                        // Trackinginformatie
                         trackingInfo?.let { info ->
                             Spacer(modifier = Modifier.height(16.dp))
                             Card(
@@ -255,29 +281,35 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
     }
 }
 
-// Composable voor pakketkaarten
+// Verbeterde PackageCard voor een strakke look
 @Composable
 fun PackageCard(pkg: Package, isSelected: Boolean, onClick: () -> Unit) {
     val pickupCity = pkg.pickupAddress?.city ?: "Onbekend"
     val dropoffCity = pkg.dropoffAddress?.city ?: "Onbekend"
+    val statusText = when (pkg.status) {
+        "assigned" -> "Toegewezen"
+        "in_transit" -> "Onderweg"
+        "delivered" -> "Geleverd"
+        else -> "Onbekend"
+    }
 
     Card(
         modifier = Modifier
-            .width(200.dp)
-            .height(100.dp)
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
             .clickable { onClick() }
-            .shadow(if (isSelected) 8.dp else 4.dp, RoundedCornerShape(16.dp)),
+            .shadow(if (isSelected) 8.dp else 4.dp, RoundedCornerShape(12.dp)),
         colors = CardDefaults.cardColors(containerColor = if (isSelected) GreenSustainable else Color.White)
     ) {
         Column(
             modifier = Modifier
                 .padding(16.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.Center
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
                 text = "Pakket #${pkg.id}",
-                fontSize = 16.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (isSelected) Color.White else DarkGreen
             )
@@ -290,6 +322,12 @@ fun PackageCard(pkg: Package, isSelected: Boolean, onClick: () -> Unit) {
                 text = "Van $pickupCity naar $dropoffCity",
                 fontSize = 12.sp,
                 color = if (isSelected) Color.White.copy(alpha = 0.6f) else DarkGreen.copy(alpha = 0.6f)
+            )
+            Text(
+                text = "Status: $statusText",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isSelected) Color.White else GreenSustainable
             )
         }
     }

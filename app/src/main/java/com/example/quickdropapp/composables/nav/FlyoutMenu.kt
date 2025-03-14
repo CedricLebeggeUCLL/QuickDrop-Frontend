@@ -125,10 +125,10 @@ fun FlyoutMenu(
         // Actieve activiteiten
         HorizontalDivider(thickness = 1.dp, color = GreenSustainable.copy(alpha = 0.3f))
         NavigationDrawerItem(
-            label = { Text("Track Levering", color = DarkGreen) },
+            label = { Text("Track Pakketten", color = DarkGreen) },
             selected = false,
             onClick = {
-                navController.navigate("trackDelivery")
+                navController.navigate("trackPackages/$userId")
                 onClose()
             },
             icon = { Icon(Icons.Filled.LocationOn, contentDescription = null, tint = GreenSustainable.copy(alpha = 0.8f)) },

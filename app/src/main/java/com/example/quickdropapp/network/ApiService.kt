@@ -8,6 +8,7 @@ import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.models.packages.PackageRequest
 import com.example.quickdropapp.models.packages.SearchRequest
 import com.example.quickdropapp.models.packages.SearchResponse
+import com.example.quickdropapp.models.tracking.DeliveryTrackingInfo
 import com.example.quickdropapp.models.tracking.TrackingInfo
 import retrofit2.Call
 import retrofit2.http.*
@@ -101,9 +102,12 @@ interface ApiService {
     @GET("deliveries/courier/{userId}")
     fun getCourierDeliveries(@Path("userId") userId: Int): Call<List<Delivery>>
 
+    @GET("deliveries/user/{userId}")
+    fun getDeliveriesByUserId(@Path("userId") userId: Int): Call<List<Delivery>>
+
     @GET("deliveries/stats/{userId}")
     fun getDeliveryStats(@Path("userId") userId: Int): Call<DeliveryStats>
 
     @GET("deliveries/{id}/track")
-    fun trackDelivery(@Path("id") id: Int): Call<TrackingInfo>
+    fun trackDelivery(@Path("id") id: Int): Call<DeliveryTrackingInfo>
 }

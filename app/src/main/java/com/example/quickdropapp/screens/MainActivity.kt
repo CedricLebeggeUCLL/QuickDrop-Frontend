@@ -21,6 +21,7 @@ import com.example.quickdropapp.screens.activities.packages.SendPackageScreen
 import com.example.quickdropapp.screens.activities.packages.UpdatePackageScreen
 import com.example.quickdropapp.screens.activities.packages.ViewPackagesScreen
 import com.example.quickdropapp.screens.activities.tracking.TrackPackagesScreen
+import com.example.quickdropapp.screens.activities.tracking.TrackingDeliveriesScreen
 import com.example.quickdropapp.screens.auth.LoginScreen
 import com.example.quickdropapp.screens.auth.RegisterScreen
 import com.example.quickdropapp.screens.auth.WelcomeScreen
@@ -201,6 +202,13 @@ class MainActivity : ComponentActivity() {
                     ) { backStackEntry ->
                         val userId = backStackEntry.arguments?.getInt("userId") ?: 0
                         HelpSupportScreen(navController, userId)
+                    }
+                    composable(
+                        route = "trackingDeliveries/{userId}",
+                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                    ) { backStackEntry ->
+                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                        TrackingDeliveriesScreen(navController = navController, userId = userId)
                     }
                 }
             }

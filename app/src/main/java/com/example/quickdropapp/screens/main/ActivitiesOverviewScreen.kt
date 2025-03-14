@@ -173,6 +173,15 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                                     onClick = { navController.navigate("trackPackages/$userId") },
                                     containerColor = GreenSustainable
                                 )
+                                if (userRole != null && (userRole == "courier" || userRole == "admin")) {
+                                    ModernActionCard(
+                                        title = "Track Leveringen",
+                                        description = "Volg live je leveringen",
+                                        icon = Icons.Filled.LocalShipping, // Kan je aanpassen naar een ander icoon
+                                        onClick = { navController.navigate("trackingDeliveries/$userId") },
+                                        containerColor = DarkGreen
+                                    )
+                                }
                             }
                         }
                     }
@@ -187,7 +196,7 @@ fun EnhancedHeaderActivities(onMenuClick: () -> Unit, onLogout: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 16.dp)  // Aangepaste padding voor consistentie met HomeScreen en ProfileScreen
+            .padding(bottom = 16.dp) // Aangepaste padding voor consistentie met HomeScreen en ProfileScreen
             .background(
                 brush = Brush.linearGradient(
                     colors = listOf(GreenSustainable.copy(alpha = 0.2f), SandBeige)

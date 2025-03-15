@@ -128,7 +128,7 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                             if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
                                 scaffoldState.bottomSheetState.hide()
                             } else {
-                                scaffoldState.bottomSheetState.show()
+                                scaffoldState.bottomSheetState.expand() // Gebruik expand() zoals in TrackPackagesScreen
                             }
                         }
                     },
@@ -211,22 +211,74 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                         }
 
                         // Kaart die het hele scherm vult
-                        GoogleMap(
-                            modifier = Modifier.fillMaxSize(),
-                            cameraPositionState = cameraPositionState,
-                            properties = MapProperties(isMyLocationEnabled = false)
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f) // Consistent met TrackPackagesScreen
+                                .clip(RoundedCornerShape(16.dp))
+                                .shadow(8.dp, RoundedCornerShape(16.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
-                            trackingInfo?.let { info ->
-                                Marker(
-                                    state = MarkerState(
-                                        position = com.google.android.gms.maps.model.LatLng(
-                                            info.currentLocation.lat,
-                                            info.currentLocation.lng
-                                        )
-                                    ),
-                                    title = "Levering Locatie",
-                                    snippet = "Huidige locatie van levering #${info.deliveryId}"
-                                )
+                            GoogleMap(
+                                modifier = Modifier.fillMaxSize(),
+                                cameraPositionState = cameraPositionState,
+                                properties = MapProperties(isMyLocationEnabled = false)
+                            ) {
+                                trackingInfo?.let { info ->
+                                    Marker(
+                                        state = MarkerState(
+                                            position = com.google.android.gms.maps.model.LatLng(
+                                                info.currentLocation.lat,
+                                                info.currentLocation.lng
+                                            )
+                                        ),
+                                        title = "Levering Locatie",
+                                        snippet = "Huidige locatie van levering #${info.deliveryId}"
+                                    )
+                                }
+                            }
+                        }
+
+                        // Trackinginformatie onder de kaart (toegevoegd voor consistentie)
+                        trackingInfo?.let { info ->
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .clip(RoundedCornerShape(16.dp)),
+                                colors = CardDefaults.cardColors(containerColor = SandBeige),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = "Levering ID: ${info.deliveryId}",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GreenSustainable
+                                    )
+                                    Text(
+                                        text = "Status: ${info.status}",
+                                        fontSize = 16.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = GreenSustainable
+                                    )
+                                    Text(
+                                        text = "Geschatte aankomst: ${info.estimatedDelivery}",
+                                        fontSize = 14.sp,
+                                        color = DarkGreen.copy(alpha = 0.8f)
+                                    )
+                                    Text(
+                                        text = "Afhaaladres: ${info.pickupAddress.street_name} ${info.pickupAddress.house_number}",
+                                        fontSize = 14.sp,
+                                        color = DarkGreen.copy(alpha = 0.8f)
+                                    )
+                                    Text(
+                                        text = "Afleveradres: ${info.dropoffAddress.street_name} ${info.dropoffAddress.house_number}",
+                                        fontSize = 14.sp,
+                                        color = DarkGreen.copy(alpha = 0.8f)
+                                    )
+                                }
                             }
                         }
                     }
@@ -239,8 +291,6 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
 // Composable voor levering-kaarten
 @Composable
 fun DeliveryCard(delivery: Delivery, isSelected: Boolean, onClick: () -> Unit) {
-    // Omdat pickupAddress en dropoffAddress niet direct beschikbaar zijn in Delivery,
-    // toon je alleen de ID's of haal de adressen apart op via een API-aanroep
     Card(
         modifier = Modifier
             .fillMaxWidth()

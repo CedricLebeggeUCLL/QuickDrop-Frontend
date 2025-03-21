@@ -101,8 +101,11 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                     override fun onResponse(call: Call<TrackingInfo>, response: Response<TrackingInfo>) {
                         if (response.isSuccessful) {
                             val info = response.body()
-                            trackingInfo = info
-                            shouldPoll = info?.status == "in_transit"
+                            if (info != null) {
+                                Log.d("Tracking", "Nieuwe tracking info: lat=${info.currentLocation.lat}, lng=${info.currentLocation.lng}")
+                                trackingInfo = info
+                                shouldPoll = info.status == "in_transit"
+                            }
                             errorMessage = null
                         } else {
                             errorMessage = "Fout bij ophalen tracking: ${response.code()}"
@@ -257,10 +260,11 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                         }
 
                         LaunchedEffect(trackingInfo) {
-                            trackingInfo?.let {
+                            trackingInfo?.let { info ->
+                                Log.d("MapUpdate", "Kaart bijwerken naar: lat=${info.currentLocation.lat}, lng=${info.currentLocation.lng}")
                                 cameraPositionState.animate(
                                     update = CameraUpdateFactory.newLatLngZoom(
-                                        LatLng(it.currentLocation.lat, it.currentLocation.lng),
+                                        LatLng(info.currentLocation.lat, info.currentLocation.lng),
                                         15f
                                     ),
                                     durationMs = 1000

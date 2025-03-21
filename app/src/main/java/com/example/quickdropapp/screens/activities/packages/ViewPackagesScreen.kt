@@ -1,4 +1,3 @@
-// com.example.quickdropapp.screens/ViewPackagesScreen.kt
 package com.example.quickdropapp.screens.activities.packages
 
 import androidx.compose.foundation.background
@@ -12,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -61,28 +61,24 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
         })
     }
 
-    Scaffold(containerColor = SandBeige) { paddingValues ->
+    Scaffold(
+        containerColor = SandBeige
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(SandBeige)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f)) // Match SendPackageScreen
+                    )
+                )
         ) {
-            // Sleek header with gradient
+            // Clean header (matched with SendPackageScreen)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(
-                                GreenSustainable.copy(alpha = 0.15f),
-                                Color(0xFF2E7D32).copy(alpha = 0.4f),
-                                GreenSustainable.copy(alpha = 0.2f)
-                            ),
-                            startX = 0f,
-                            endX = Float.POSITIVE_INFINITY
-                        )
-                    )
+                    .background(SandBeige) // Solid background, no gradient
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -91,21 +87,20 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBackIosNew,
                         contentDescription = "Terug",
-                        tint = Color.White,
+                        tint = GreenSustainable,
                         modifier = Modifier
                             .size(32.dp)
-                            .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                            .background(SandBeige.copy(alpha = 0.2f), CircleShape)
                             .padding(6.dp)
                     )
                 }
                 Text(
                     text = "Mijn Pakketten",
-                    color = Color.White,
+                    color = GreenSustainable, // Match SendPackageScreen
                     fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                    modifier = Modifier.padding(end = 16.dp)
+                    fontSize = 24.sp
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(48.dp)) // Match SendPackageScreen
             }
 
             // Content
@@ -117,9 +112,9 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
             ) {
                 Text(
                     text = "Beheer je pakketten",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DarkGreen,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = DarkGreen.copy(alpha = 0.8f), // Match SendPackageScreen
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
@@ -134,15 +129,15 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
                         Text(
                             text = errorMessage!!,
                             color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(8.dp)
                         )
                     }
                     packages == null || packages?.isEmpty() == true -> {
                         Text(
                             text = "Geen pakketten gevonden",
-                            color = DarkGreen,
-                            style = MaterialTheme.typography.bodyLarge,
+                            color = DarkGreen.copy(alpha = 0.8f), // Match SendPackageScreen
+                            style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(8.dp)
                         )
                     }

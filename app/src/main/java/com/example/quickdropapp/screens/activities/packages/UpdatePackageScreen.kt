@@ -4,20 +4,19 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -52,12 +51,12 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
 
     val apiService = RetrofitClient.instance
 
-    // Animatie voor knop
+    // Animatie voor knop (matched with SendPackageScreen)
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val buttonScale by animateFloatAsState(
-        targetValue = if (isPressed) 1.05f else 1f,
-        animationSpec = tween(durationMillis = 150)
+        targetValue = if (isPressed) 1.05f else 1f, // Scale up to 1.05f when pressed (same as SendPackageScreen)
+        animationSpec = tween(durationMillis = 150) // Match the 150ms duration
     )
 
     // Laad pakketgegevens
@@ -99,15 +98,18 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(SandBeige)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f)) // Match SendPackageScreen
+                    )
+                )
                 .verticalScroll(rememberScrollState())
         ) {
-            // Custom Top Bar
+            // Custom Top Bar (matched with SendPackageScreen)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(SandBeige)
-                    .shadow(4.dp)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -125,42 +127,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
                 )
-                IconButton(
-                    onClick = {
-                        if (description.isNotEmpty() && status.isNotEmpty()) {
-                            val updateRequest = PackageRequest(
-                                user_id = packageItem?.user_id ?: 0,
-                                description = description,
-                                pickup_address = pickupAddress.copy(country = "Belgium"),
-                                dropoff_address = dropoffAddress.copy(country = "Belgium"),
-                                status = status
-                            )
-                            apiService.updatePackage(packageId, updateRequest).enqueue(object : Callback<Package> {
-                                override fun onResponse(call: Call<Package>, response: Response<Package>) {
-                                    if (response.isSuccessful) {
-                                        successMessage = "Pakket succesvol bijgewerkt!"
-                                        navController.popBackStack()
-                                    } else {
-                                        errorMessage = "Bijwerken mislukt: ${response.message()}"
-                                    }
-                                }
-
-                                override fun onFailure(call: Call<Package>, t: Throwable) {
-                                    errorMessage = "Netwerkfout: ${t.message}"
-                                }
-                            })
-                        } else {
-                            errorMessage = "Vul alle verplichte velden in"
-                        }
-                    },
-                    enabled = !isLoading
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Save,
-                        contentDescription = "Opslaan",
-                        tint = if (isLoading) GreenSustainable.copy(alpha = 0.5f) else GreenSustainable
-                    )
-                }
+                Spacer(modifier = Modifier.width(48.dp)) // Match SendPackageScreen
             }
 
             Column(
@@ -177,7 +144,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             .padding(16.dp)
                     )
                 } else {
-                    // Subtitel
+                    // Subtitel (matched with SendPackageScreen)
                     Text(
                         text = "Werk de details van pakket #$packageId bij",
                         style = MaterialTheme.typography.titleMedium,
@@ -187,73 +154,172 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Formulier in een Card
+                    // Groep 1: Pakketdetails (using Card like SendPackageScreen)
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .shadow(6.dp, RoundedCornerShape(16.dp), clip = false),
-                        colors = CardDefaults.cardColors(containerColor = SandBeige),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            .clip(RoundedCornerShape(16.dp)),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Transparent // Match SendPackageScreen
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Match SendPackageScreen
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            // Omschrijving
-                            OutlinedTextField(
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.White,
+                                            SandBeige.copy(alpha = 0.3f) // Match SendPackageScreen
+                                        )
+                                    )
+                                )
+                                .padding(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Inventory,
+                                    contentDescription = null,
+                                    tint = GreenSustainable,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Pakketdetails",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = DarkGreen
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            ModernFormField(
                                 value = description,
                                 onValueChange = { description = it },
-                                label = { Text("Beschrijving van het pakket") },
-                                placeholder = { Text("Bijv. Boeken of Kleding") },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenSustainable,
-                                    unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                    cursorColor = GreenSustainable,
-                                    focusedLabelColor = GreenSustainable
-                                ),
-                                shape = RoundedCornerShape(12.dp)
+                                label = "Beschrijving van het pakket",
+                                placeholder = "Bijv. Boeken of Kleding",
+                                icon = Icons.Filled.Description,
+                                modifier = Modifier.fillMaxWidth()
                             )
-
                             Spacer(modifier = Modifier.height(12.dp))
-
-                            // Status
-                            OutlinedTextField(
+                            ModernFormField(
                                 value = status,
                                 onValueChange = { status = it },
-                                label = { Text("Status") },
-                                placeholder = { Text("Bijv. pending, shipped") },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = GreenSustainable,
-                                    unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                    cursorColor = GreenSustainable,
-                                    focusedLabelColor = GreenSustainable
-                                ),
-                                shape = RoundedCornerShape(12.dp)
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            // Ophaaladres
-                            AddressInputField(
-                                label = "Ophaaladres",
-                                address = pickupAddress,
-                                onAddressChange = { pickupAddress = it }
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            // Afleveradres
-                            AddressInputField(
-                                label = "Afleveradres",
-                                address = dropoffAddress,
-                                onAddressChange = { dropoffAddress = it }
+                                label = "Status",
+                                placeholder = "Bijv. pending, shipped",
+                                icon = Icons.Filled.Info,
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Opslaan knop met gradient en animatie
+                    // Groep 2: Ophaaladres
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp)),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Transparent // Match SendPackageScreen
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Match SendPackageScreen
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.White,
+                                            SandBeige.copy(alpha = 0.3f) // Match SendPackageScreen
+                                        )
+                                    )
+                                )
+                                .padding(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.LocationOn,
+                                    contentDescription = null,
+                                    tint = GreenSustainable,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Vanwaar vertrekt je pakket?",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = DarkGreen
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            AddressInputField(
+                                label = "Vertrekpunt",
+                                address = pickupAddress,
+                                onAddressChange = { pickupAddress = it }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Groep 3: Afleveradres
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp)),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Transparent // Match SendPackageScreen
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Match SendPackageScreen
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.White,
+                                            SandBeige.copy(alpha = 0.3f) // Match SendPackageScreen
+                                        )
+                                    )
+                                )
+                                .padding(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.LocationOn,
+                                    contentDescription = null,
+                                    tint = GreenSustainable,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Waar stuur je het naartoe?",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = DarkGreen
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            AddressInputField(
+                                label = "Bestemming",
+                                address = dropoffAddress,
+                                onAddressChange = { dropoffAddress = it }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Opslaan knop met gradient en animatie (matched with SendPackageScreen)
                     Button(
                         onClick = {
                             if (description.isNotEmpty() && status.isNotEmpty()) {
@@ -287,7 +353,6 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             .height(56.dp)
                             .graphicsLayer(scaleX = buttonScale, scaleY = buttonScale)
                             .clip(RoundedCornerShape(16.dp))
-                            .shadow(8.dp, RoundedCornerShape(16.dp), clip = false)
                             .background(
                                 brush = Brush.linearGradient(
                                     colors = listOf(GreenSustainable, DarkGreen)
@@ -300,8 +365,8 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                         enabled = !isLoading && description.isNotEmpty() && status.isNotEmpty(),
                         interactionSource = interactionSource,
                         elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 4.dp,
-                            pressedElevation = 8.dp
+                            defaultElevation = 0.dp, // Match SendPackageScreen
+                            pressedElevation = 0.dp  // Match SendPackageScreen
                         )
                     ) {
                         Row(
@@ -309,14 +374,14 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.Save,
+                                imageVector = Icons.Filled.DoubleArrow, // Match SendPackageScreen
                                 contentDescription = "Opslaan",
                                 tint = SandBeige,
                                 modifier = Modifier.size(24.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Opslaan",
+                                text = "Pakket Bijwerken", // Adjusted text to reflect the action
                                 color = SandBeige,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -326,7 +391,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Fout- en succesmeldingen
+                    // Fout- en succesmeldingen (matched with SendPackageScreen)
                     successMessage?.let {
                         Text(
                             text = it,
@@ -334,6 +399,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .wrapContentHeight() // Match SendPackageScreen
                                 .padding(bottom = 8.dp),
                             maxLines = 5
                         )
@@ -346,14 +412,70 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .wrapContentHeight() // Match SendPackageScreen
                                 .padding(bottom = 8.dp),
                             maxLines = 5
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp)) // Extra ruimte aan het einde (match SendPackageScreen)
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ModernFormField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    placeholder: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier = Modifier
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isFocused) 1.02f else 1f,
+        animationSpec = tween(durationMillis = 200)
+    )
+
+    Row(
+        modifier = modifier
+            .graphicsLayer(scaleX = scale, scaleY = scale),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = GreenSustainable,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(
+                text = label,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = DarkGreen.copy(alpha = 0.8f)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            TextField(
+                value = value,
+                onValueChange = onValueChange,
+                placeholder = { Text(placeholder, color = DarkGreen.copy(alpha = 0.5f)) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = GreenSustainable,
+                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
+                    cursorColor = GreenSustainable,
+                    focusedLabelColor = GreenSustainable
+                ),
+                interactionSource = interactionSource
+            )
         }
     }
 }

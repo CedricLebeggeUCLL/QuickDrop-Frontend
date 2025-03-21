@@ -2,23 +2,22 @@ package com.example.quickdropapp.screens.activities.packages
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.DoubleArrow
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -27,7 +26,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.composables.forms.AddressInputField // Nieuwe import
+import com.example.quickdropapp.composables.forms.AddressInputField
 import com.example.quickdropapp.models.*
 import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.models.packages.PackageRequest
@@ -70,7 +69,11 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(SandBeige)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
+                    )
+                )
                 .verticalScroll(rememberScrollState())
         ) {
             // Custom Top Bar
@@ -78,7 +81,6 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(SandBeige)
-                    .shadow(4.dp)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -115,90 +117,225 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Formuliervelden in een Card
+                // Groep 1: Ontvangerinformatie
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .shadow(6.dp, RoundedCornerShape(16.dp), clip = false),
-                    colors = CardDefaults.cardColors(containerColor = SandBeige),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        .clip(RoundedCornerShape(16.dp)),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.Transparent
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        // Ontvanger Naam
-                        OutlinedTextField(
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.White,
+                                        SandBeige.copy(alpha = 0.3f)
+                                    )
+                                )
+                            )
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Person,
+                                contentDescription = null,
+                                tint = GreenSustainable,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Wie ontvangt je pakket?",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = DarkGreen
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        ModernFormField(
                             value = recipientName,
                             onValueChange = { recipientName = it },
-                            label = { Text("Naam van de ontvanger") },
-                            placeholder = { Text("Bijv. Jan Jansen") },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = GreenSustainable,
-                                unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                cursorColor = GreenSustainable,
-                                focusedLabelColor = GreenSustainable
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Ophaaladres
-                        AddressInputField(
-                            label = "Adres waar je het ophaalt",
-                            address = pickupAddress,
-                            onAddressChange = { pickupAddress = it }
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Afleveradres
-                        AddressInputField(
-                            label = "Adres waar het naartoe gaat",
-                            address = dropoffAddress,
-                            onAddressChange = { dropoffAddress = it }
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Beschrijving pakket
-                        OutlinedTextField(
-                            value = packageDescription,
-                            onValueChange = { packageDescription = it },
-                            label = { Text("Beschrijving van het pakket") },
-                            placeholder = { Text("Bijv. Boeken of Kleding") },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = GreenSustainable,
-                                unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                cursorColor = GreenSustainable,
-                                focusedLabelColor = GreenSustainable
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Gewicht pakket
-                        OutlinedTextField(
-                            value = packageWeight,
-                            onValueChange = { packageWeight = it.filter { char -> char.isDigit() || char == '.' } },
-                            label = { Text("Gewicht van het pakket (kg)") },
-                            placeholder = { Text("Bijv. 2.5") },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = GreenSustainable,
-                                unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                cursorColor = GreenSustainable,
-                                focusedLabelColor = GreenSustainable
-                            ),
-                            shape = RoundedCornerShape(12.dp)
+                            label = "Naam van de ontvanger",
+                            placeholder = "Bijv. Jan Jansen",
+                            icon = Icons.Filled.Person,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
+
+                // Groep 2: Ophaaladres
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp)),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.Transparent
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.White,
+                                        SandBeige.copy(alpha = 0.3f)
+                                    )
+                                )
+                            )
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.LocationOn,
+                                contentDescription = null,
+                                tint = GreenSustainable,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Vanwaar vertrekt je pakket?",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = DarkGreen
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        AddressInputField(
+                            label = "Vertrekpunt",
+                            address = pickupAddress,
+                            onAddressChange = { pickupAddress = it }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Groep 3: Afleveradres
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp)),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.Transparent
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.White,
+                                        SandBeige.copy(alpha = 0.3f)
+                                    )
+                                )
+                            )
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.LocationOn,
+                                contentDescription = null,
+                                tint = GreenSustainable,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Waar stuur je het naartoe?",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = DarkGreen
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        AddressInputField(
+                            label = "Bestemming",
+                            address = dropoffAddress,
+                            onAddressChange = { dropoffAddress = it }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Groep 4: Pakketdetails
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp)),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.Transparent
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color.White,
+                                        SandBeige.copy(alpha = 0.3f)
+                                    )
+                                )
+                            )
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Inventory,
+                                contentDescription = null,
+                                tint = GreenSustainable,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Wat zit er in je pakket?",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = DarkGreen
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        ModernFormField(
+                            value = packageDescription,
+                            onValueChange = { packageDescription = it },
+                            label = "Beschrijving van het pakket",
+                            placeholder = "Bijv. Boeken of Kleding",
+                            icon = Icons.Filled.Description,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        ModernFormField(
+                            value = packageWeight,
+                            onValueChange = { packageWeight = it.filter { char -> char.isDigit() || char == '.' } },
+                            label = "Gewicht van het pakket (kg)",
+                            placeholder = "Bijv. 2.5",
+                            icon = Icons.Filled.FitnessCenter,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Verstuur knop met gradient en animatie
                 Button(
@@ -209,11 +346,11 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             return@Button
                         }
                         if (pickupAddress.street_name.isBlank() || pickupAddress.house_number.isBlank() || pickupAddress.postal_code.isBlank()) {
-                            errorMessage = "Een geldig ophaaladres is verplicht (straat, huisnummer en postcode)"
+                            errorMessage = "Een geldig vertrekpunt is verplicht (straat, huisnummer en postcode)"
                             return@Button
                         }
                         if (dropoffAddress.street_name.isBlank() || dropoffAddress.house_number.isBlank() || dropoffAddress.postal_code.isBlank()) {
-                            errorMessage = "Een geldig afleveradres is verplicht (straat, huisnummer en postcode)"
+                            errorMessage = "Een geldige bestemming is verplicht (straat, huisnummer en postcode)"
                             return@Button
                         }
                         if (packageDescription.isBlank()) {
@@ -281,7 +418,6 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                         .height(56.dp)
                         .graphicsLayer(scaleX = buttonScale, scaleY = buttonScale)
                         .clip(RoundedCornerShape(16.dp))
-                        .shadow(8.dp, RoundedCornerShape(16.dp), clip = false)
                         .background(
                             brush = Brush.linearGradient(
                                 colors = listOf(GreenSustainable, DarkGreen)
@@ -303,8 +439,8 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             packageWeight.toDoubleOrNull() != null,
                     interactionSource = interactionSource,
                     elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 4.dp,
-                        pressedElevation = 8.dp
+                        defaultElevation = 0.dp,
+                        pressedElevation = 0.dp
                     )
                 ) {
                     Row(
@@ -358,6 +494,63 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(16.dp)) // Extra ruimte aan het einde
             }
+        }
+    }
+}
+
+@Composable
+fun ModernFormField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    placeholder: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier = Modifier,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isFocused) 1.02f else 1f,
+        animationSpec = tween(durationMillis = 200)
+    )
+
+    Row(
+        modifier = modifier
+            .graphicsLayer(scaleX = scale, scaleY = scale),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = GreenSustainable,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(
+                text = label,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = DarkGreen.copy(alpha = 0.8f)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            TextField(
+                value = value,
+                onValueChange = onValueChange,
+                placeholder = { Text(placeholder, color = DarkGreen.copy(alpha = 0.5f)) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = GreenSustainable,
+                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
+                    cursorColor = GreenSustainable,
+                    focusedLabelColor = GreenSustainable
+                ),
+                keyboardOptions = keyboardOptions,
+                interactionSource = interactionSource
+            )
         }
     }
 }

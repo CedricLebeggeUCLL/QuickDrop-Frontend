@@ -1,25 +1,31 @@
 package com.example.quickdropapp.screens.activities.deliveries
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavBackStackEntry // Toegevoegd
+import androidx.navigation.NavBackStackEntry
 import com.example.quickdropapp.composables.forms.AddressInputField
 import com.example.quickdropapp.models.*
 import com.example.quickdropapp.models.packages.Package
@@ -78,13 +84,17 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(SandBeige)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
+                    )
+                )
         ) {
+            // Custom Top Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(SandBeige)
-                    .shadow(4.dp)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -121,87 +131,184 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
                     Spacer(modifier = Modifier.height(24.dp))
 
+                    // Groep 1: Startadres
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp)),
-                        colors = CardDefaults.cardColors(containerColor = SandBeige),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Transparent
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.White,
+                                            SandBeige.copy(alpha = 0.3f)
+                                        )
+                                    )
+                                )
+                                .padding(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.LocationOn,
+                                    contentDescription = null,
+                                    tint = GreenSustainable,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Vanwaar vertrek je?",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = DarkGreen
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
                             AddressInputField(
-                                label = "Startadres",
+                                label = "Vertrekpunt",
                                 address = startAddress,
                                 onAddressChange = { startAddress = it }
                             )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            AddressInputField(
-                                label = "Bestemmingsadres",
-                                address = destinationAddress,
-                                onAddressChange = { destinationAddress = it }
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                OutlinedTextField(
-                                    value = pickupRadius,
-                                    onValueChange = { pickupRadius = it.filter { char -> char.isDigit() || char == '.' } },
-                                    label = { Text("Ophaalradius (km)") },
-                                    placeholder = { Text("Bijv. 30.0") },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                    modifier = Modifier.weight(1f),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = GreenSustainable,
-                                        unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                        cursorColor = GreenSustainable,
-                                        focusedLabelColor = GreenSustainable
-                                    ),
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                                OutlinedTextField(
-                                    value = dropoffRadius,
-                                    onValueChange = { dropoffRadius = it.filter { char -> char.isDigit() || char == '.' } },
-                                    label = { Text("Afleverradius (km)") },
-                                    placeholder = { Text("Bijv. 40.0") },
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                    modifier = Modifier.weight(1f),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = GreenSustainable,
-                                        unfocusedBorderColor = DarkGreen.copy(alpha = 0.6f),
-                                        cursorColor = GreenSustainable,
-                                        focusedLabelColor = GreenSustainable
-                                    ),
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                            }
                         }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    successMessage?.let {
-                        Text(
-                            text = it,
-                            color = GreenSustainable,
-                            style = MaterialTheme.typography.bodyMedium,
+                    // Groep 2: Bestemmingsadres
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp)),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Transparent
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 8.dp),
-                            maxLines = 5
-                        )
-                    }
-                    errorMessage?.let {
-                        Text(
-                            text = it,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 8.dp),
-                            maxLines = 5
-                        )
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.White,
+                                            SandBeige.copy(alpha = 0.3f)
+                                        )
+                                    )
+                                )
+                                .padding(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.LocationOn,
+                                    contentDescription = null,
+                                    tint = GreenSustainable,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Wat is je bestemming?",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = DarkGreen
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            AddressInputField(
+                                label = "Bestemming",
+                                address = destinationAddress,
+                                onAddressChange = { destinationAddress = it }
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    // Groep 3: Zoekradius
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp)),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Transparent
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.White,
+                                            SandBeige.copy(alpha = 0.3f)
+                                        )
+                                    )
+                                )
+                                .padding(16.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.MyLocation,
+                                    contentDescription = null,
+                                    tint = GreenSustainable,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Hoe ver wil je zoeken?",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = DarkGreen
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                ModernFormField(
+                                    value = pickupRadius,
+                                    onValueChange = { pickupRadius = it.filter { char -> char.isDigit() || char == '.' } },
+                                    label = "Ophaalradius (km)",
+                                    placeholder = "Bijv. 30.0",
+                                    icon = Icons.Filled.LocationSearching,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                ModernFormField(
+                                    value = dropoffRadius,
+                                    onValueChange = { dropoffRadius = it.filter { char -> char.isDigit() || char == '.' } },
+                                    label = "Afleverradius (km)",
+                                    placeholder = "Bijv. 40.0",
+                                    icon = Icons.Filled.LocationSearching,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Verstuur knop
+                    // Add interaction source to detect button press
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val isPressed by interactionSource.collectIsPressedAsState()
+
+                    // Animate the button scale based on press state
+                    val buttonScale by animateFloatAsState(
+                        targetValue = if (isPressed) 0.95f else 1f, // Scale down slightly when pressed
+                        animationSpec = tween(durationMillis = 200)
+                    )
 
                     Button(
                         onClick = {
@@ -285,9 +392,18 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable),
-                        shape = RoundedCornerShape(16.dp),
+                            .height(56.dp)
+                            .graphicsLayer(scaleX = buttonScale, scaleY = buttonScale) // Use buttonScale for both scaleX and scaleY
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                brush = Brush.linearGradient(
+                                    colors = listOf(GreenSustainable, DarkGreen)
+                                )
+                            ),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = SandBeige
+                        ),
                         enabled = courierId != null && startAddress.street_name.isNotBlank() && startAddress.house_number.isNotBlank() &&
                                 startAddress.postal_code.isNotBlank() && startAddress.city?.isNotBlank() == true &&
                                 startAddress.country?.isNotBlank() == true &&
@@ -295,9 +411,17 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                 destinationAddress.postal_code.isNotBlank() && destinationAddress.city?.isNotBlank() == true &&
                                 destinationAddress.country?.isNotBlank() == true &&
                                 pickupRadius.isNotBlank() && pickupRadius.toDoubleOrNull() != null &&
-                                dropoffRadius.isNotBlank() && dropoffRadius.toDoubleOrNull() != null
+                                dropoffRadius.isNotBlank() && dropoffRadius.toDoubleOrNull() != null,
+                        elevation = ButtonDefaults.buttonElevation(
+                            defaultElevation = 0.dp,
+                            pressedElevation = 0.dp
+                        ),
+                        interactionSource = interactionSource // Attach the interaction source to the button
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
                             Icon(
                                 imageVector = Icons.Filled.Search,
                                 contentDescription = "Zoek Pakketten",
@@ -306,7 +430,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "Zoek Pakketten",
+                                text = "Zoek Pakketten",
                                 color = SandBeige,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -315,8 +439,94 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    // Fout- en succesmeldingen onderaan
+                    successMessage?.let {
+                        Text(
+                            text = it,
+                            color = GreenSustainable,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight()
+                                .padding(bottom = 8.dp),
+                            maxLines = 5
+                        )
+                    }
+
+                    errorMessage?.let {
+                        Text(
+                            text = it,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight()
+                                .padding(bottom = 8.dp),
+                            maxLines = 5
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ModernFormField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    placeholder: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier = Modifier,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isFocused) 1.02f else 1f,
+        animationSpec = tween(durationMillis = 200)
+    )
+
+    Row(
+        modifier = modifier
+            .graphicsLayer(scaleX = scale, scaleY = scale),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = GreenSustainable,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(
+                text = label,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = DarkGreen.copy(alpha = 0.8f)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            TextField(
+                value = value,
+                onValueChange = onValueChange,
+                placeholder = { Text(placeholder, color = DarkGreen.copy(alpha = 0.5f)) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = GreenSustainable,
+                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
+                    cursorColor = GreenSustainable,
+                    focusedLabelColor = GreenSustainable
+                ),
+                keyboardOptions = keyboardOptions,
+                interactionSource = interactionSource
+            )
         }
     }
 }
@@ -330,7 +540,7 @@ fun searchPackages(
     dropoffRadius: Double,
     packages: MutableState<List<Package>>,
     navController: NavController,
-    currentEntry: NavBackStackEntry? // Nu correct geïmporteerd
+    currentEntry: NavBackStackEntry?
 ) {
     val searchRequest = SearchRequest(
         user_id = userId,

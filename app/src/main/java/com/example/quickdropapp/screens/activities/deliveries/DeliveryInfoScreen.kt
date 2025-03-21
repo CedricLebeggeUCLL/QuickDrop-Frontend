@@ -19,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.composables.deliveries.DeliveryInfoCard // Nieuwe import
+import com.example.quickdropapp.composables.deliveries.DeliveryInfoCard
 import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.models.DeliveryUpdate
 import com.example.quickdropapp.network.ApiService
@@ -57,28 +57,24 @@ fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
         })
     }
 
-    Scaffold(containerColor = SandBeige) { paddingValues ->
+    Scaffold(
+        containerColor = SandBeige
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(SandBeige)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f)) // Match SendPackageScreen
+                    )
+                )
         ) {
-            // Sleek header with gradient
+            // Clean header (matched with SendPackageScreen)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(
-                                GreenSustainable.copy(alpha = 0.15f),
-                                Color(0xFF2E7D32).copy(alpha = 0.4f),
-                                GreenSustainable.copy(alpha = 0.2f)
-                            ),
-                            startX = 0f,
-                            endX = Float.POSITIVE_INFINITY
-                        )
-                    )
+                    .background(SandBeige) // Solid background, no gradient
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -87,21 +83,20 @@ fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBackIosNew,
                         contentDescription = "Terug",
-                        tint = Color.White,
+                        tint = GreenSustainable,
                         modifier = Modifier
                             .size(32.dp)
-                            .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                            .background(SandBeige.copy(alpha = 0.2f), CircleShape)
                             .padding(6.dp)
                     )
                 }
                 Text(
                     text = "Levering Details",
-                    color = Color.White,
+                    color = GreenSustainable, // Match SendPackageScreen
                     fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                    modifier = Modifier.padding(end = 16.dp)
+                    fontSize = 24.sp
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(48.dp)) // Match SendPackageScreen
             }
 
             // Content with animated card
@@ -121,7 +116,7 @@ fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
                     delivery == null -> {
                         Text(
                             text = "Levering niet gevonden",
-                            color = DarkGreen,
+                            color = DarkGreen.copy(alpha = 0.8f), // Match SendPackageScreen
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier.padding(8.dp)
                         )

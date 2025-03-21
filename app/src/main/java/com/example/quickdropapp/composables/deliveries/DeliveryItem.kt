@@ -1,4 +1,3 @@
-// com.example.quickdropapp.composables/DeliveryItem.kt
 package com.example.quickdropapp.composables.deliveries
 
 import androidx.compose.animation.AnimatedVisibility
@@ -6,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -39,53 +39,69 @@ fun DeliveryItem(delivery: Delivery, navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            SandBeige.copy(alpha = 0.95f),
-                            GreenSustainable.copy(alpha = 0.1f),
-                            Color.White.copy(alpha = 0.9f)
-                        )
-                    )
+                .border(
+                    width = 1.dp,
+                    color = GreenSustainable.copy(alpha = 0.2f), // Subtle border
+                    shape = RoundedCornerShape(16.dp)
                 )
                 .clickable {
                     navController.navigate("deliveryInfo/${delivery.id}")
                 },
             colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Geen schaduw
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // No shadows
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                SandBeige.copy(alpha = 0.9f), // Softer start color
+                                SandBeige.copy(alpha = 0.5f) // Softer end color
+                            )
+                        )
+                    )
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
-                    Text(
-                        text = "Levering ID: ${delivery.id}",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = DarkGreen
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.LocationOn,
+                            contentDescription = null,
+                            tint = GreenSustainable,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = "Levering #${delivery.id}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = DarkGreen
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Status: ${delivery.status?.uppercase() ?: "ASSIGNED"}",
-                        fontSize = 14.sp,
-                        color = DarkGreen.copy(alpha = 0.8f)
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = GreenSustainable
                     )
                     if (delivery.status == "delivered" && delivery.delivery_time != null) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Afgeleverd: ${delivery.delivery_time}",
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.bodySmall,
                             color = DarkGreen.copy(alpha = 0.6f)
                         )
                     } else if (delivery.pickup_time != null) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Opgehaald: ${delivery.pickup_time}",
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.bodySmall,
                             color = DarkGreen.copy(alpha = 0.6f)
                         )
                     }

@@ -1,4 +1,3 @@
-// com.example.quickdropapp.composables/DeliveryInfoCard.kt
 package com.example.quickdropapp.composables.deliveries
 
 import androidx.compose.animation.AnimatedVisibility
@@ -6,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -40,58 +40,62 @@ fun DeliveryInfoCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        SandBeige.copy(alpha = 0.95f),
-                        GreenSustainable.copy(alpha = 0.1f),
-                        Color.White.copy(alpha = 0.9f)
-                    )
-                )
+            .border(
+                width = 1.dp,
+                color = GreenSustainable.copy(alpha = 0.2f), // Subtle border
+                shape = RoundedCornerShape(16.dp)
             ),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Geen schaduw
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // No shadows
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            SandBeige.copy(alpha = 0.9f), // Softer start color
+                            SandBeige.copy(alpha = 0.5f) // Softer end color
+                        )
+                    )
+                )
                 .padding(16.dp)
         ) {
             Text(
-                text = "Levering ID: ${delivery.id}",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Medium,
+                text = "Levering #${delivery.id}",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
                 color = DarkGreen
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "Pakket ID: ${delivery.package_id}",
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 color = DarkGreen.copy(alpha = 0.9f)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Ophaaladres: Onbekend (ID: ${delivery.pickup_address_id})", // Placeholder
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 color = DarkGreen.copy(alpha = 0.8f)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Afleveradres: Onbekend (ID: ${delivery.dropoff_address_id})", // Placeholder
-                fontSize = 14.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 color = DarkGreen.copy(alpha = 0.8f)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Status: ${delivery.status?.uppercase() ?: "ASSIGNED"}",
-                fontSize = 16.sp,
-                color = DarkGreen.copy(alpha = 0.9f)
+                style = MaterialTheme.typography.bodyMedium,
+                color = GreenSustainable
             )
             delivery.pickup_time?.let {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Opgehaald: $it",
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = DarkGreen.copy(alpha = 0.7f)
                 )
             }
@@ -99,7 +103,7 @@ fun DeliveryInfoCard(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Afgeleverd: $it",
-                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     color = DarkGreen.copy(alpha = 0.7f)
                 )
             }

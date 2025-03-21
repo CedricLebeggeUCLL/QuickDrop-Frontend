@@ -77,4 +77,8 @@ dependencies {
 
     // DataStore dependency
     implementation(libs.datastore.preferences)
+
+    // Added dependencies for live tracking
+    implementation(libs.play.services.location)
+    implementation(libs.accompanist.permissions)
 }

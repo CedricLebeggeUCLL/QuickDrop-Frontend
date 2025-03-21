@@ -1,5 +1,7 @@
 package com.example.quickdropapp.screens.activities.tracking
 
+import android.Manifest
+import android.os.Looper
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,25 +19,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.models.tracking.TrackingInfo
+import com.example.quickdropapp.network.LocationUpdate
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import android.util.Log
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun TrackPackagesScreen(navController: NavController, userId: Int) {
     var packages by remember { mutableStateOf<List<Package>>(emptyList()) }
@@ -43,14 +54,25 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
     var trackingInfo by remember { mutableStateOf<TrackingInfo?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var shouldPoll by remember { mutableStateOf(false) }
 
-    // Bottom sheet state management
     val scaffoldState = rememberBottomSheetScaffoldState()
     val scope = rememberCoroutineScope()
-
     val apiService = RetrofitClient.instance
 
-    // Haal pakketten op bij initialisatie
+    // Location-related setup
+    val context = LocalContext.current
+    val locationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+
+    // Request location permission
+    LaunchedEffect(Unit) {
+        if (!locationPermissionState.status.isGranted) {
+            locationPermissionState.launchPermissionRequest()
+        }
+    }
+
+    // Fetch packages for the user
     LaunchedEffect(userId) {
         apiService.getPackagesByUserId(userId).enqueue(object : Callback<List<Package>> {
             override fun onResponse(call: Call<List<Package>>, response: Response<List<Package>>) {
@@ -70,27 +92,77 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
         })
     }
 
-    // Haal trackinginformatie op bij pakketselectie
+    // Poll tracking info when a package is selected
     LaunchedEffect(selectedPackageId) {
         selectedPackageId?.let { packageId ->
-            apiService.trackPackage(packageId).enqueue(object : Callback<TrackingInfo> {
-                override fun onResponse(call: Call<TrackingInfo>, response: Response<TrackingInfo>) {
-                    if (response.isSuccessful) {
-                        trackingInfo = response.body()
-                        errorMessage = null
-                    } else {
-                        errorMessage = "Fout bij ophalen tracking: ${response.code()}"
+            shouldPoll = true
+            while (shouldPoll) {
+                apiService.trackPackage(packageId).enqueue(object : Callback<TrackingInfo> {
+                    override fun onResponse(call: Call<TrackingInfo>, response: Response<TrackingInfo>) {
+                        if (response.isSuccessful) {
+                            val info = response.body()
+                            trackingInfo = info
+                            shouldPoll = info?.status == "in_transit"
+                            errorMessage = null
+                        } else {
+                            errorMessage = "Fout bij ophalen tracking: ${response.code()}"
+                            shouldPoll = false
+                        }
                     }
-                }
 
-                override fun onFailure(call: Call<TrackingInfo>, t: Throwable) {
-                    errorMessage = "Netwerkfout: ${t.message}"
-                }
-            })
+                    override fun onFailure(call: Call<TrackingInfo>, t: Throwable) {
+                        errorMessage = "Netwerkfout: ${t.message}"
+                        shouldPoll = false
+                    }
+                })
+                if (shouldPoll) delay(5000) // Poll every 5 seconds
+            }
         }
     }
 
-    // BottomSheetScaffold voor de nieuwe lay-out
+    // Start/stop location updates when selecting an "in_transit" package
+    DisposableEffect(selectedPackageId) {
+        val callback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                val location = locationResult.lastLocation
+                if (location != null && locationPermissionState.status.isGranted) {
+                    val latLng = LatLng(location.latitude, location.longitude)
+                    // For testing, assume courierId is 2; replace with dynamic value in production
+                    apiService.updateCourierLocation(2, LocationUpdate(latLng.latitude, latLng.longitude))
+                        .enqueue(object : Callback<Void> {
+                            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                                if (response.isSuccessful) {
+                                    Log.d("LocationUpdate", "Location updated successfully")
+                                } else {
+                                    Log.e("LocationUpdate", "Error updating location: ${response.code()}")
+                                }
+                            }
+
+                            override fun onFailure(call: Call<Void>, t: Throwable) {
+                                Log.e("LocationUpdate", "Network error: ${t.message}")
+                            }
+                        })
+                }
+            }
+        }
+
+        if (selectedPackageId != null &&
+            packages.find { it.id == selectedPackageId }?.status == "in_transit" &&
+            locationPermissionState.status.isGranted
+        ) {
+            val locationRequest = LocationRequest.Builder(5000) // Interval of 5 seconds
+                .setMinUpdateIntervalMillis(5000) // Fastest interval of 5 seconds
+                .setPriority(Priority.PRIORITY_HIGH_ACCURACY) // High accuracy for tracking
+                .build()
+            locationClient.requestLocationUpdates(locationRequest, callback, Looper.getMainLooper())
+        }
+
+        // Cleanup: Stop location updates when package is deselected or status changes
+        onDispose {
+            locationClient.removeLocationUpdates(callback)
+        }
+    }
+
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetContent = {
@@ -103,12 +175,11 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                 items(packages.filter { it.status in listOf("assigned", "in_transit", "delivered") }) { pkg ->
                     PackageCard(pkg, isSelected = selectedPackageId == pkg.id) {
                         selectedPackageId = pkg.id
-                        // Bottom sheet blijft open na selectie
                     }
                 }
             }
         },
-        sheetPeekHeight = 0.dp, // Bottom sheet is standaard gesloten
+        sheetPeekHeight = 0.dp,
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         sheetContainerColor = SandBeige
     ) {
@@ -139,7 +210,6 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                     .padding(paddingValues)
                     .background(SandBeige)
             ) {
-                // Header met terug-knop en titel
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -177,25 +247,20 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                         }
                     }
                     else -> {
-                        // Kaartconfiguratie
                         val cameraPositionState = rememberCameraPositionState {
                             position = CameraPosition.fromLatLngZoom(
                                 trackingInfo?.currentLocation?.let {
-                                    com.google.android.gms.maps.model.LatLng(it.lat, it.lng)
-                                } ?: com.google.android.gms.maps.model.LatLng(52.3676, 4.9041), // Amsterdam als default
+                                    LatLng(it.lat, it.lng)
+                                } ?: LatLng(52.3676, 4.9041), // Default to Amsterdam
                                 14f
                             )
                         }
 
-                        // Automatisch navigeren naar pakketlocatie
                         LaunchedEffect(trackingInfo) {
                             trackingInfo?.let {
                                 cameraPositionState.animate(
                                     update = CameraUpdateFactory.newLatLngZoom(
-                                        com.google.android.gms.maps.model.LatLng(
-                                            it.currentLocation.lat,
-                                            it.currentLocation.lng
-                                        ),
+                                        LatLng(it.currentLocation.lat, it.currentLocation.lng),
                                         15f
                                     ),
                                     durationMs = 1000
@@ -203,7 +268,6 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                             }
                         }
 
-                        // Kaart die het hele scherm vult
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -220,10 +284,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                                 trackingInfo?.let { info ->
                                     Marker(
                                         state = MarkerState(
-                                            position = com.google.android.gms.maps.model.LatLng(
-                                                info.currentLocation.lat,
-                                                info.currentLocation.lng
-                                            )
+                                            position = LatLng(info.currentLocation.lat, info.currentLocation.lng)
                                         ),
                                         title = "Pakket Locatie",
                                         snippet = "Huidige positie van pakket #${info.packageId}"
@@ -232,7 +293,6 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                             }
                         }
 
-                        // Trackinginformatie
                         trackingInfo?.let { info ->
                             Spacer(modifier = Modifier.height(16.dp))
                             Card(
@@ -281,7 +341,6 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
     }
 }
 
-// Verbeterde PackageCard voor een strakke look
 @Composable
 fun PackageCard(pkg: Package, isSelected: Boolean, onClick: () -> Unit) {
     val pickupCity = pkg.pickupAddress?.city ?: "Onbekend"

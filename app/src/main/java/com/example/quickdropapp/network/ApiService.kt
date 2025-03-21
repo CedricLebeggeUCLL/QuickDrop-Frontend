@@ -13,6 +13,12 @@ import com.example.quickdropapp.models.tracking.TrackingInfo
 import retrofit2.Call
 import retrofit2.http.*
 
+// Data class for location update request body
+data class LocationUpdate(
+    val lat: Double,
+    val lng: Double
+)
+
 interface ApiService {
     // Users Endpoints
     @GET("users")
@@ -79,6 +85,13 @@ interface ApiService {
 
     @DELETE("couriers/{id}")
     fun deleteCourier(@Path("id") id: Int): Call<Void>
+
+    // New endpoint to update courier location
+    @POST("couriers/{id}/location")
+    fun updateCourierLocation(
+        @Path("id") courierId: Int,
+        @Body location: LocationUpdate
+    ): Call<Void>
 
     // Deliveries Endpoints
     @GET("deliveries")

@@ -22,14 +22,14 @@ fun FlyoutMenu(
     userId: Int,
     userRole: String?,
     onClose: () -> Unit,
-    onLogout: () -> Unit // Nieuwe parameter voor uitloggen
+    onLogout: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .width(250.dp)
             .fillMaxHeight()
             .background(SandBeige)
-            .padding(top = 48.dp, start = 16.dp, end = 16.dp, bottom = 16.dp), // Extra padding bovenaan
+            .padding(top = 48.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Header van de drawer
@@ -41,9 +41,14 @@ fun FlyoutMenu(
             modifier = Modifier.padding(bottom = 8.dp)
         )
 
-        HorizontalDivider(thickness = 1.dp, color = GreenSustainable.copy(alpha = 0.3f))
-
         // Pakketten sectie
+        Text(
+            text = "Pakketten",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = DarkGreen,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
         NavigationDrawerItem(
             label = { Text("Pakket Versturen", color = DarkGreen) },
             selected = false,
@@ -53,7 +58,7 @@ fun FlyoutMenu(
             },
             icon = { Icon(Icons.Filled.DoubleArrow, contentDescription = null, tint = GreenSustainable.copy(alpha = 0.8f)) },
             colors = NavigationDrawerItemDefaults.colors(
-                unselectedContainerColor = SandBeige.copy(alpha = 0.95f), // Zachtere achtergrond
+                unselectedContainerColor = SandBeige.copy(alpha = 0.95f),
                 unselectedTextColor = DarkGreen,
                 unselectedIconColor = GreenSustainable.copy(alpha = 0.8f)
             )
@@ -72,7 +77,7 @@ fun FlyoutMenu(
                 unselectedIconColor = GreenSustainable.copy(alpha = 0.8f)
             )
         )
-        if (userRole == "user") { // Alleen voor niet-couriers
+        if (userRole == "user") {
             NavigationDrawerItem(
                 label = { Text("Word Koerier", color = DarkGreen) },
                 selected = false,
@@ -91,7 +96,13 @@ fun FlyoutMenu(
 
         // Leveringen sectie (voor couriers en admins)
         if (userRole == "courier" || userRole == "admin") {
-            HorizontalDivider(thickness = 1.dp, color = GreenSustainable.copy(alpha = 0.3f))
+            Text(
+                text = "Leveringen",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = DarkGreen,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
             NavigationDrawerItem(
                 label = { Text("Start een Levering", color = DarkGreen) },
                 selected = false,
@@ -122,8 +133,14 @@ fun FlyoutMenu(
             )
         }
 
-        // Actieve activiteiten
-        HorizontalDivider(thickness = 1.dp, color = GreenSustainable.copy(alpha = 0.3f))
+        // Tracking sectie
+        Text(
+            text = "Tracking",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = DarkGreen,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
         NavigationDrawerItem(
             label = { Text("Track Pakketten", color = DarkGreen) },
             selected = false,
@@ -138,23 +155,31 @@ fun FlyoutMenu(
                 unselectedIconColor = GreenSustainable.copy(alpha = 0.8f)
             )
         )
-        NavigationDrawerItem(
-            label = { Text("Actieve Activiteiten", color = DarkGreen) },
-            selected = false,
-            onClick = {
-                navController.navigate("activeActivities/$userId")
-                onClose()
-            },
-            icon = { Icon(Icons.Filled.LocalActivity, contentDescription = null, tint = GreenSustainable.copy(alpha = 0.8f)) },
-            colors = NavigationDrawerItemDefaults.colors(
-                unselectedContainerColor = SandBeige.copy(alpha = 0.95f),
-                unselectedTextColor = DarkGreen,
-                unselectedIconColor = GreenSustainable.copy(alpha = 0.8f)
+        if (userRole == "courier" || userRole == "admin") {
+            NavigationDrawerItem(
+                label = { Text("Track Leveringen", color = DarkGreen) },
+                selected = false,
+                onClick = {
+                    navController.navigate("trackingDeliveries/$userId")
+                    onClose()
+                },
+                icon = { Icon(Icons.Filled.LocalShipping, contentDescription = null, tint = GreenSustainable.copy(alpha = 0.8f)) },
+                colors = NavigationDrawerItemDefaults.colors(
+                    unselectedContainerColor = SandBeige.copy(alpha = 0.95f),
+                    unselectedTextColor = DarkGreen,
+                    unselectedIconColor = GreenSustainable.copy(alpha = 0.8f)
+                )
             )
-        )
+        }
 
-        // Profiel
-        HorizontalDivider(thickness = 1.dp, color = GreenSustainable.copy(alpha = 0.3f))
+        // Profiel sectie
+        Text(
+            text = "Profiel",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = DarkGreen,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
         NavigationDrawerItem(
             label = { Text("Profiel", color = DarkGreen) },
             selected = false,
@@ -170,8 +195,14 @@ fun FlyoutMenu(
             )
         )
 
-        // Uitloggen
-        HorizontalDivider(thickness = 1.dp, color = GreenSustainable.copy(alpha = 0.3f))
+        // Uitloggen sectie
+        Text(
+            text = "Uitloggen",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = DarkGreen,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
         NavigationDrawerItem(
             label = { Text("Uitloggen", color = DarkGreen) },
             selected = false,

@@ -134,10 +134,10 @@ fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) 
                     EnhancedHeader(onMenuClick = { scope.launch { drawerState.open() } }, onLogout = onLogout)
                     AnimatedStatisticsCard(userRole = userRole, packageStats = packageStats, deliveryStats = deliveryStats)
                     InteractiveBarChartCard(shipmentsPerMonth = packageStats?.shipmentsPerMonth)
-                    ShipmentStatusChart(statusCounts = packageStats?.statusCounts)
+                    ShipmentStatusChart(statusCounts = packageStats?.statusCounts, navController = navController, userId = userId)
                     if (userRole == "courier" || userRole == "admin") {
                         DeliveriesBarChartCard(deliveriesPerMonth = deliveryStats?.deliveriesPerMonth)
-                        DeliveryStatusChart(statusCounts = deliveryStats?.statusCounts)
+                        DeliveryStatusChart(statusCounts = deliveryStats?.statusCounts, navController = navController, userId = userId)
                     }
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -345,7 +345,7 @@ fun InteractiveBarChartCard(shipmentsPerMonth: List<MonthlyCount>?) {
 }
 
 @Composable
-fun ShipmentStatusChart(statusCounts: List<StatusCount>?) {
+fun ShipmentStatusChart(statusCounts: List<StatusCount>?, navController: NavController, userId: Int) {
     val active = statusCounts?.filter { it.status in listOf("in_transit", "assigned") }?.sumOf { it.count } ?: 0
     val pending = statusCounts?.find { it.status == "pending" }?.count ?: 0
     val delivered = statusCounts?.find { it.status == "delivered" }?.count ?: 0
@@ -354,7 +354,7 @@ fun ShipmentStatusChart(statusCounts: List<StatusCount>?) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clip(RoundedCornerShape(16.dp)),
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp)),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
@@ -369,25 +369,40 @@ fun ShipmentStatusChart(statusCounts: List<StatusCount>?) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatusItem(label = "Active", value = active.toString(), color = Color(0xFFFFA726))
-                StatusItem(label = "Pending", value = pending.toString(), color = Color(0xFF42A5F5))
-                StatusItem(label = "Delivered", value = delivered.toString(), color = Color(0xFF66BB6A))
+                StatusItem(
+                    label = "Pending",
+                    value = pending.toString(),
+                    color = Color(0xFF42A5F5),
+                    onClick = { navController.navigate("viewPackages/$userId") }
+                )
+                StatusItem(
+                    label = "Active",
+                    value = active.toString(),
+                    color = Color(0xFFFFA726),
+                    onClick = { navController.navigate("viewPackages/$userId") }
+                )
+                StatusItem(
+                    label = "Delivered",
+                    value = delivered.toString(),
+                    color = Color(0xFF66BB6A),
+                    onClick = { navController.navigate("history/$userId") }
+                )
             }
         }
     }
 }
 
 @Composable
-fun DeliveryStatusChart(statusCounts: List<StatusCount>?) {
+fun DeliveryStatusChart(statusCounts: List<StatusCount>?, navController: NavController, userId: Int) {
     val assigned = statusCounts?.find { it.status == "assigned" }?.count ?: 0
-    val active = statusCounts?.find { it.status == "picked_up"}?.count ?: 0
+    val active = statusCounts?.find { it.status == "picked_up" }?.count ?: 0
     val delivered = statusCounts?.find { it.status == "delivered" }?.count ?: 0
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .clip(RoundedCornerShape(16.dp)),
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp)),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
@@ -402,17 +417,37 @@ fun DeliveryStatusChart(statusCounts: List<StatusCount>?) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatusItem(label = "Assigned", value = assigned.toString(), color = Color(0xFF42A5F5))
-                StatusItem(label = "Active", value = active.toString(), color = Color(0xFF66BB6A))
-                StatusItem(label = "Delivered", value = delivered.toString(), color = Color(0xFF8BC34A))
+                StatusItem(
+                    label = "Assigned",
+                    value = assigned.toString(),
+                    color = Color(0xFF42A5F5),
+                    onClick = { navController.navigate("viewDeliveries/$userId") }
+                )
+                StatusItem(
+                    label = "Active",
+                    value = active.toString(),
+                    color = Color(0xFFFFA726),
+                    onClick = { navController.navigate("viewDeliveries/$userId") }
+                )
+                StatusItem(
+                    label = "Delivered",
+                    value = delivered.toString(),
+                    color = Color(0xFF66BB6A),
+                    onClick = { navController.navigate("history/$userId") }
+                )
             }
         }
     }
 }
 
 @Composable
-fun StatusItem(label: String, value: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+fun StatusItem(label: String, value: String, color: Color, onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .padding(8.dp)
+    ) {
         Text(
             text = label,
             fontSize = 16.sp,

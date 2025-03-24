@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 fun PackageItem(
     packageItem: Package,
     navController: NavController,
+    userId: Int,
     onDelete: (Int) -> Unit,
     onUpdate: (Int) -> Unit
 ) {
@@ -36,6 +37,8 @@ fun PackageItem(
     val packageId = packageItem.id ?: return
     // Controleer of de delete knop getoond mag worden (alleen bij pending of assigned)
     val showDeleteButton = packageItem.status in listOf("pending", "assigned")
+    // Controleer of de track knop getoond mag worden (niet bij pending)
+    val showTrackButton = packageItem.status != "pending"
 
     Card(
         modifier = Modifier
@@ -115,19 +118,22 @@ fun PackageItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                IconButton(
-                    onClick = {
-                        navController.navigate("trackPackage/$packageId")
-                    },
-                    modifier = Modifier
-                        .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
-                        .size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.LocationOn,
-                        contentDescription = "Track Pakket",
-                        tint = GreenSustainable
-                    )
+                // Toon de tracking-knop alleen als de status niet "pending" is
+                if (showTrackButton) {
+                    IconButton(
+                        onClick = {
+                            navController.navigate("trackPackages/$userId")
+                        },
+                        modifier = Modifier
+                            .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
+                            .size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.LocationOn,
+                            contentDescription = "Track Pakket",
+                            tint = GreenSustainable
+                        )
+                    }
                 }
 
                 IconButton(

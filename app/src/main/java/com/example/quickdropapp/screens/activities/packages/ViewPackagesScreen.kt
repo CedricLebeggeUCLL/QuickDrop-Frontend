@@ -150,6 +150,7 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
                                 PackageItem(
                                     packageItem = packageItem,
                                     navController = navController,
+                                    userId = userId, // Voeg userId toe
                                     onDelete = { id ->
                                         apiService.deletePackage(id).enqueue(object : Callback<Void> {
                                             override fun onResponse(call: Call<Void>, response: Response<Void>) {

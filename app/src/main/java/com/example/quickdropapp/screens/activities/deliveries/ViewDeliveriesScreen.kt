@@ -46,7 +46,7 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
         apiService.getCourierDeliveries(userId).enqueue(object : Callback<List<Delivery>> {
             override fun onResponse(call: Call<List<Delivery>>, response: Response<List<Delivery>>) {
                 if (response.isSuccessful) {
-                    deliveries = response.body()
+                    deliveries = response.body()?.filter { it.status != "delivered" }
                     isLoading = false
                 } else {
                     errorMessage = "Fout bij het laden van leveringen: ${response.code()} - ${response.message()}"
@@ -133,7 +133,7 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                     }
                     deliveries == null || deliveries?.isEmpty() == true -> {
                         Text(
-                            text = "Geen leveringen gevonden",
+                            text = "Geen actieve leveringen gevonden",
                             color = DarkGreen.copy(alpha = 0.8f),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(8.dp)

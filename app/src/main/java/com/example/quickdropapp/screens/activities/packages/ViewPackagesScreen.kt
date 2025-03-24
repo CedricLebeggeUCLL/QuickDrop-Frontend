@@ -45,7 +45,7 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
         apiService.getPackagesByUserId(userId).enqueue(object : Callback<List<Package>> {
             override fun onResponse(call: Call<List<Package>>, response: Response<List<Package>>) {
                 if (response.isSuccessful) {
-                    packages = response.body()
+                    packages = response.body()?.filter { it.status != "delivered" }
                     isLoading = false
                 } else {
                     errorMessage = "Fout bij het laden van pakketten: ${response.code()} - ${response.message()}"
@@ -132,7 +132,7 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
                     }
                     packages == null || packages?.isEmpty() == true -> {
                         Text(
-                            text = "Geen pakketten gevonden",
+                            text = "Geen actieve pakketten gevonden",
                             color = DarkGreen.copy(alpha = 0.8f),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(8.dp)

@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -70,15 +69,14 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
                 .padding(paddingValues)
                 .background(
                     brush = Brush.verticalGradient(
-                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f)) // Match SendPackageScreen
+                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
                     )
                 )
         ) {
-            // Clean header (matched with SendPackageScreen)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(SandBeige) // Solid background, no gradient
+                    .background(SandBeige)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -96,14 +94,13 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
                 }
                 Text(
                     text = "Mijn Pakketten",
-                    color = GreenSustainable, // Match SendPackageScreen
+                    color = GreenSustainable,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
                 )
-                Spacer(modifier = Modifier.width(48.dp)) // Match SendPackageScreen
+                Spacer(modifier = Modifier.width(48.dp))
             }
 
-            // Content
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -114,7 +111,7 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
                     text = "Beheer je pakketten",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
-                    color = DarkGreen.copy(alpha = 0.8f), // Match SendPackageScreen
+                    color = DarkGreen.copy(alpha = 0.8f),
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
@@ -136,7 +133,7 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
                     packages == null || packages?.isEmpty() == true -> {
                         Text(
                             text = "Geen pakketten gevonden",
-                            color = DarkGreen.copy(alpha = 0.8f), // Match SendPackageScreen
+                            color = DarkGreen.copy(alpha = 0.8f),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(8.dp)
                         )
@@ -154,7 +151,19 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
                                     packageItem = packageItem,
                                     navController = navController,
                                     onDelete = { id ->
-                                        packages = packages?.filter { it.id != id }
+                                        apiService.deletePackage(id).enqueue(object : Callback<Void> {
+                                            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                                                if (response.isSuccessful) {
+                                                    packages = packages?.filter { it.id != id }
+                                                } else {
+                                                    errorMessage = "Fout bij verwijderen pakket: ${response.code()}"
+                                                }
+                                            }
+
+                                            override fun onFailure(call: Call<Void>, t: Throwable) {
+                                                errorMessage = "Netwerkfout bij verwijderen: ${t.message}"
+                                            }
+                                        })
                                     },
                                     onUpdate = { id ->
                                         navController.navigate("updatePackage/$id")

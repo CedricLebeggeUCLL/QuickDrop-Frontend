@@ -17,7 +17,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.ui.theme.DarkGreen
@@ -35,6 +34,8 @@ fun PackageItem(
 ) {
     // Safe access to packageItem.id
     val packageId = packageItem.id ?: return
+    // Controleer of de delete knop getoond mag worden (alleen bij pending of assigned)
+    val showDeleteButton = packageItem.status in listOf("pending", "assigned")
 
     Card(
         modifier = Modifier
@@ -42,14 +43,14 @@ fun PackageItem(
             .clip(RoundedCornerShape(16.dp))
             .border(
                 width = 1.dp,
-                color = GreenSustainable.copy(alpha = 0.2f), // Subtle border for modern look
+                color = GreenSustainable.copy(alpha = 0.2f),
                 shape = RoundedCornerShape(16.dp)
             ),
         colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent // Transparent to allow gradient background
+            containerColor = Color.Transparent
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp // No elevation, shadows removed
+            defaultElevation = 0.dp
         )
     ) {
         Row(
@@ -58,8 +59,8 @@ fun PackageItem(
                 .background(
                     brush = Brush.linearGradient(
                         colors = listOf(
-                            SandBeige.copy(alpha = 0.9f), // Softer start color
-                            SandBeige.copy(alpha = 0.5f) // Softer end color
+                            SandBeige.copy(alpha = 0.9f),
+                            SandBeige.copy(alpha = 0.5f)
                         )
                     )
                 )
@@ -67,7 +68,6 @@ fun PackageItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Package details
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -96,7 +96,7 @@ fun PackageItem(
                 Text(
                     text = packageItem.description ?: "Geen omschrijving",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = DarkGreen.copy(alpha = 0.8f), // Match SendPackageScreen
+                    color = DarkGreen.copy(alpha = 0.8f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -111,7 +111,6 @@ fun PackageItem(
                 )
             }
 
-            // Action buttons
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -144,19 +143,19 @@ fun PackageItem(
                     )
                 }
 
-                IconButton(
-                    onClick = {
-                        onDelete(packageId)
-                    },
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f), CircleShape)
-                        .size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = "Verwijder Pakket",
-                        tint = MaterialTheme.colorScheme.error
-                    )
+                if (showDeleteButton) {
+                    IconButton(
+                        onClick = { onDelete(packageId) },
+                        modifier = Modifier
+                            .background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f), CircleShape)
+                            .size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = "Verwijder Pakket",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
         }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -17,7 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +46,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import android.util.Log
+import androidx.compose.ui.draw.shadow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -60,19 +62,16 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
     val scope = rememberCoroutineScope()
     val apiService = RetrofitClient.instance
 
-    // Location-related setup
     val context = LocalContext.current
     val locationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
 
-    // Request location permission
     LaunchedEffect(Unit) {
         if (!locationPermissionState.status.isGranted) {
             locationPermissionState.launchPermissionRequest()
         }
     }
 
-    // Fetch packages for the user
     LaunchedEffect(userId) {
         apiService.getPackagesByUserId(userId).enqueue(object : Callback<List<Package>> {
             override fun onResponse(call: Call<List<Package>>, response: Response<List<Package>>) {
@@ -92,7 +91,6 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
         })
     }
 
-    // Poll tracking info when a package is selected
     LaunchedEffect(selectedPackageId) {
         selectedPackageId?.let { packageId ->
             shouldPoll = true
@@ -118,19 +116,17 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                         shouldPoll = false
                     }
                 })
-                if (shouldPoll) delay(5000) // Poll every 5 seconds
+                if (shouldPoll) delay(5000)
             }
         }
     }
 
-    // Start/stop location updates when selecting an "in_transit" package
     DisposableEffect(selectedPackageId) {
         val callback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 val location = locationResult.lastLocation
                 if (location != null && locationPermissionState.status.isGranted) {
                     val latLng = LatLng(location.latitude, location.longitude)
-                    // For testing, assume courierId is 2; replace with dynamic value in production
                     apiService.updateCourierLocation(2, LocationUpdate(latLng.latitude, latLng.longitude))
                         .enqueue(object : Callback<Void> {
                             override fun onResponse(call: Call<Void>, response: Response<Void>) {
@@ -153,14 +149,13 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
             packages.find { it.id == selectedPackageId }?.status == "in_transit" &&
             locationPermissionState.status.isGranted
         ) {
-            val locationRequest = LocationRequest.Builder(5000) // Interval of 5 seconds
-                .setMinUpdateIntervalMillis(5000) // Fastest interval of 5 seconds
-                .setPriority(Priority.PRIORITY_HIGH_ACCURACY) // High accuracy for tracking
+            val locationRequest = LocationRequest.Builder(5000)
+                .setMinUpdateIntervalMillis(5000)
+                .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
                 .build()
             locationClient.requestLocationUpdates(locationRequest, callback, Looper.getMainLooper())
         }
 
-        // Cleanup: Stop location updates when package is deselected or status changes
         onDispose {
             locationClient.removeLocationUpdates(callback)
         }
@@ -213,11 +208,15 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                     .padding(paddingValues)
                     .background(SandBeige)
             ) {
+                // Uniforme header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(SandBeige)
-                        .shadow(4.dp)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
+                            )
+                        )
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -226,7 +225,11 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBackIosNew,
                             contentDescription = "Terug",
-                            tint = GreenSustainable
+                            tint = GreenSustainable,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(SandBeige.copy(alpha = 0.2f), CircleShape)
+                                .padding(6.dp)
                         )
                     }
                     Text(
@@ -254,7 +257,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                             position = CameraPosition.fromLatLngZoom(
                                 trackingInfo?.currentLocation?.let {
                                     LatLng(it.lat, it.lng)
-                                } ?: LatLng(52.3676, 4.9041), // Default to Amsterdam
+                                } ?: LatLng(52.3676, 4.9041),
                                 14f
                             )
                         }

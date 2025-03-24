@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -31,44 +32,34 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                 .padding(paddingValues)
                 .background(SandBeige)
         ) {
-            // Sleek header met gradiënt en schaduw
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(
-                                GreenSustainable.copy(alpha = 0.1f),
-                                DarkGreen.copy(alpha = 0.3f),
-                                GreenSustainable.copy(alpha = 0.15f)
-                            )
-                        )
-                    )
-                    .shadow(4.dp)
+                    .background(SandBeige)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBackIosNew,
                         contentDescription = "Terug",
-                        tint = Color.White,
+                        tint = GreenSustainable,
                         modifier = Modifier
                             .size(32.dp)
-                            .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                            .background(SandBeige.copy(alpha = 0.2f), CircleShape)
                             .padding(6.dp)
                     )
                 }
                 Text(
                     text = "Help & Support",
-                    color = Color.White,
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.weight(1f)
+                    color = GreenSustainable,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp
                 )
                 Spacer(modifier = Modifier.width(48.dp))
             }
 
-            // Content
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -116,12 +107,12 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "E-mail: support@quickdropapp.com",
+                            text = "E-mail: support@quickdropapp.com",
                             style = MaterialTheme.typography.bodyLarge,
                             color = DarkGreen.copy(alpha = 0.8f)
                         )
                         Text(
-                            "Telefoon: +32 123 456 789",
+                            text = "Telefoon: +32 123 456 789",
                             style = MaterialTheme.typography.bodyLarge,
                             color = DarkGreen.copy(alpha = 0.8f)
                         )

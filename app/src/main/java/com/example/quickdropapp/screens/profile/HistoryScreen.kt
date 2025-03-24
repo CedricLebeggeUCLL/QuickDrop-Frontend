@@ -94,21 +94,10 @@ fun HistoryScreen(navController: NavController, userId: Int) {
                 .padding(paddingValues)
                 .background(SandBeige)
         ) {
-            // Sleek header met gradiënt, exact zoals ViewPackagesScreen
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(
-                                GreenSustainable.copy(alpha = 0.15f),
-                                Color(0xFF2E7D32).copy(alpha = 0.4f),
-                                GreenSustainable.copy(alpha = 0.2f)
-                            ),
-                            startX = 0f,
-                            endX = Float.POSITIVE_INFINITY
-                        )
-                    )
+                    .background(SandBeige)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -117,24 +106,22 @@ fun HistoryScreen(navController: NavController, userId: Int) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBackIosNew,
                         contentDescription = "Terug",
-                        tint = Color.White,
+                        tint = GreenSustainable,
                         modifier = Modifier
                             .size(32.dp)
-                            .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                            .background(SandBeige.copy(alpha = 0.2f), CircleShape)
                             .padding(6.dp)
                     )
                 }
                 Text(
                     text = "Geschiedenis",
-                    color = Color.White,
+                    color = GreenSustainable,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                    modifier = Modifier.padding(end = 16.dp)
+                    fontSize = 24.sp
                 )
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(48.dp))
             }
 
-            // Content
             Column(
                 modifier = Modifier
                     .fillMaxSize()

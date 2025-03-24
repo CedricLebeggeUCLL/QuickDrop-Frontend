@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -15,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -43,13 +45,11 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Bottom sheet state management
     val scaffoldState = rememberBottomSheetScaffoldState()
     val scope = rememberCoroutineScope()
 
     val apiService = RetrofitClient.instance
 
-    // Haal leveringen op bij initialisatie
     LaunchedEffect(userId) {
         apiService.getCourierDeliveries(userId).enqueue(object : Callback<List<Delivery>> {
             override fun onResponse(call: Call<List<Delivery>>, response: Response<List<Delivery>>) {
@@ -69,7 +69,6 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
         })
     }
 
-    // Haal trackinginformatie op bij leveringselectie
     LaunchedEffect(selectedDeliveryId) {
         selectedDeliveryId?.let { deliveryId ->
             apiService.trackDelivery(deliveryId).enqueue(object : Callback<DeliveryTrackingInfo> {
@@ -89,7 +88,6 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
         }
     }
 
-    // BottomSheetScaffold voor de lay-out
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetContent = {
@@ -106,7 +104,7 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                 }
             }
         },
-        sheetPeekHeight = 0.dp, // Standaard gesloten
+        sheetPeekHeight = 0.dp,
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         sheetContainerColor = SandBeige,
         sheetDragHandle = {
@@ -128,7 +126,7 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                             if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
                                 scaffoldState.bottomSheetState.hide()
                             } else {
-                                scaffoldState.bottomSheetState.expand() // Gebruik expand() zoals in TrackPackagesScreen
+                                scaffoldState.bottomSheetState.expand()
                             }
                         }
                     },
@@ -146,12 +144,15 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                     .padding(paddingValues)
                     .background(SandBeige)
             ) {
-                // Header met terug-knop en titel
+                // Uniforme header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(SandBeige)
-                        .shadow(4.dp)
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
+                            )
+                        )
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -160,7 +161,11 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                         Icon(
                             imageVector = Icons.Filled.ArrowBackIosNew,
                             contentDescription = "Terug",
-                            tint = GreenSustainable
+                            tint = GreenSustainable,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(SandBeige.copy(alpha = 0.2f), CircleShape)
+                                .padding(6.dp)
                         )
                     }
                     Text(
@@ -184,17 +189,15 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                         }
                     }
                     else -> {
-                        // Kaartconfiguratie
                         val cameraPositionState = rememberCameraPositionState {
                             position = CameraPosition.fromLatLngZoom(
                                 trackingInfo?.currentLocation?.let {
                                     com.google.android.gms.maps.model.LatLng(it.lat, it.lng)
-                                } ?: com.google.android.gms.maps.model.LatLng(52.3676, 4.9041), // Amsterdam als default
+                                } ?: com.google.android.gms.maps.model.LatLng(52.3676, 4.9041),
                                 14f
                             )
                         }
 
-                        // Automatisch navigeren naar leveringslocatie
                         LaunchedEffect(trackingInfo) {
                             trackingInfo?.let {
                                 cameraPositionState.animate(
@@ -210,11 +213,10 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                             }
                         }
 
-                        // Kaart die het hele scherm vult
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f) // Consistent met TrackPackagesScreen
+                                .weight(1f)
                                 .clip(RoundedCornerShape(16.dp))
                                 .shadow(8.dp, RoundedCornerShape(16.dp)),
                             colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -239,7 +241,6 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                             }
                         }
 
-                        // Trackinginformatie onder de kaart (toegevoegd voor consistentie)
                         trackingInfo?.let { info ->
                             Spacer(modifier = Modifier.height(16.dp))
                             Card(
@@ -288,7 +289,6 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
     }
 }
 
-// Composable voor levering-kaarten
 @Composable
 fun DeliveryCard(delivery: Delivery, isSelected: Boolean, onClick: () -> Unit) {
     Card(

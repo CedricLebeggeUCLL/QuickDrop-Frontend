@@ -10,11 +10,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.auth.User
 import com.example.quickdropapp.network.RetrofitClient
@@ -62,39 +62,31 @@ fun SettingsScreen(navController: NavController, userId: Int) {
                 .padding(paddingValues)
                 .background(SandBeige)
         ) {
-            // Sleek header met gradiënt en schaduw
+            // Uniforme header zonder witte gradiënt
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        brush = Brush.horizontalGradient(
-                            colors = listOf(
-                                GreenSustainable.copy(alpha = 0.1f),
-                                DarkGreen.copy(alpha = 0.3f),
-                                GreenSustainable.copy(alpha = 0.15f)
-                            )
-                        )
-                    )
-                    .shadow(4.dp)
+                    .background(SandBeige)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBackIosNew,
                         contentDescription = "Terug",
-                        tint = Color.White,
+                        tint = GreenSustainable,
                         modifier = Modifier
                             .size(32.dp)
-                            .background(Color.White.copy(alpha = 0.1f), CircleShape)
+                            .background(SandBeige.copy(alpha = 0.2f), CircleShape)
                             .padding(6.dp)
                     )
                 }
                 Text(
                     text = "Instellingen",
-                    color = Color.White,
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.weight(1f)
+                    color = GreenSustainable,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp
                 )
                 Spacer(modifier = Modifier.width(48.dp))
             }

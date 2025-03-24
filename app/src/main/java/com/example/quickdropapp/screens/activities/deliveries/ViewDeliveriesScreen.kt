@@ -70,15 +70,14 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                 .padding(paddingValues)
                 .background(
                     brush = Brush.verticalGradient(
-                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f)) // Match SendPackageScreen
+                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
                     )
                 )
         ) {
-            // Clean header (matched with SendPackageScreen)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(SandBeige) // Solid background, no gradient
+                    .background(SandBeige)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -96,14 +95,13 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                 }
                 Text(
                     text = "Mijn Leveringen",
-                    color = GreenSustainable, // Match SendPackageScreen
+                    color = GreenSustainable,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
                 )
-                Spacer(modifier = Modifier.width(48.dp)) // Match SendPackageScreen
+                Spacer(modifier = Modifier.width(48.dp))
             }
 
-            // Content
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -114,7 +112,7 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                     text = "Bekijk je leveringen",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
-                    color = DarkGreen.copy(alpha = 0.8f), // Match SendPackageScreen
+                    color = DarkGreen.copy(alpha = 0.8f),
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
@@ -136,7 +134,7 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                     deliveries == null || deliveries?.isEmpty() == true -> {
                         Text(
                             text = "Geen leveringen gevonden",
-                            color = DarkGreen.copy(alpha = 0.8f), // Match SendPackageScreen
+                            color = DarkGreen.copy(alpha = 0.8f),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(8.dp)
                         )
@@ -149,9 +147,9 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             contentPadding = PaddingValues(bottom = 16.dp)
                         ) {
-                            items(deliveries!!) { delivery ->
+                            items(deliveries!!) { deliveryItem ->
                                 DeliveryItem(
-                                    delivery = delivery,
+                                    delivery = deliveryItem,
                                     navController = navController
                                 )
                             }

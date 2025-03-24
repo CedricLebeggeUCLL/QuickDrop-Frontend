@@ -31,7 +31,7 @@ import java.util.Locale
 fun DeliveryInfoCard(
     delivery: Delivery,
     onUpdateStatus: (ApiService, Int, String, String?, String?, NavController, (Delivery) -> Unit) -> Unit,
-    onCancel: (ApiService, Int, NavController) -> Unit,
+    onCancel: (ApiService, Int, NavController) -> Unit?,
     apiService: ApiService,
     navController: NavController,
     onDeliveryUpdated: (Delivery) -> Unit
@@ -42,11 +42,11 @@ fun DeliveryInfoCard(
             .clip(RoundedCornerShape(16.dp))
             .border(
                 width = 1.dp,
-                color = GreenSustainable.copy(alpha = 0.2f), // Subtle border
+                color = GreenSustainable.copy(alpha = 0.2f),
                 shape = RoundedCornerShape(16.dp)
             ),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // No shadows
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier
@@ -54,8 +54,8 @@ fun DeliveryInfoCard(
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(
-                            SandBeige.copy(alpha = 0.9f), // Softer start color
-                            SandBeige.copy(alpha = 0.5f) // Softer end color
+                            SandBeige.copy(alpha = 0.9f),
+                            SandBeige.copy(alpha = 0.5f)
                         )
                     )
                 )
@@ -75,13 +75,13 @@ fun DeliveryInfoCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Ophaaladres: Onbekend (ID: ${delivery.pickup_address_id})", // Placeholder
+                text = "Ophaaladres: Onbekend (ID: ${delivery.pickup_address_id})",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DarkGreen.copy(alpha = 0.8f)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Afleveradres: Onbekend (ID: ${delivery.dropoff_address_id})", // Placeholder
+                text = "Afleveradres: Onbekend (ID: ${delivery.dropoff_address_id})",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DarkGreen.copy(alpha = 0.8f)
             )
@@ -175,13 +175,13 @@ fun DeliveryInfoCard(
                     }
                 }
                 AnimatedVisibility(
-                    visible = delivery.status != "delivered",
+                    visible = delivery.status == "assigned", // Alleen bij "assigned"
                     enter = fadeIn(animationSpec = tween(durationMillis = 400)),
                     exit = fadeOut(animationSpec = tween(durationMillis = 400))
                 ) {
                     Button(
                         onClick = {
-                            onCancel(apiService, delivery.id!!, navController)
+                            onCancel.invoke(apiService, delivery.id!!, navController)
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.error,

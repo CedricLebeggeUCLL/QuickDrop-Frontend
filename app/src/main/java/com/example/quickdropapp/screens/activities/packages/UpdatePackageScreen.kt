@@ -51,12 +51,12 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
 
     val apiService = RetrofitClient.instance
 
-    // Animatie voor knop (matched with SendPackageScreen)
+    // Animatie voor knop
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val buttonScale by animateFloatAsState(
-        targetValue = if (isPressed) 1.05f else 1f, // Scale up to 1.05f when pressed (same as SendPackageScreen)
-        animationSpec = tween(durationMillis = 150) // Match the 150ms duration
+        targetValue = if (isPressed) 1.05f else 1f,
+        animationSpec = tween(durationMillis = 150)
     )
 
     // Laad pakketgegevens
@@ -91,6 +91,9 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
         })
     }
 
+    // Bepaal of adresvelden bewerkbaar zijn
+    val isAddressEditable = status in listOf("pending", "assigned")
+
     Scaffold(
         containerColor = SandBeige
     ) { paddingValues ->
@@ -100,12 +103,12 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                 .padding(paddingValues)
                 .background(
                     brush = Brush.verticalGradient(
-                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f)) // Match SendPackageScreen
+                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
                     )
                 )
                 .verticalScroll(rememberScrollState())
         ) {
-            // Custom Top Bar (matched with SendPackageScreen)
+            // Custom Top Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -127,7 +130,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
                 )
-                Spacer(modifier = Modifier.width(48.dp)) // Match SendPackageScreen
+                Spacer(modifier = Modifier.width(48.dp))
             }
 
             Column(
@@ -144,7 +147,6 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             .padding(16.dp)
                     )
                 } else {
-                    // Subtitel (matched with SendPackageScreen)
                     Text(
                         text = "Werk de details van pakket #$packageId bij",
                         style = MaterialTheme.typography.titleMedium,
@@ -154,32 +156,25 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Groep 1: Pakketdetails (using Card like SendPackageScreen)
+                    // Groep 1: Pakketdetails
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp)),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.Transparent // Match SendPackageScreen
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Match SendPackageScreen
+                        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(
                                     brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.White,
-                                            SandBeige.copy(alpha = 0.3f) // Match SendPackageScreen
-                                        )
+                                        colors = listOf(Color.White, SandBeige.copy(alpha = 0.3f))
                                     )
                                 )
                                 .padding(16.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Filled.Inventory,
                                     contentDescription = null,
@@ -204,14 +199,34 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(modifier = Modifier.height(12.dp))
-                            ModernFormField(
-                                value = status,
-                                onValueChange = { status = it },
-                                label = "Status",
-                                placeholder = "Bijv. pending, shipped",
-                                icon = Icons.Filled.Info,
-                                modifier = Modifier.fillMaxWidth()
-                            )
+                            // Status als alleen-lezen
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Info,
+                                    contentDescription = null,
+                                    tint = GreenSustainable,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "Status",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = DarkGreen.copy(alpha = 0.8f)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = status.replaceFirstChar { it.uppercase() },
+                                        fontSize = 16.sp,
+                                        color = DarkGreen,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
                         }
                     }
 
@@ -222,27 +237,20 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp)),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.Transparent // Match SendPackageScreen
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Match SendPackageScreen
+                        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(
                                     brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.White,
-                                            SandBeige.copy(alpha = 0.3f) // Match SendPackageScreen
-                                        )
+                                        colors = listOf(Color.White, SandBeige.copy(alpha = 0.3f))
                                     )
                                 )
                                 .padding(16.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Filled.LocationOn,
                                     contentDescription = null,
@@ -261,7 +269,8 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             AddressInputField(
                                 label = "Vertrekpunt",
                                 address = pickupAddress,
-                                onAddressChange = { pickupAddress = it }
+                                onAddressChange = { pickupAddress = it },
+                                isEditable = isAddressEditable
                             )
                         }
                     }
@@ -273,27 +282,20 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp)),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.Transparent // Match SendPackageScreen
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Match SendPackageScreen
+                        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(
                                     brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.White,
-                                            SandBeige.copy(alpha = 0.3f) // Match SendPackageScreen
-                                        )
+                                        colors = listOf(Color.White, SandBeige.copy(alpha = 0.3f))
                                     )
                                 )
                                 .padding(16.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Filled.LocationOn,
                                     contentDescription = null,
@@ -312,23 +314,24 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             AddressInputField(
                                 label = "Bestemming",
                                 address = dropoffAddress,
-                                onAddressChange = { dropoffAddress = it }
+                                onAddressChange = { dropoffAddress = it },
+                                isEditable = isAddressEditable
                             )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Opslaan knop met gradient en animatie (matched with SendPackageScreen)
+                    // Opslaan knop
                     Button(
                         onClick = {
-                            if (description.isNotEmpty() && status.isNotEmpty()) {
+                            if (description.isNotEmpty()) {
                                 val updateRequest = PackageRequest(
                                     user_id = packageItem?.user_id ?: 0,
                                     description = description,
                                     pickup_address = pickupAddress.copy(country = "Belgium"),
                                     dropoff_address = dropoffAddress.copy(country = "Belgium"),
-                                    status = status
+                                    status = status // Status wordt meegegeven maar niet gewijzigd door de gebruiker
                                 )
                                 apiService.updatePackage(packageId, updateRequest).enqueue(object : Callback<Package> {
                                     override fun onResponse(call: Call<Package>, response: Response<Package>) {
@@ -362,26 +365,23 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             containerColor = Color.Transparent,
                             contentColor = SandBeige
                         ),
-                        enabled = !isLoading && description.isNotEmpty() && status.isNotEmpty(),
+                        enabled = !isLoading && description.isNotEmpty(),
                         interactionSource = interactionSource,
-                        elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 0.dp, // Match SendPackageScreen
-                            pressedElevation = 0.dp  // Match SendPackageScreen
-                        )
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.DoubleArrow, // Match SendPackageScreen
+                                imageVector = Icons.Filled.DoubleArrow,
                                 contentDescription = "Opslaan",
                                 tint = SandBeige,
                                 modifier = Modifier.size(24.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Pakket Bijwerken", // Adjusted text to reflect the action
+                                text = "Pakket Bijwerken",
                                 color = SandBeige,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -391,7 +391,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Fout- en succesmeldingen (matched with SendPackageScreen)
+                    // Fout- en succesmeldingen
                     successMessage?.let {
                         Text(
                             text = it,
@@ -399,7 +399,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .wrapContentHeight() // Match SendPackageScreen
+                                .wrapContentHeight()
                                 .padding(bottom = 8.dp),
                             maxLines = 5
                         )
@@ -412,13 +412,13 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .wrapContentHeight() // Match SendPackageScreen
+                                .wrapContentHeight()
                                 .padding(bottom = 8.dp),
                             maxLines = 5
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp)) // Extra ruimte aan het einde (match SendPackageScreen)
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
@@ -442,8 +442,7 @@ fun ModernFormField(
     )
 
     Row(
-        modifier = modifier
-            .graphicsLayer(scaleX = scale, scaleY = scale),
+        modifier = modifier.graphicsLayer(scaleX = scale, scaleY = scale),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(

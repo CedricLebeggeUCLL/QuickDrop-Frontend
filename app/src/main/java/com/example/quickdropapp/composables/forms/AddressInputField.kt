@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.quickdropapp.models.Address
@@ -18,171 +19,303 @@ import com.example.quickdropapp.ui.theme.GreenSustainable
 fun AddressInputField(
     label: String,
     address: Address,
-    onAddressChange: (Address) -> Unit
+    onAddressChange: (Address) -> Unit,
+    isEditable: Boolean = true // Nieuwe parameter om bewerkbaarheid te bepalen
 ) {
     Column {
         Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Home,
-                contentDescription = null,
-                tint = GreenSustainable,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            TextField(
-                value = address.street_name,
-                onValueChange = { onAddressChange(address.copy(street_name = it)) },
-                label = { Text("Straatnaam", fontSize = 14.sp, color = DarkGreen.copy(alpha = 0.8f)) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = GreenSustainable,
-                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
-                    cursorColor = GreenSustainable,
-                    focusedLabelColor = GreenSustainable
-                ),
-                isError = address.street_name.isBlank()
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Numbers,
-                contentDescription = null,
-                tint = GreenSustainable,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            TextField(
-                value = address.house_number,
-                onValueChange = { onAddressChange(address.copy(house_number = it)) },
-                label = { Text("Huisnummer", fontSize = 14.sp, color = DarkGreen.copy(alpha = 0.8f)) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = GreenSustainable,
-                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
-                    cursorColor = GreenSustainable,
-                    focusedLabelColor = GreenSustainable
-                ),
-                isError = address.house_number.isBlank()
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Filled.PinDrop,
-                contentDescription = null,
-                tint = GreenSustainable,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            TextField(
-                value = address.postal_code,
-                onValueChange = { onAddressChange(address.copy(postal_code = it)) },
-                label = { Text("Postcode", fontSize = 14.sp, color = DarkGreen.copy(alpha = 0.8f)) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = GreenSustainable,
-                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
-                    cursorColor = GreenSustainable,
-                    focusedLabelColor = GreenSustainable
-                ),
-                isError = address.postal_code.isBlank()
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Filled.LocationCity,
-                contentDescription = null,
-                tint = GreenSustainable,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            TextField(
-                value = address.city ?: "",
-                onValueChange = { onAddressChange(address.copy(city = it)) },
-                label = { Text("Stad", fontSize = 14.sp, color = DarkGreen.copy(alpha = 0.8f)) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = GreenSustainable,
-                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
-                    cursorColor = GreenSustainable,
-                    focusedLabelColor = GreenSustainable
-                ),
-                isError = address.city.isNullOrBlank()
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Public,
-                contentDescription = null,
-                tint = GreenSustainable,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            TextField(
-                value = address.country ?: "",
-                onValueChange = { onAddressChange(address.copy(country = it)) },
-                label = { Text("Land", fontSize = 14.sp, color = DarkGreen.copy(alpha = 0.8f)) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = GreenSustainable,
-                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
-                    cursorColor = GreenSustainable,
-                    focusedLabelColor = GreenSustainable
-                ),
-                isError = address.country.isNullOrBlank()
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Info,
-                contentDescription = null,
-                tint = GreenSustainable,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            TextField(
-                value = address.extra_info ?: "",
-                onValueChange = { newValue ->
-                    onAddressChange(address.copy(extra_info = if (newValue.isBlank()) null else newValue))
-                },
-                label = { Text("Extra info (optioneel)", fontSize = 14.sp, color = DarkGreen.copy(alpha = 0.8f)) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = GreenSustainable,
-                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
-                    cursorColor = GreenSustainable,
-                    focusedLabelColor = GreenSustainable
+        if (isEditable) {
+            // Bewerkbare versie
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Home,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
                 )
-            )
+                Spacer(modifier = Modifier.width(8.dp))
+                TextField(
+                    value = address.street_name,
+                    onValueChange = { onAddressChange(address.copy(street_name = it)) },
+                    label = { Text("Straatnaam", fontSize = 14.sp, color = DarkGreen.copy(alpha = 0.8f)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = GreenSustainable,
+                        unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
+                        cursorColor = GreenSustainable,
+                        focusedLabelColor = GreenSustainable
+                    ),
+                    isError = address.street_name.isBlank()
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Numbers,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                TextField(
+                    value = address.house_number,
+                    onValueChange = { onAddressChange(address.copy(house_number = it)) },
+                    label = { Text("Huisnummer", fontSize = 14.sp, color = DarkGreen.copy(alpha = 0.8f)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = GreenSustainable,
+                        unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
+                        cursorColor = GreenSustainable,
+                        focusedLabelColor = GreenSustainable
+                    ),
+                    isError = address.house_number.isBlank()
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.PinDrop,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                TextField(
+                    value = address.postal_code,
+                    onValueChange = { onAddressChange(address.copy(postal_code = it)) },
+                    label = { Text("Postcode", fontSize = 14.sp, color = DarkGreen.copy(alpha = 0.8f)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = GreenSustainable,
+                        unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
+                        cursorColor = GreenSustainable,
+                        focusedLabelColor = GreenSustainable
+                    ),
+                    isError = address.postal_code.isBlank()
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.LocationCity,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                TextField(
+                    value = address.city ?: "",
+                    onValueChange = { onAddressChange(address.copy(city = it)) },
+                    label = { Text("Stad", fontSize = 14.sp, color = DarkGreen.copy(alpha = 0.8f)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = GreenSustainable,
+                        unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
+                        cursorColor = GreenSustainable,
+                        focusedLabelColor = GreenSustainable
+                    ),
+                    isError = address.city.isNullOrBlank()
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Public,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                TextField(
+                    value = address.country ?: "",
+                    onValueChange = { onAddressChange(address.copy(country = it)) },
+                    label = { Text("Land", fontSize = 14.sp, color = DarkGreen.copy(alpha = 0.8f)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = GreenSustainable,
+                        unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
+                        cursorColor = GreenSustainable,
+                        focusedLabelColor = GreenSustainable
+                    ),
+                    isError = address.country.isNullOrBlank()
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Info,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                TextField(
+                    value = address.extra_info ?: "",
+                    onValueChange = { newValue ->
+                        onAddressChange(address.copy(extra_info = if (newValue.isBlank()) null else newValue))
+                    },
+                    label = { Text("Extra info (optioneel)", fontSize = 14.sp, color = DarkGreen.copy(alpha = 0.8f)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = GreenSustainable,
+                        unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
+                        cursorColor = GreenSustainable,
+                        focusedLabelColor = GreenSustainable
+                    )
+                )
+            }
+        } else {
+            // Alleen-lezen versie
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Home,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text = "Straatnaam",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = DarkGreen.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = address.street_name,
+                        fontSize = 16.sp,
+                        color = DarkGreen
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Numbers,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text = "Huisnummer",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = DarkGreen.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = address.house_number,
+                        fontSize = 16.sp,
+                        color = DarkGreen
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.PinDrop,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text = "Postcode",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = DarkGreen.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = address.postal_code,
+                        fontSize = 16.sp,
+                        color = DarkGreen
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.LocationCity,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text = "Stad",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = DarkGreen.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = address.city ?: "",
+                        fontSize = 16.sp,
+                        color = DarkGreen
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Public,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text = "Land",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = DarkGreen.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = address.country ?: "",
+                        fontSize = 16.sp,
+                        color = DarkGreen
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Filled.Info,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text = "Extra info (optioneel)",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = DarkGreen.copy(alpha = 0.8f)
+                    )
+                    Text(
+                        text = address.extra_info ?: "Geen extra info",
+                        fontSize = 16.sp,
+                        color = DarkGreen
+                    )
+                }
+            }
         }
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }

@@ -150,7 +150,8 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                             items(deliveries!!) { deliveryItem ->
                                 DeliveryItem(
                                     delivery = deliveryItem,
-                                    navController = navController
+                                    navController = navController,
+                                    userId = userId // Geef userId door
                                 )
                             }
                         }

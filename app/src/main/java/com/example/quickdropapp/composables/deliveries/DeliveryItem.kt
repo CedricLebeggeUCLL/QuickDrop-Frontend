@@ -29,7 +29,7 @@ import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
 
 @Composable
-fun DeliveryItem(delivery: Delivery, navController: NavController) {
+fun DeliveryItem(delivery: Delivery, navController: NavController, userId: Int) {
     AnimatedVisibility(
         visible = true,
         enter = fadeIn(animationSpec = tween(durationMillis = 400)),
@@ -41,14 +41,14 @@ fun DeliveryItem(delivery: Delivery, navController: NavController) {
                 .clip(RoundedCornerShape(16.dp))
                 .border(
                     width = 1.dp,
-                    color = GreenSustainable.copy(alpha = 0.2f), // Subtle border
+                    color = GreenSustainable.copy(alpha = 0.2f),
                     shape = RoundedCornerShape(16.dp)
                 )
                 .clickable {
                     navController.navigate("deliveryInfo/${delivery.id}")
                 },
             colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // No shadows
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Row(
                 modifier = Modifier
@@ -56,8 +56,8 @@ fun DeliveryItem(delivery: Delivery, navController: NavController) {
                     .background(
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                SandBeige.copy(alpha = 0.9f), // Softer start color
-                                SandBeige.copy(alpha = 0.5f) // Softer end color
+                                SandBeige.copy(alpha = 0.9f),
+                                SandBeige.copy(alpha = 0.5f)
                             )
                         )
                     )
@@ -107,7 +107,9 @@ fun DeliveryItem(delivery: Delivery, navController: NavController) {
                     }
                 }
                 IconButton(
-                    onClick = { navController.navigate("trackDelivery/${delivery.id}") },
+                    onClick = {
+                        navController.navigate("trackingDeliveries/$userId?deliveryId=${delivery.id}")
+                    },
                     modifier = Modifier
                         .size(40.dp)
                         .background(GreenSustainable.copy(alpha = 0.15f), CircleShape)

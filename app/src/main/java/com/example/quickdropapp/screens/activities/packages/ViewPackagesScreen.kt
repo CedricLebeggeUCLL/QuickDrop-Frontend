@@ -150,7 +150,7 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
                                 PackageItem(
                                     packageItem = packageItem,
                                     navController = navController,
-                                    userId = userId, // Voeg userId toe
+                                    userId = userId,
                                     onDelete = { id ->
                                         apiService.deletePackage(id).enqueue(object : Callback<Void> {
                                             override fun onResponse(call: Call<Void>, response: Response<Void>) {
@@ -167,7 +167,10 @@ fun ViewPackagesScreen(navController: NavController, userId: Int) {
                                         })
                                     },
                                     onUpdate = { id ->
-                                        navController.navigate("updatePackage/$id")
+                                        navController.navigate("updatePackage/$id") {
+                                            popUpTo(navController.graph.startDestinationId) { inclusive = false }
+                                            launchSingleTop = true
+                                        }
                                     }
                                 )
                             }

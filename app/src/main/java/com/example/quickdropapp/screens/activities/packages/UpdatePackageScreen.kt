@@ -8,6 +8,7 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -56,6 +57,11 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
         animationSpec = tween(durationMillis = 150)
     )
 
+    // Debug logging
+    fun log(message: String) {
+        println("UpdatePackageScreen: $message")
+    }
+
     LaunchedEffect(packageId) {
         if (packageId <= 0) {
             errorMessage = "Ongeldige package ID: $packageId"
@@ -73,11 +79,10 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                         pickupAddress = pkg.pickupAddress?.copy() ?: Address()
                         dropoffAddress = pkg.dropoffAddress?.copy() ?: Address()
                     }
-                    isLoading = false
                 } else {
                     errorMessage = "Fout bij laden pakket: ${response.message()}"
-                    isLoading = false
                 }
+                isLoading = false
             }
 
             override fun onFailure(call: Call<Package>, t: Throwable) {
@@ -114,15 +119,27 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
             ) {
                 IconButton(
                     onClick = {
+                        log("Back button clicked, executing double popBackStack")
                         if (navController.previousBackStackEntry != null) {
-                            navController.popBackStack()
+                            navController.popBackStack() // Eerste pop
+                            if (navController.previousBackStackEntry != null) {
+                                navController.popBackStack() // Tweede pop
+                            } else {
+                                log("Only one back stack entry was present")
+                            }
+                        } else {
+                            log("No previous back stack entry found")
                         }
                     }
                 ) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBackIosNew,
                         contentDescription = "Terug",
-                        tint = GreenSustainable
+                        tint = GreenSustainable,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(SandBeige.copy(alpha = 0.2f), CircleShape)
+                            .padding(6.dp)
                     )
                 }
                 Text(
@@ -146,6 +163,13 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                         modifier = Modifier
                             .size(40.dp)
                             .padding(16.dp)
+                    )
+                } else if (packageItem == null) {
+                    Text(
+                        text = "Pakket niet gevonden",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(16.dp)
                     )
                 } else {
                     Text(
@@ -333,6 +357,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                     override fun onResponse(call: Call<Package>, response: Response<Package>) {
                                         if (response.isSuccessful) {
                                             successMessage = "Pakket succesvol bijgewerkt!"
+                                            log("Update successful, popping back stack once")
                                             navController.popBackStack()
                                         } else {
                                             errorMessage = "Bijwerken mislukt: ${response.message()}"
@@ -393,6 +418,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                     override fun onResponse(call: Call<Void>, response: Response<Void>) {
                                         if (response.isSuccessful) {
                                             successMessage = "Pakket succesvol verwijderd!"
+                                            log("Delete successful, popping back stack once")
                                             navController.popBackStack()
                                         } else {
                                             errorMessage = "Verwijderen mislukt: ${response.message()}"

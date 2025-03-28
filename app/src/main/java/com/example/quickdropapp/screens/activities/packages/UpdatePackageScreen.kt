@@ -121,11 +121,11 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                     onClick = {
                         log("Back button clicked, executing double popBackStack")
                         if (navController.previousBackStackEntry != null) {
-                            navController.popBackStack() // Eerste pop
+                            navController.popBackStack()
                             if (navController.previousBackStackEntry != null) {
-                                navController.popBackStack() // Tweede pop
+                                navController.popBackStack()
                             } else {
-                                log("Only one back stack entry was present")
+                                log("Only one back stack entry was present after first pop")
                             }
                         } else {
                             log("No previous back stack entry found")
@@ -418,8 +418,13 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                     override fun onResponse(call: Call<Void>, response: Response<Void>) {
                                         if (response.isSuccessful) {
                                             successMessage = "Pakket succesvol verwijderd!"
-                                            log("Delete successful, popping back stack once")
+                                            log("Delete successful, executing double popBackStack")
                                             navController.popBackStack()
+                                            if (navController.previousBackStackEntry != null) {
+                                                navController.popBackStack()
+                                            } else {
+                                                log("Only one back stack entry was present after first pop")
+                                            }
                                         } else {
                                             errorMessage = "Verwijderen mislukt: ${response.message()}"
                                         }

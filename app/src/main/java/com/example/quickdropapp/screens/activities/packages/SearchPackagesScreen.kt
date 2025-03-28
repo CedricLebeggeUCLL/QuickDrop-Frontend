@@ -4,20 +4,22 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState // Toegevoegd
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.quickdropapp.composables.packages.PackageCard
-import com.example.quickdropapp.models.*
+import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
@@ -36,8 +38,6 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
     val noPackages = navBackStackEntry?.arguments?.getBoolean("noPackages") ?: false
     val hasError = navBackStackEntry?.arguments?.getBoolean("error") ?: false
 
-    val apiService = RetrofitClient.instance
-
     LaunchedEffect(Unit) {
         val parentEntry = navController.getBackStackEntry("startDelivery/$userId")
         val parentPackages = parentEntry.savedStateHandle.get<List<Package>>("packages") ?: emptyList()
@@ -46,19 +46,23 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
         isLoading = false
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(SandBeige)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
+    Scaffold(
+        containerColor = SandBeige
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
+                    )
+                )
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .shadow(4.dp)
+                    .background(SandBeige)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -67,82 +71,113 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBackIosNew,
                         contentDescription = "Terug",
-                        tint = GreenSustainable
+                        tint = GreenSustainable,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(SandBeige.copy(alpha = 0.2f), CircleShape)
+                            .padding(6.dp)
                     )
                 }
                 Text(
-                    text = "Zoek Pakketten",
+                    text = "Beschikbare Pakketten",
                     color = GreenSustainable,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
                 )
                 Spacer(modifier = Modifier.width(48.dp))
             }
-        }
 
-        item {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    color = GreenSustainable,
-                    modifier = Modifier.wrapContentSize(Alignment.Center)
-                )
-            } else if (hasError) {
-                Text(
-                    text = "Er is een fout opgetreden bij het zoeken naar pakketten",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            } else if (noPackages || packages.isEmpty()) {
-                Text(
-                    text = "Geen pakketten gevonden binnen je zoekcriteria",
-                    color = DarkGreen,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-
-        item {
-            Text(
-                text = "Debug: Aantal pakketten = ${packages.size}",
-                color = DarkGreen,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-
-        items(packages) { packageItem ->
-            PackageCard(
-                packageItem = packageItem,
-                onAccept = { packageId ->
-                    val deliveryRequest = DeliveryRequest(
-                        user_id = userId,
-                        package_id = packageId
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Pakketten binnen je radius",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = DarkGreen.copy(alpha = 0.8f),
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
-
-                    apiService.createDelivery(deliveryRequest).enqueue(object : Callback<Delivery> {
-                        override fun onResponse(call: Call<Delivery>, response: Response<Delivery>) {
-                            if (response.isSuccessful) {
-                                println("Delivery created successfully: ${response.body()}")
-                                navController.navigate("viewDeliveries/$userId") {
-                                    popUpTo("searchPackages/$userId") { inclusive = true }
-                                    launchSingleTop = true
-                                }
-                            } else {
-                                val errorBody = response.errorBody()?.string() ?: "No error details available"
-                                errorMessage = "Fout bij aanmaken levering: ${response.code()} - $errorBody"
-                                println("Error creating delivery: ${response.code()} - $errorBody")
-                                println("Raw response: ${response.raw()}")
-                            }
-                        }
-
-                        override fun onFailure(call: Call<Delivery>, t: Throwable) {
-                            errorMessage = "Netwerkfout bij aanmaken levering: ${t.message}"
-                            println("Network failure creating delivery: ${t.message}")
-                        }
-                    })
                 }
-            )
+
+                item {
+                    when {
+                        isLoading -> {
+                            CircularProgressIndicator(
+                                color = GreenSustainable,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .padding(16.dp)
+                            )
+                        }
+                        hasError -> {
+                            Text(
+                                text = "Er is een fout opgetreden bij het zoeken",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+                        noPackages || packages.isEmpty() -> {
+                            Text(
+                                text = "Geen pakketten gevonden in je buurt",
+                                color = DarkGreen.copy(alpha = 0.8f),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+                    }
+                }
+
+                items(packages) { packageItem ->
+                    PackageCard(
+                        packageItem = packageItem,
+                        onAccept = { packageId ->
+                            val apiService = RetrofitClient.instance
+                            val deliveryRequest = com.example.quickdropapp.models.DeliveryRequest(
+                                user_id = userId,
+                                package_id = packageId
+                            )
+
+                            apiService.createDelivery(deliveryRequest).enqueue(object : Callback<Delivery> {
+                                override fun onResponse(call: Call<Delivery>, response: Response<Delivery>) {
+                                    if (response.isSuccessful) {
+                                        println("Delivery created successfully: ${response.body()}")
+                                        navController.navigate("viewDeliveries/$userId") {
+                                            popUpTo("searchPackages/$userId") { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                    } else {
+                                        errorMessage = "Fout bij aanmaken levering: ${response.code()}"
+                                        println("Error creating delivery: ${response.code()} - ${response.errorBody()?.string()}")
+                                    }
+                                }
+
+                                override fun onFailure(call: Call<Delivery>, t: Throwable) {
+                                    errorMessage = "Netwerkfout: ${t.message}"
+                                    println("Network failure: ${t.message}")
+                                }
+                            })
+                        }
+                    )
+                }
+
+                item {
+                    errorMessage?.let {
+                        Text(
+                            text = it,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                }
+            }
         }
     }
 }

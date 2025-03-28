@@ -1,6 +1,6 @@
 package com.example.quickdropapp.models.auth
 
 data class LoginRequest(
-    val email: String,
+    val identifier: String, // Gebruikersnaam of e-mail
     val password: String
 )

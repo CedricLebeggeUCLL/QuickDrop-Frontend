@@ -35,7 +35,7 @@ import retrofit2.Response
 fun LoginScreen(navController: NavController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var email by remember { mutableStateOf("") }
+    var identifier by remember { mutableStateOf("") } // Gebruikersnaam of e-mail
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var passwordVisible by remember { mutableStateOf(false) } // Staat om wachtwoord zichtbaarheid te toggelen
@@ -58,9 +58,9 @@ fun LoginScreen(navController: NavController) {
         )
 
         OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("E-mail", color = GreenSustainable) },
+            value = identifier,
+            onValueChange = { identifier = it },
+            label = { Text("Gebruikersnaam of E-mail", color = GreenSustainable) },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp),
@@ -105,10 +105,10 @@ fun LoginScreen(navController: NavController) {
 
         Button(
             onClick = {
-                if (email.isNotEmpty() && password.isNotEmpty()) {
-                    val loginRequest = LoginRequest(email, password)
+                if (identifier.isNotEmpty() && password.isNotEmpty()) {
+                    val loginRequest = LoginRequest(identifier, password) // Identifier kan gebruikersnaam of e-mail zijn
                     val call = apiService.loginUser(loginRequest)
-                    println("LoginScreen: Sending login request with email=$email")
+                    println("LoginScreen: Sending login request with identifier=$identifier")
                     call.enqueue(object : Callback<LoginResponse> {
                         override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                             println("LoginScreen: Response received, code=${response.code()}")
@@ -131,7 +131,7 @@ fun LoginScreen(navController: NavController) {
                                 }
                             } else {
                                 errorMessage = when (response.code()) {
-                                    401 -> "Ongeldige e-mail of wachtwoord"
+                                    401 -> "Ongeldige gebruikersnaam/e-mail of wachtwoord"
                                     500 -> "Serverfout, probeer het later opnieuw"
                                     else -> "Inloggen mislukt: ${response.message()}"
                                 }
@@ -145,8 +145,8 @@ fun LoginScreen(navController: NavController) {
                         }
                     })
                 } else {
-                    errorMessage = "Vul e-mail en wachtwoord in"
-                    println("LoginScreen: Error - Email or password empty")
+                    errorMessage = "Vul gebruikersnaam/e-mail en wachtwoord in"
+                    println("LoginScreen: Error - Identifier or password empty")
                 }
             },
             colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable),

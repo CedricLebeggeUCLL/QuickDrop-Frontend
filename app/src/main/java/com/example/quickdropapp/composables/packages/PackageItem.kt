@@ -4,25 +4,25 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 
 @Composable
 fun PackageItem(
@@ -34,6 +34,31 @@ fun PackageItem(
 ) {
     val packageId = packageItem.id ?: return
     val showTrackButton = packageItem.status != "pending"
+
+    // Status aliassen en kleuren
+    val (statusAlias, statusColor) = when (packageItem.status) {
+        "pending" -> "In afwachting" to Color(0xFFFFC107) // Geel
+        "assigned" -> "Toegewezen" to Color(0xFF2196F3) // Blauw
+        "in_transit" -> "Onderweg" to Color(0xFFFF9800) // Oranje
+        "delivered" -> "Afgeleverd" to Color(0xFF4CAF50) // Groen
+        else -> "Onbekend" to Color.Gray
+    }
+
+    // Ontvanger extraheren uit description
+    val description = packageItem.description ?: ""
+    val receiverName = description.split(" - ").getOrNull(1)?.split(", ")?.getOrNull(0)?.replace("Ontvanger: ", "") ?: "Onbekende ontvanger"
+
+    // Titel gebaseerd op dropoff stad
+    val dropoffCity = packageItem.dropoffAddress?.city ?: "Onbekende stad"
+    val title = "Levering naar $dropoffCity"
+
+    // Adresformaten met stad uit pickupAddress en dropoffAddress
+    val pickupAddress = packageItem.pickupAddress?.let {
+        "${it.street_name} ${it.house_number}, ${it.postal_code} ${it.city}"
+    } ?: "Onbekend adres"
+    val dropoffAddress = packageItem.dropoffAddress?.let {
+        "${it.street_name} ${it.house_number}, ${it.postal_code} ${it.city}"
+    } ?: "Onbekend adres"
 
     Card(
         modifier = Modifier
@@ -48,84 +73,136 @@ fun PackageItem(
                 onUpdate(packageId)
                 navController.navigate("updatePackage/$packageId")
             },
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp
-        )
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
                     brush = Brush.linearGradient(
-                        colors = listOf(
-                            SandBeige.copy(alpha = 0.9f),
-                            SandBeige.copy(alpha = 0.5f)
-                        )
+                        colors = listOf(SandBeige.copy(alpha = 0.9f), SandBeige.copy(alpha = 0.5f))
                     )
                 )
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 8.dp)
+            // Titel
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.DirectionsCar,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkGreen,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Ontvanger
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Person,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = "Ontvanger: $receiverName",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DarkGreen.copy(alpha = 0.8f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Adresinformatie
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowUpward,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = "Van: $pickupAddress",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DarkGreen.copy(alpha = 0.8f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowDownward,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = "Naar: $dropoffAddress",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DarkGreen.copy(alpha = 0.8f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Status en track-knop
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.LocationOn,
+                        imageVector = Icons.Filled.Info,
                         contentDescription = null,
-                        tint = GreenSustainable,
-
-
+                        tint = statusColor,
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = "Pakket #${packageId}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = DarkGreen,
+                        text = "Status: $statusAlias",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = statusColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = packageItem.description ?: "Geen omschrijving",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = DarkGreen.copy(alpha = 0.8f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Status: ${packageItem.status?.replaceFirstChar { it.uppercase() } ?: "Onbekend"}",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    color = GreenSustainable,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
                 if (showTrackButton) {
                     IconButton(
-                        onClick = {
-                            navController.navigate("trackPackages/$userId")
-                        },
+                        onClick = { navController.navigate("trackPackages/$userId") },
                         modifier = Modifier
-                            .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
+                            .background(GreenSustainable.copy(alpha = 0.1f), RoundedCornerShape(50))
                             .size(36.dp)
                     ) {
                         Icon(

@@ -24,7 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.MailTo
 import androidx.navigation.NavController
 import androidx.navigation.NavBackStackEntry
 import com.example.quickdropapp.composables.forms.AddressInputField
@@ -58,6 +57,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
     val apiService = RetrofitClient.instance
 
+    // Haal courierId op bij het laden van het scherm
     LaunchedEffect(userId) {
         if (userId <= 0) {
             errorMessage = "Ongeldige user ID: $userId"
@@ -68,18 +68,16 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                 if (response.isSuccessful) {
                     val courier = response.body()
                     courierId = courier?.id
-                    println("Fetched courierId: $courierId for userId: $userId")
+                    println("StartDeliveryScreen: Fetched courierId: $courierId for userId: $userId")
                 } else {
                     errorMessage = "Kon koerier niet vinden: ${response.code()} - ${response.errorBody()?.string() ?: "Geen details"}"
-                    println("Failed to fetch courier: ${response.code()} - ${response.errorBody()?.string()}")
-                    courierId = userId // Gebruik userId als fallback
+                    println("StartDeliveryScreen: Failed to fetch courier: ${response.code()} - ${response.errorBody()?.string()}")
                 }
             }
 
             override fun onFailure(call: Call<Courier>, t: Throwable) {
                 errorMessage = "Netwerkfout bij ophalen koerier: ${t.message}"
-                println("Network failure fetching courier: ${t.message}")
-                courierId = userId // Fallback naar userId
+                println("StartDeliveryScreen: Network failure fetching courier: ${t.message}")
             }
         })
     }
@@ -334,9 +332,12 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                 availability = true
                             )
 
+                            println("StartDeliveryScreen: Updating courier with data: $updateData")
+
                             val currentEntry = navController.currentBackStackEntry
                             apiService.updateCourier(courierId!!, updateData).enqueue(object : Callback<Courier> {
                                 override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
+                                    println("StartDeliveryScreen: Update response: ${response.code()} - ${response.body()}")
                                     if (response.isSuccessful) {
                                         successMessage = "Locatie en radius succesvol ingesteld!"
                                         errorMessage = null
@@ -352,49 +353,13 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                         }
                                     } else {
                                         errorMessage = "Fout bij updaten: ${response.code()} - ${response.errorBody()?.string()}"
-                                        println("Update failed: ${response.code()} - ${response.errorBody()?.string()}")
-                                        if (response.code() == 404) {
-                                            apiService.getCourierByUserId(userId).enqueue(object : Callback<Courier> {
-                                                override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
-                                                    if (response.isSuccessful) {
-                                                        courierId = response.body()?.id
-                                                        apiService.updateCourier(courierId!!, updateData).enqueue(object : Callback<Courier> {
-                                                            override fun onResponse(call: Call<Courier>, innerResponse: Response<Courier>) {
-                                                                if (innerResponse.isSuccessful) {
-                                                                    successMessage = "Locatie en radius succesvol ingesteld na hercontrole!"
-                                                                    errorMessage = null
-                                                                    scope.launch {
-                                                                        RecentFormDataStore.saveStartDeliveryData(
-                                                                            context,
-                                                                            startAddress,
-                                                                            destinationAddress,
-                                                                            pickupRadius,
-                                                                            dropoffRadius
-                                                                        )
-                                                                        searchPackages(apiService, userId, startAddress, destinationAddress, pickupRad, dropoffRad, packages, navController, currentEntry)
-                                                                    }
-                                                                } else {
-                                                                    errorMessage = "Fout bij herhaalde update: ${innerResponse.code()} - ${innerResponse.errorBody()?.string()}"
-                                                                }
-                                                            }
-                                                            override fun onFailure(call: Call<Courier>, t: Throwable) {
-                                                                errorMessage = "Netwerkfout bij herhaalde update: ${t.message}"
-                                                            }
-                                                        })
-                                                    } else {
-                                                        errorMessage = "Kon koerier niet herstellen: ${response.code()} - ${response.errorBody()?.string()}"
-                                                    }
-                                                }
-                                                override fun onFailure(call: Call<Courier>, t: Throwable) {
-                                                    errorMessage = "Netwerkfout bij hercontrole: ${t.message}"
-                                                }
-                                            })
-                                        }
+                                        println("StartDeliveryScreen: Update failed: ${response.code()} - ${response.errorBody()?.string()}")
                                     }
                                 }
 
                                 override fun onFailure(call: Call<Courier>, t: Throwable) {
-                                    errorMessage = "Netwerkfout: ${t.message}"
+                                    errorMessage = "Netwerkfout bij update: ${t.message}"
+                                    println("StartDeliveryScreen: Network failure on update: ${t.message}")
                                 }
                             })
                         },
@@ -453,7 +418,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight()
-                                .padding(bottom = 8.dp),
+                                .padding(horizontal = 8.dp),
                             maxLines = 5
                         )
                     }
@@ -466,7 +431,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight()
-                                .padding(bottom = 8.dp),
+                                .padding(horizontal = 8.dp),
                             maxLines = 5
                         )
                     }
@@ -553,17 +518,17 @@ fun searchPackages(
         dropoff_radius = dropoffRadius,
         use_current_as_start = false
     )
-    println("Sending search request: $searchRequest")
+    println("StartDeliveryScreen: Sending search request: $searchRequest")
     apiService.searchPackages(searchRequest).enqueue(object : Callback<SearchResponse> {
         override fun onResponse(call: Call<SearchResponse>, response: Response<SearchResponse>) {
-            println("Search packages response received: code=${response.code()}, body=${response.body()}")
-            println("Raw response: ${response.raw()}")
+            println("StartDeliveryScreen: Search packages response received: code=${response.code()}, body=${response.body()}")
+            println("StartDeliveryScreen: Raw response: ${response.raw()}")
             if (response.isSuccessful) {
                 val result = response.body()
-                println("Parsed result: $result")
+                println("StartDeliveryScreen: Parsed result: $result")
                 if (result != null) {
-                    val packageList = result.packages?.filterNotNull() ?: emptyList()
-                    println("Package list after parsing: $packageList")
+                    val packageList = result.packages ?: emptyList()
+                    println("StartDeliveryScreen: Package list after parsing: $packageList")
                     packages.value = packageList
                     currentEntry?.savedStateHandle?.set("packages", packageList)
                     if (packageList.isNotEmpty()) {
@@ -584,7 +549,7 @@ fun searchPackages(
                     }
                 }
             } else {
-                println("Error response: ${response.errorBody()?.string()}")
+                println("StartDeliveryScreen: Error response: ${response.errorBody()?.string()}")
                 navController.navigate("searchPackages/$userId?error=true") {
                     popUpTo("startDelivery/$userId") { inclusive = false }
                     launchSingleTop = true
@@ -593,7 +558,7 @@ fun searchPackages(
         }
 
         override fun onFailure(call: Call<SearchResponse>, t: Throwable) {
-            println("Network failure: ${t.message}")
+            println("StartDeliveryScreen: Network failure: ${t.message}")
             navController.navigate("searchPackages/$userId?error=true") {
                 popUpTo("startDelivery/$userId") { inclusive = false }
                 launchSingleTop = true

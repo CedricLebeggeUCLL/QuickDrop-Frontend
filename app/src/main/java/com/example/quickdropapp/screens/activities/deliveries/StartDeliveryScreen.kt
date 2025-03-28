@@ -4,7 +4,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,13 +19,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.MailTo
 import androidx.navigation.NavController
 import androidx.navigation.NavBackStackEntry
 import com.example.quickdropapp.composables.forms.AddressInputField
+import com.example.quickdropapp.data.RecentFormDataStore
 import com.example.quickdropapp.models.*
 import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.models.packages.SearchRequest
@@ -36,12 +38,15 @@ import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 @Composable
 fun StartDeliveryScreen(navController: NavController, userId: Int) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var startAddress by remember { mutableStateOf(Address()) }
     var destinationAddress by remember { mutableStateOf(Address()) }
     var pickupRadius by remember { mutableStateOf("30.0") }
@@ -90,7 +95,6 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                     )
                 )
         ) {
-            // Custom Top Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -112,7 +116,22 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
                 )
-                Spacer(modifier = Modifier.width(48.dp))
+                IconButton(onClick = {
+                    scope.launch {
+                        RecentFormDataStore.getRecentStartDeliveryDataFlow(context).collect { recentData ->
+                            startAddress = recentData.startAddress
+                            destinationAddress = recentData.destinationAddress
+                            pickupRadius = recentData.pickupRadius
+                            dropoffRadius = recentData.dropoffRadius
+                        }
+                    }
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.Restore,
+                        contentDescription = "Herstel recente gegevens",
+                        tint = GreenSustainable
+                    )
+                }
             }
 
             LazyColumn(
@@ -131,14 +150,11 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Groep 1: Startadres
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp)),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.Transparent
-                        ),
+                        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Column(
@@ -146,17 +162,12 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                 .fillMaxWidth()
                                 .background(
                                     brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.White,
-                                            SandBeige.copy(alpha = 0.3f)
-                                        )
+                                        colors = listOf(Color.White, SandBeige.copy(alpha = 0.3f))
                                     )
                                 )
                                 .padding(16.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Filled.LocationOn,
                                     contentDescription = null,
@@ -182,14 +193,11 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Groep 2: Bestemmingsadres
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp)),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.Transparent
-                        ),
+                        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Column(
@@ -197,17 +205,12 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                 .fillMaxWidth()
                                 .background(
                                     brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.White,
-                                            SandBeige.copy(alpha = 0.3f)
-                                        )
+                                        colors = listOf(Color.White, SandBeige.copy(alpha = 0.3f))
                                     )
                                 )
                                 .padding(16.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Filled.LocationOn,
                                     contentDescription = null,
@@ -233,14 +236,11 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Groep 3: Zoekradius
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp)),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.Transparent
-                        ),
+                        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                     ) {
                         Column(
@@ -248,17 +248,12 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                 .fillMaxWidth()
                                 .background(
                                     brush = Brush.verticalGradient(
-                                        colors = listOf(
-                                            Color.White,
-                                            SandBeige.copy(alpha = 0.3f)
-                                        )
+                                        colors = listOf(Color.White, SandBeige.copy(alpha = 0.3f))
                                     )
                                 )
                                 .padding(16.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Filled.MyLocation,
                                     contentDescription = null,
@@ -299,14 +294,10 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Verstuur knop
-                    // Add interaction source to detect button press
                     val interactionSource = remember { MutableInteractionSource() }
                     val isPressed by interactionSource.collectIsPressedAsState()
-
-                    // Animate the button scale based on press state
                     val buttonScale by animateFloatAsState(
-                        targetValue = if (isPressed) 0.95f else 1f, // Scale down slightly when pressed
+                        targetValue = if (isPressed) 0.95f else 1f,
                         animationSpec = tween(durationMillis = 200)
                     )
 
@@ -349,12 +340,20 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                     if (response.isSuccessful) {
                                         successMessage = "Locatie en radius succesvol ingesteld!"
                                         errorMessage = null
-                                        searchPackages(apiService, userId, startAddress, destinationAddress, pickupRad, dropoffRad, packages, navController, currentEntry)
+                                        scope.launch {
+                                            RecentFormDataStore.saveStartDeliveryData(
+                                                context,
+                                                startAddress,
+                                                destinationAddress,
+                                                pickupRadius,
+                                                dropoffRadius
+                                            )
+                                            searchPackages(apiService, userId, startAddress, destinationAddress, pickupRad, dropoffRad, packages, navController, currentEntry)
+                                        }
                                     } else {
                                         errorMessage = "Fout bij updaten: ${response.code()} - ${response.errorBody()?.string()}"
                                         println("Update failed: ${response.code()} - ${response.errorBody()?.string()}")
                                         if (response.code() == 404) {
-                                            // Hercontroleer koerier
                                             apiService.getCourierByUserId(userId).enqueue(object : Callback<Courier> {
                                                 override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
                                                     if (response.isSuccessful) {
@@ -364,7 +363,16 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                                                 if (innerResponse.isSuccessful) {
                                                                     successMessage = "Locatie en radius succesvol ingesteld na hercontrole!"
                                                                     errorMessage = null
-                                                                    searchPackages(apiService, userId, startAddress, destinationAddress, pickupRad, dropoffRad, packages, navController, currentEntry)
+                                                                    scope.launch {
+                                                                        RecentFormDataStore.saveStartDeliveryData(
+                                                                            context,
+                                                                            startAddress,
+                                                                            destinationAddress,
+                                                                            pickupRadius,
+                                                                            dropoffRadius
+                                                                        )
+                                                                        searchPackages(apiService, userId, startAddress, destinationAddress, pickupRad, dropoffRad, packages, navController, currentEntry)
+                                                                    }
                                                                 } else {
                                                                     errorMessage = "Fout bij herhaalde update: ${innerResponse.code()} - ${innerResponse.errorBody()?.string()}"
                                                                 }
@@ -393,7 +401,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp)
-                            .graphicsLayer(scaleX = buttonScale, scaleY = buttonScale) // Use buttonScale for both scaleX and scaleY
+                            .graphicsLayer(scaleX = buttonScale, scaleY = buttonScale)
                             .clip(RoundedCornerShape(16.dp))
                             .background(
                                 brush = Brush.linearGradient(
@@ -412,11 +420,8 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                 destinationAddress.country?.isNotBlank() == true &&
                                 pickupRadius.isNotBlank() && pickupRadius.toDoubleOrNull() != null &&
                                 dropoffRadius.isNotBlank() && dropoffRadius.toDoubleOrNull() != null,
-                        elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 0.dp,
-                            pressedElevation = 0.dp
-                        ),
-                        interactionSource = interactionSource // Attach the interaction source to the button
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp),
+                        interactionSource = interactionSource
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -440,7 +445,6 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Fout- en succesmeldingen onderaan
                     successMessage?.let {
                         Text(
                             text = it,
@@ -485,15 +489,14 @@ fun ModernFormField(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val isFocused by interactionSource.collectIsFocusedAsState()
+    val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isFocused) 1.02f else 1f,
+        targetValue = if (isPressed) 1.02f else 1f,
         animationSpec = tween(durationMillis = 200)
     )
 
     Row(
-        modifier = modifier
-            .graphicsLayer(scaleX = scale, scaleY = scale),
+        modifier = modifier.graphicsLayer(scaleX = scale, scaleY = scale),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -562,7 +565,6 @@ fun searchPackages(
                     val packageList = result.packages?.filterNotNull() ?: emptyList()
                     println("Package list after parsing: $packageList")
                     packages.value = packageList
-                    // Save to savedStateHandle
                     currentEntry?.savedStateHandle?.set("packages", packageList)
                     if (packageList.isNotEmpty()) {
                         navController.navigate("searchPackages/$userId") {

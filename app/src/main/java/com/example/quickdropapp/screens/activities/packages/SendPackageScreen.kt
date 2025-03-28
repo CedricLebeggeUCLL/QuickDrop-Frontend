@@ -4,7 +4,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,25 +20,30 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.composables.forms.AddressInputField
-import com.example.quickdropapp.models.*
+import com.example.quickdropapp.data.RecentFormDataStore
+import com.example.quickdropapp.models.Address
 import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.models.packages.PackageRequest
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
+import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 @Composable
 fun SendPackageScreen(navController: NavController, userId: Int) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var recipientName by remember { mutableStateOf("") }
     var pickupAddress by remember { mutableStateOf(Address()) }
     var dropoffAddress by remember { mutableStateOf(Address()) }
@@ -57,14 +61,11 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
     val apiService = RetrofitClient.instance
 
-    // Log de userId voor debugging
     LaunchedEffect(userId) {
         println("Received userId: $userId")
     }
 
-    Scaffold(
-        containerColor = SandBeige
-    ) { paddingValues ->
+    Scaffold(containerColor = SandBeige) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -76,7 +77,6 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                 )
                 .verticalScroll(rememberScrollState())
         ) {
-            // Custom Top Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -98,7 +98,23 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
                 )
-                Spacer(modifier = Modifier.width(48.dp)) // Placeholder voor balans
+                IconButton(onClick = {
+                    scope.launch {
+                        RecentFormDataStore.getRecentSendPackageDataFlow(context).collect { recentData ->
+                            recipientName = recentData.recipientName
+                            pickupAddress = recentData.pickupAddress
+                            dropoffAddress = recentData.dropoffAddress
+                            packageDescription = recentData.packageDescription
+                            packageWeight = recentData.packageWeight
+                        }
+                    }
+                }) {
+                    Icon(
+                        imageVector = Icons.Filled.Restore,
+                        contentDescription = "Herstel recente gegevens",
+                        tint = GreenSustainable
+                    )
+                }
             }
 
             Column(
@@ -107,7 +123,6 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                     .padding(horizontal = 20.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Subtitel met instructie
                 Text(
                     text = "Vul de details in om je pakket duurzaam te versturen",
                     style = MaterialTheme.typography.titleMedium,
@@ -117,14 +132,11 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Groep 1: Ontvangerinformatie
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp)),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.Transparent
-                    ),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(
@@ -132,17 +144,12 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             .fillMaxWidth()
                             .background(
                                 brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.White,
-                                        SandBeige.copy(alpha = 0.3f)
-                                    )
+                                    colors = listOf(Color.White, SandBeige.copy(alpha = 0.3f))
                                 )
                             )
                             .padding(16.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Filled.Person,
                                 contentDescription = null,
@@ -171,14 +178,11 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Groep 2: Ophaaladres
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp)),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.Transparent
-                    ),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(
@@ -186,17 +190,12 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             .fillMaxWidth()
                             .background(
                                 brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.White,
-                                        SandBeige.copy(alpha = 0.3f)
-                                    )
+                                    colors = listOf(Color.White, SandBeige.copy(alpha = 0.3f))
                                 )
                             )
                             .padding(16.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Filled.LocationOn,
                                 contentDescription = null,
@@ -222,14 +221,11 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Groep 3: Afleveradres
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp)),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.Transparent
-                    ),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(
@@ -237,17 +233,12 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             .fillMaxWidth()
                             .background(
                                 brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.White,
-                                        SandBeige.copy(alpha = 0.3f)
-                                    )
+                                    colors = listOf(Color.White, SandBeige.copy(alpha = 0.3f))
                                 )
                             )
                             .padding(16.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Filled.LocationOn,
                                 contentDescription = null,
@@ -273,14 +264,11 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Groep 4: Pakketdetails
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp)),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.Transparent
-                    ),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Column(
@@ -288,17 +276,12 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             .fillMaxWidth()
                             .background(
                                 brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        Color.White,
-                                        SandBeige.copy(alpha = 0.3f)
-                                    )
+                                    colors = listOf(Color.White, SandBeige.copy(alpha = 0.3f))
                                 )
                             )
                             .padding(16.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Filled.Inventory,
                                 contentDescription = null,
@@ -337,10 +320,8 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Verstuur knop met gradient en animatie
                 Button(
                     onClick = {
-                        // Validatie
                         if (recipientName.isBlank()) {
                             errorMessage = "De naam van de ontvanger is verplicht"
                             return@Button
@@ -361,16 +342,12 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             errorMessage = "Het gewicht van het pakket is verplicht en moet een geldig getal zijn"
                             return@Button
                         }
-
                         if (userId <= 0) {
                             errorMessage = "Ongeldige gebruikers-ID: $userId"
                             return@Button
                         }
 
-                        // Combineer gegevens in de beschrijving
                         val fullDescription = "$packageDescription - Ontvanger: $recipientName, Gewicht: $packageWeight kg"
-
-                        // Maak PackageRequest object
                         val packageRequest = PackageRequest(
                             user_id = userId,
                             description = fullDescription,
@@ -378,11 +355,9 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             dropoff_address = dropoffAddress
                         )
 
-                        // Log de data voor debugging
                         println("Sending package request: $packageRequest")
                         println("Sending with userId: $userId")
 
-                        // Verstuur naar backend
                         val call = apiService.addPackage(packageRequest)
                         call.enqueue(object : Callback<Package> {
                             override fun onResponse(call: Call<Package>, response: Response<Package>) {
@@ -390,14 +365,17 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                                     val responseBody = response.body()
                                     successMessage = "Je pakket is succesvol aangemaakt! (ID: ${responseBody?.id ?: "onbekend"})"
                                     errorMessage = null
-                                    // Reset form
-                                    recipientName = ""
-                                    pickupAddress = Address()
-                                    dropoffAddress = Address()
-                                    packageDescription = ""
-                                    packageWeight = ""
-                                    // Terug naar HomeScreen
-                                    navController.popBackStack()
+                                    scope.launch {
+                                        RecentFormDataStore.saveSendPackageData(
+                                            context,
+                                            recipientName,
+                                            pickupAddress,
+                                            dropoffAddress,
+                                            packageDescription,
+                                            packageWeight
+                                        )
+                                        navController.popBackStack()
+                                    }
                                 } else {
                                     val errorBody = response.errorBody()?.string() ?: "Geen details"
                                     errorMessage = "Er ging iets mis: ${response.code()} - ${errorBody}"
@@ -438,10 +416,7 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             packageWeight.isNotBlank() &&
                             packageWeight.toDoubleOrNull() != null,
                     interactionSource = interactionSource,
-                    elevation = ButtonDefaults.buttonElevation(
-                        defaultElevation = 0.dp,
-                        pressedElevation = 0.dp
-                    )
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -465,7 +440,6 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Fout- en succesmeldingen onderaan
                 successMessage?.let {
                     Text(
                         text = it,
@@ -492,7 +466,7 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp)) // Extra ruimte aan het einde
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -509,15 +483,14 @@ fun ModernFormField(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val isFocused by interactionSource.collectIsFocusedAsState()
+    val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isFocused) 1.02f else 1f,
+        targetValue = if (isPressed) 1.02f else 1f,
         animationSpec = tween(durationMillis = 200)
     )
 
     Row(
-        modifier = modifier
-            .graphicsLayer(scaleX = scale, scaleY = scale),
+        modifier = modifier.graphicsLayer(scaleX = scale, scaleY = scale),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(

@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,8 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.Delivery
-import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.models.auth.User
+import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -41,6 +42,12 @@ fun HistoryScreen(navController: NavController, userId: Int) {
     val apiService = RetrofitClient.instance
 
     LaunchedEffect(userId) {
+        if (userId <= 0) {
+            errorMessage = "Ongeldige user ID: $userId"
+            isLoading = false
+            return@LaunchedEffect
+        }
+
         apiService.getUserById(userId).enqueue(object : Callback<User> {
             override fun onResponse(call: Call<User>, response: Response<User>) {
                 if (response.isSuccessful) {
@@ -51,12 +58,14 @@ fun HistoryScreen(navController: NavController, userId: Int) {
                         override fun onResponse(call: Call<List<Package>>, response: Response<List<Package>>) {
                             if (response.isSuccessful) {
                                 packages = response.body()?.filter { it.status == "delivered" } ?: emptyList()
+                            } else {
+                                errorMessage = "Fout bij laden pakketten: ${response.message()}"
                             }
                             isLoading = false
                         }
 
                         override fun onFailure(call: Call<List<Package>>, t: Throwable) {
-                            errorMessage = "Fout bij laden pakketten: ${t.message}"
+                            errorMessage = "Netwerkfout bij laden pakketten: ${t.message}"
                             isLoading = false
                         }
                     })
@@ -66,16 +75,18 @@ fun HistoryScreen(navController: NavController, userId: Int) {
                             override fun onResponse(call: Call<List<Delivery>>, response: Response<List<Delivery>>) {
                                 if (response.isSuccessful) {
                                     deliveries = response.body()?.filter { it.status == "delivered" } ?: emptyList()
+                                } else {
+                                    errorMessage = "Fout bij laden leveringen: ${response.message()}"
                                 }
                             }
 
                             override fun onFailure(call: Call<List<Delivery>>, t: Throwable) {
-                                errorMessage = "Fout bij laden leveringen: ${t.message}"
+                                errorMessage = "Netwerkfout bij laden leveringen: ${t.message}"
                             }
                         })
                     }
                 } else {
-                    errorMessage = "Fout bij laden gebruiker"
+                    errorMessage = "Fout bij laden gebruiker: ${response.message()}"
                 }
                 isLoading = false
             }
@@ -92,7 +103,11 @@ fun HistoryScreen(navController: NavController, userId: Int) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(SandBeige)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
+                    )
+                )
         ) {
             Row(
                 modifier = Modifier
@@ -129,10 +144,10 @@ fun HistoryScreen(navController: NavController, userId: Int) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Beheer je geschiedenis",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DarkGreen,
+                    text = "Jouw voltooide geschiedenis",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = DarkGreen.copy(alpha = 0.8f),
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
@@ -140,22 +155,24 @@ fun HistoryScreen(navController: NavController, userId: Int) {
                     isLoading -> {
                         CircularProgressIndicator(
                             color = GreenSustainable,
-                            modifier = Modifier.size(40.dp)
+                            modifier = Modifier
+                                .size(40.dp)
+                                .align(Alignment.CenterHorizontally)
                         )
                     }
                     errorMessage != null -> {
                         Text(
                             text = errorMessage!!,
                             color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(8.dp)
                         )
                     }
                     packages.isEmpty() && deliveries.isEmpty() -> {
                         Text(
-                            text = "Geen geschiedenis gevonden",
-                            color = DarkGreen,
-                            style = MaterialTheme.typography.bodyLarge,
+                            text = "Geen voltooide geschiedenis gevonden",
+                            color = DarkGreen.copy(alpha = 0.8f),
+                            style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(8.dp)
                         )
                     }
@@ -170,7 +187,7 @@ fun HistoryScreen(navController: NavController, userId: Int) {
                             if (packages.isNotEmpty()) {
                                 item {
                                     Text(
-                                        "Pakketgeschiedenis",
+                                        "Afgeleverde Pakketten",
                                         fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = DarkGreen,
@@ -178,13 +195,13 @@ fun HistoryScreen(navController: NavController, userId: Int) {
                                     )
                                 }
                                 items(packages) { pkg ->
-                                    PackageItem(pkg)
+                                    PackageItem(pkg, navController, userId)
                                 }
                             }
                             if (deliveries.isNotEmpty() && (user?.role == "courier" || user?.role == "admin")) {
                                 item {
                                     Text(
-                                        "Leveringsgeschiedenis",
+                                        "Afgeleverde Leveringen",
                                         fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = DarkGreen,
@@ -192,7 +209,7 @@ fun HistoryScreen(navController: NavController, userId: Int) {
                                     )
                                 }
                                 items(deliveries) { delivery ->
-                                    DeliveryItem(delivery)
+                                    DeliveryItem(delivery, navController, userId)
                                 }
                             }
                         }
@@ -204,7 +221,7 @@ fun HistoryScreen(navController: NavController, userId: Int) {
 }
 
 @Composable
-fun PackageItem(pkg: Package) {
+fun PackageItem(pkg: Package, navController: NavController, userId: Int) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -216,9 +233,12 @@ fun PackageItem(pkg: Package) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
                     text = "Pakket #${pkg.id}",
                     fontSize = 18.sp,
@@ -226,14 +246,31 @@ fun PackageItem(pkg: Package) {
                     color = DarkGreen
                 )
                 Text(
-                    text = "Status: ${pkg.status}",
+                    text = "Beschrijving: ${pkg.description ?: "Geen beschrijving"}",
                     fontSize = 14.sp,
                     color = DarkGreen.copy(alpha = 0.8f)
                 )
                 Text(
-                    text = "Datum: ${pkg.created_at ?: "Onbekend"}",
+                    text = "Status: ${pkg.status?.replaceFirstChar { it.uppercase() } ?: "Onbekend"}",
                     fontSize = 14.sp,
                     color = DarkGreen.copy(alpha = 0.8f)
+                )
+                Text(
+                    text = "Afleveradres: ${pkg.dropoffAddress?.let { "${it.street_name} ${it.house_number}, ${it.postal_code} ${it.city}" } ?: "Onbekend"}",
+                    fontSize = 14.sp,
+                    color = DarkGreen.copy(alpha = 0.8f)
+                )
+            }
+            IconButton(
+                onClick = { navController.navigate("trackPackages/$userId?packageId=${pkg.id}") },
+                modifier = Modifier
+                    .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
+                    .size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.LocationOn,
+                    contentDescription = "Track Pakket",
+                    tint = GreenSustainable
                 )
             }
         }
@@ -241,7 +278,24 @@ fun PackageItem(pkg: Package) {
 }
 
 @Composable
-fun DeliveryItem(delivery: Delivery) {
+fun DeliveryItem(delivery: Delivery, navController: NavController, userId: Int) {
+    var packageData by remember { mutableStateOf<Package?>(null) }
+    val apiService = RetrofitClient.instance
+
+    LaunchedEffect(delivery.package_id) {
+        apiService.getPackageById(delivery.package_id).enqueue(object : Callback<Package> {
+            override fun onResponse(call: Call<Package>, response: Response<Package>) {
+                if (response.isSuccessful) {
+                    packageData = response.body()
+                }
+            }
+
+            override fun onFailure(call: Call<Package>, t: Throwable) {
+                // Geen foutmelding, adres blijft "Onbekend"
+            }
+        })
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -253,9 +307,12 @@ fun DeliveryItem(delivery: Delivery) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
                 Text(
                     text = "Levering #${delivery.id}",
                     fontSize = 18.sp,
@@ -268,14 +325,36 @@ fun DeliveryItem(delivery: Delivery) {
                     color = DarkGreen.copy(alpha = 0.8f)
                 )
                 Text(
-                    text = "Status: ${delivery.status}",
+                    text = "Status: ${delivery.status?.replaceFirstChar { it.uppercase() } ?: "Onbekend"}",
                     fontSize = 14.sp,
                     color = DarkGreen.copy(alpha = 0.8f)
                 )
                 Text(
-                    text = "Datum: ${delivery.delivery_time ?: "Onbekend"}",
+                    text = "Opgehaald: ${delivery.pickup_time ?: "Niet opgehaald"}",
                     fontSize = 14.sp,
                     color = DarkGreen.copy(alpha = 0.8f)
+                )
+                Text(
+                    text = "Afgeleverd: ${delivery.delivery_time ?: "Niet afgeleverd"}",
+                    fontSize = 14.sp,
+                    color = DarkGreen.copy(alpha = 0.8f)
+                )
+                Text(
+                    text = "Afleveradres: ${packageData?.dropoffAddress?.let { "${it.street_name} ${it.house_number}, ${it.postal_code} ${it.city}" } ?: "Onbekend"}",
+                    fontSize = 14.sp,
+                    color = DarkGreen.copy(alpha = 0.8f)
+                )
+            }
+            IconButton(
+                onClick = { navController.navigate("trackingDeliveries/$userId?deliveryId=${delivery.id}") },
+                modifier = Modifier
+                    .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
+                    .size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.LocationOn,
+                    contentDescription = "Track Levering",
+                    tint = GreenSustainable
                 )
             }
         }

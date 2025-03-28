@@ -43,15 +43,12 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
 
-    // Formulierstatussen
     var description by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("pending") }
     var pickupAddress by remember { mutableStateOf(Address()) }
     var dropoffAddress by remember { mutableStateOf(Address()) }
 
     val apiService = RetrofitClient.instance
-
-    // Animatie voor knop
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val buttonScale by animateFloatAsState(
@@ -59,7 +56,6 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
         animationSpec = tween(durationMillis = 150)
     )
 
-    // Laad pakketgegevens
     LaunchedEffect(packageId) {
         if (packageId <= 0) {
             errorMessage = "Ongeldige package ID: $packageId"
@@ -91,8 +87,8 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
         })
     }
 
-    // Bepaal of adresvelden bewerkbaar zijn
     val isAddressEditable = status in listOf("pending", "assigned")
+    val showDeleteButton = status in listOf("pending", "assigned")
 
     Scaffold(
         containerColor = SandBeige
@@ -108,7 +104,6 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                 )
                 .verticalScroll(rememberScrollState())
         ) {
-            // Custom Top Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -117,7 +112,13 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton(onClick = { navController.popBackStack() }) {
+                IconButton(
+                    onClick = {
+                        if (navController.previousBackStackEntry != null) {
+                            navController.popBackStack()
+                        }
+                    }
+                ) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBackIosNew,
                         contentDescription = "Terug",
@@ -156,7 +157,6 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Groep 1: Pakketdetails
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -199,7 +199,6 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(modifier = Modifier.height(12.dp))
-                            // Status als alleen-lezen
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically
@@ -232,7 +231,6 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Groep 2: Ophaaladres
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -277,7 +275,6 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Groep 3: Afleveradres
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -322,7 +319,6 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Opslaan knop
                     Button(
                         onClick = {
                             if (description.isNotEmpty()) {
@@ -331,7 +327,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                     description = description,
                                     pickup_address = pickupAddress.copy(country = "Belgium"),
                                     dropoff_address = dropoffAddress.copy(country = "Belgium"),
-                                    status = status // Status wordt meegegeven maar niet gewijzigd door de gebruiker
+                                    status = status
                                 )
                                 apiService.updatePackage(packageId, updateRequest).enqueue(object : Callback<Package> {
                                     override fun onResponse(call: Call<Package>, response: Response<Package>) {
@@ -389,9 +385,55 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                         }
                     }
 
+                    if (showDeleteButton) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = {
+                                apiService.deletePackage(packageId).enqueue(object : Callback<Void> {
+                                    override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                                        if (response.isSuccessful) {
+                                            successMessage = "Pakket succesvol verwijderd!"
+                                            navController.popBackStack()
+                                        } else {
+                                            errorMessage = "Verwijderen mislukt: ${response.message()}"
+                                        }
+                                    }
+
+                                    override fun onFailure(call: Call<Void>, t: Throwable) {
+                                        errorMessage = "Netwerkfout bij verwijderen: ${t.message}"
+                                    }
+                                })
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .clip(RoundedCornerShape(16.dp)),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Delete,
+                                    contentDescription = "Verwijderen",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Pakket Verwijderen",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Fout- en succesmeldingen
                     successMessage?.let {
                         Text(
                             text = it,
@@ -400,7 +442,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight()
-                                .padding(bottom = 8.dp),
+                                .padding(horizontal = 8.dp),
                             maxLines = 5
                         )
                     }
@@ -413,7 +455,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight()
-                                .padding(bottom = 8.dp),
+                                .padding(horizontal = 8.dp),
                             maxLines = 5
                         )
                     }

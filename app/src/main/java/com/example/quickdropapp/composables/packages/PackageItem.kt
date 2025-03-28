@@ -2,12 +2,11 @@ package com.example.quickdropapp.composables.packages
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,11 +32,7 @@ fun PackageItem(
     onDelete: (Int) -> Unit,
     onUpdate: (Int) -> Unit
 ) {
-    // Safe access to packageItem.id
     val packageId = packageItem.id ?: return
-    // Controleer of de delete knop getoond mag worden (alleen bij pending of assigned)
-    val showDeleteButton = packageItem.status in listOf("pending", "assigned")
-    // Controleer of de track knop getoond mag worden (niet bij pending)
     val showTrackButton = packageItem.status != "pending"
 
     Card(
@@ -48,7 +43,11 @@ fun PackageItem(
                 width = 1.dp,
                 color = GreenSustainable.copy(alpha = 0.2f),
                 shape = RoundedCornerShape(16.dp)
-            ),
+            )
+            .clickable {
+                onUpdate(packageId)
+                navController.navigate("updatePackage/$packageId")
+            },
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent
         ),
@@ -84,6 +83,8 @@ fun PackageItem(
                         imageVector = Icons.Filled.LocationOn,
                         contentDescription = null,
                         tint = GreenSustainable,
+
+
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
@@ -118,7 +119,6 @@ fun PackageItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Toon de tracking-knop alleen als de status niet "pending" is
                 if (showTrackButton) {
                     IconButton(
                         onClick = {
@@ -132,34 +132,6 @@ fun PackageItem(
                             imageVector = Icons.Filled.LocationOn,
                             contentDescription = "Track Pakket",
                             tint = GreenSustainable
-                        )
-                    }
-                }
-
-                IconButton(
-                    onClick = { onUpdate(packageId) },
-                    modifier = Modifier
-                        .background(DarkGreen.copy(alpha = 0.1f), CircleShape)
-                        .size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Edit,
-                        contentDescription = "Update Pakket",
-                        tint = DarkGreen
-                    )
-                }
-
-                if (showDeleteButton) {
-                    IconButton(
-                        onClick = { onDelete(packageId) },
-                        modifier = Modifier
-                            .background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f), CircleShape)
-                            .size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Delete,
-                            contentDescription = "Verwijder Pakket",
-                            tint = MaterialTheme.colorScheme.error
                         )
                     }
                 }

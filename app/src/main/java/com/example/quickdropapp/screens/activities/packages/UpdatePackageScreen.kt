@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -49,7 +50,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
     var pickupAddress by remember { mutableStateOf(Address()) }
     var dropoffAddress by remember { mutableStateOf(Address()) }
 
-    val apiService = RetrofitClient.instance
+    val apiService = RetrofitClient.create(LocalContext.current)
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val buttonScale by animateFloatAsState(

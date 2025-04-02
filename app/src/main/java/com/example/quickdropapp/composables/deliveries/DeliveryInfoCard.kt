@@ -47,32 +47,48 @@ fun DeliveryInfoCard(
     // Datumformaat voor weergave (bijv. "2 apr 2025, 07:32")
     val displayFormat = SimpleDateFormat("d MMM yyyy, HH:mm", Locale("nl"))
 
-    val formattedPickupTime = delivery.pickup_time?.let {
+    val formattedPickupTime = delivery.pickup_time?.let { pickupTime ->
         try {
-            val date = isoFormat.parse(it)
-            displayFormat.format(date)
+            val date = isoFormat.parse(pickupTime)
+            if (date != null) {
+                displayFormat.format(date)
+            } else {
+                "Ongeldige datum" // Fallback for null (e.g., empty string)
+            }
         } catch (e: Exception) {
             try {
-                // Fallback voor ander formaat (bijv. "yyyy-MM-dd HH:mm:ss")
                 val fallbackFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-                val date = fallbackFormat.parse(it)
-                displayFormat.format(date)
+                val date = fallbackFormat.parse(pickupTime)
+                if (date != null) {
+                    displayFormat.format(date)
+                } else {
+                    "Ongeldige datum"
+                }
             } catch (e: Exception) {
-                it // Laat originele string staan als parsing mislukt
+                pickupTime // Laat originele string staan als parsing mislukt
             }
         }
     }
-    val formattedDeliveryTime = delivery.delivery_time?.let {
+
+    val formattedDeliveryTime = delivery.delivery_time?.let { deliveryTime ->
         try {
-            val date = isoFormat.parse(it)
-            displayFormat.format(date)
+            val date = isoFormat.parse(deliveryTime)
+            if (date != null) {
+                displayFormat.format(date)
+            } else {
+                "Ongeldige datum"
+            }
         } catch (e: Exception) {
             try {
                 val fallbackFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-                val date = fallbackFormat.parse(it)
-                displayFormat.format(date)
+                val date = fallbackFormat.parse(deliveryTime)
+                if (date != null) {
+                    displayFormat.format(date)
+                } else {
+                    "Ongeldige datum"
+                }
             } catch (e: Exception) {
-                it
+                deliveryTime
             }
         }
     }

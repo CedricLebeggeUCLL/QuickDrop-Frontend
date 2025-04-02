@@ -55,7 +55,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
     var courierId by remember { mutableStateOf<Int?>(null) }
     var packages = remember { mutableStateOf<List<Package>>(emptyList()) }
 
-    val apiService = RetrofitClient.instance
+    val apiService = RetrofitClient.create(LocalContext.current)
 
     // Haal courierId op bij het laden van het scherm
     LaunchedEffect(userId) {

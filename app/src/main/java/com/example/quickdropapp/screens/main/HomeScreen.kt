@@ -38,6 +38,7 @@ import com.example.quickdropapp.ui.theme.SandBeige
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -53,7 +54,7 @@ fun HomeScreen(navController: NavController, userId: Int, onLogout: () -> Unit) 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    val apiService = RetrofitClient.instance
+    val apiService = RetrofitClient.create(LocalContext.current)
 
     // Fetch user role
     LaunchedEffect(userId) {

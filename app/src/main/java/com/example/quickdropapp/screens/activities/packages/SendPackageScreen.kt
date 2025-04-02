@@ -59,7 +59,7 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
         animationSpec = tween(durationMillis = 150)
     )
 
-    val apiService = RetrofitClient.instance
+    val apiService = RetrofitClient.create(LocalContext.current)
 
     LaunchedEffect(userId) {
         println("Received userId: $userId")

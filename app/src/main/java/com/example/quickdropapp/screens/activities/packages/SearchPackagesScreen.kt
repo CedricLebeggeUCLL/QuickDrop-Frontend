@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,6 +38,9 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val noPackages = navBackStackEntry?.arguments?.getBoolean("noPackages") ?: false
     val hasError = navBackStackEntry?.arguments?.getBoolean("error") ?: false
+
+    // Capture the context here within the composable scope
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         val parentEntry = navController.getBackStackEntry("startDelivery/$userId")
@@ -138,7 +142,8 @@ fun SearchPackagesScreen(navController: NavController, userId: Int) {
                     PackageCard(
                         packageItem = packageItem,
                         onAccept = { packageId ->
-                            val apiService = RetrofitClient.instance
+                            // Use the captured context here
+                            val apiService = RetrofitClient.create(context)
                             val deliveryRequest = com.example.quickdropapp.models.DeliveryRequest(
                                 user_id = userId,
                                 package_id = packageId

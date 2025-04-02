@@ -27,19 +27,23 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     kotlinOptions {
         jvmTarget = "11"
     }
+
     buildFeatures {
         compose = true
     }
 }
 
 dependencies {
+    // Core AndroidX and Compose dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -49,6 +53,8 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.ui.text)
+
+    // Test dependencies
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -57,28 +63,32 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    // Retrofit dependencies
+    // Retrofit and Gson dependencies for API calls and JSON parsing
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.gson)
 
-    // Navigation dependencies
+    // OkHttp and OkHttp Logging Interceptor
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+
+    // Navigation dependency for Jetpack Compose
     implementation(libs.androidx.navigation.compose)
 
-    // Material Icons Extended dependency (voor Icons.Default)
+    // Material Icons Extended for Icons.Default
     implementation(libs.androidx.material.icons.extended)
 
-    // Animation dependency (voor animateFloatAsState, tween)
+    // Animation dependency for animateFloatAsState, tween, etc.
     implementation(libs.androidx.animation)
 
-    // Google Maps dependencies (via Version Catalog)
+    // Google Maps dependencies
     implementation(libs.maps.compose)
     implementation(libs.play.services.maps)
 
-    // DataStore dependency
+    // DataStore for persisting auth data (e.g., JWT token)
     implementation(libs.datastore.preferences)
 
-    // Added dependencies for live tracking
+    // Dependencies for live tracking
     implementation(libs.play.services.location)
     implementation(libs.accompanist.permissions)
 }

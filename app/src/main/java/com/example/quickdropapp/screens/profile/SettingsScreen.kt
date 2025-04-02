@@ -21,6 +21,7 @@ import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
+import androidx.compose.ui.platform.LocalContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -33,7 +34,7 @@ fun SettingsScreen(navController: NavController, userId: Int) {
     var message by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isUsernameError by remember { mutableStateOf(false) }
-    val apiService = RetrofitClient.instance
+    val apiService = RetrofitClient.create(LocalContext.current)
 
     LaunchedEffect(userId) {
         apiService.getUserById(userId).enqueue(object : Callback<User> {

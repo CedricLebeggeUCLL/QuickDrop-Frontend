@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,7 +40,7 @@ fun HistoryScreen(navController: NavController, userId: Int) {
     var deliveries by remember { mutableStateOf<List<Delivery>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    val apiService = RetrofitClient.instance
+    val apiService = RetrofitClient.create(LocalContext.current)
 
     LaunchedEffect(userId) {
         if (userId <= 0) {
@@ -280,7 +281,7 @@ fun PackageItem(pkg: Package, navController: NavController, userId: Int) {
 @Composable
 fun DeliveryItem(delivery: Delivery, navController: NavController, userId: Int) {
     var packageData by remember { mutableStateOf<Package?>(null) }
-    val apiService = RetrofitClient.instance
+    val apiService = RetrofitClient.create(LocalContext.current)
 
     LaunchedEffect(delivery.package_id) {
         apiService.getPackageById(delivery.package_id).enqueue(object : Callback<Package> {

@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,7 +37,7 @@ fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
     var delivery by remember { mutableStateOf<Delivery?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    val apiService = RetrofitClient.instance
+    val apiService = RetrofitClient.create(LocalContext.current)
 
     LaunchedEffect(deliveryId) {
         apiService.getDeliveryById(deliveryId).enqueue(object : Callback<Delivery> {

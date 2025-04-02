@@ -40,21 +40,40 @@ fun DeliveryInfoCard(
     navController: NavController,
     onDeliveryUpdated: (Delivery) -> Unit
 ) {
-    val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("nl"))
+    // Datumformaat voor parsing van ISO 8601 (bijv. "2025-04-02T07:32:06.000Z")
+    val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()).apply {
+        timeZone = TimeZone.getTimeZone("UTC") // ISO 8601 is in UTC
+    }
+    // Datumformaat voor weergave (bijv. "2 apr 2025, 07:32")
+    val displayFormat = SimpleDateFormat("d MMM yyyy, HH:mm", Locale("nl"))
+
     val formattedPickupTime = delivery.pickup_time?.let {
         try {
-            val date = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).parse(it)
-            dateFormat.format(date)
+            val date = isoFormat.parse(it)
+            displayFormat.format(date)
         } catch (e: Exception) {
-            it
+            try {
+                // Fallback voor ander formaat (bijv. "yyyy-MM-dd HH:mm:ss")
+                val fallbackFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                val date = fallbackFormat.parse(it)
+                displayFormat.format(date)
+            } catch (e: Exception) {
+                it // Laat originele string staan als parsing mislukt
+            }
         }
     }
     val formattedDeliveryTime = delivery.delivery_time?.let {
         try {
-            val date = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).parse(it)
-            dateFormat.format(date)
+            val date = isoFormat.parse(it)
+            displayFormat.format(date)
         } catch (e: Exception) {
-            it
+            try {
+                val fallbackFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                val date = fallbackFormat.parse(it)
+                displayFormat.format(date)
+            } catch (e: Exception) {
+                it
+            }
         }
     }
 
@@ -79,7 +98,7 @@ fun DeliveryInfoCard(
                 shape = RoundedCornerShape(16.dp)
             ),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Schaduw verwijderd
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
             modifier = Modifier

@@ -35,10 +35,10 @@ import retrofit2.Response
 fun LoginScreen(navController: NavController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var identifier by remember { mutableStateOf("") } // Gebruikersnaam of e-mail
+    var identifier by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var passwordVisible by remember { mutableStateOf(false) } // Staat om wachtwoord zichtbaarheid te toggelen
+    var passwordVisible by remember { mutableStateOf(false) }
 
     val apiService = RetrofitClient.create(LocalContext.current)
 
@@ -115,9 +115,9 @@ fun LoginScreen(navController: NavController) {
                             if (response.isSuccessful) {
                                 val loginResponse = response.body()
                                 loginResponse?.let {
-                                    println("LoginScreen: Successful login - userId=${it.userId}, token=${it.token}")
+                                    println("LoginScreen: Successful login - userId=${it.userId}, accessToken=${it.accessToken}, refreshToken=${it.refreshToken}")
                                     scope.launch(Dispatchers.IO) {
-                                        AuthDataStore.saveAuthData(context, it.userId, it.token)
+                                        AuthDataStore.saveAuthData(context, it.userId, it.accessToken, it.refreshToken)
                                         launch(Dispatchers.Main) {
                                             println("LoginScreen: Navigating to home/${it.userId}")
                                             navController.navigate("home/${it.userId}") {

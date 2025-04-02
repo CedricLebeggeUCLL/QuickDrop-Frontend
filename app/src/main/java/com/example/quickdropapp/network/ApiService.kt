@@ -3,6 +3,8 @@ package com.example.quickdropapp.network
 import com.example.quickdropapp.models.*
 import com.example.quickdropapp.models.auth.LoginRequest
 import com.example.quickdropapp.models.auth.LoginResponse
+import com.example.quickdropapp.models.auth.RefreshTokenRequest
+import com.example.quickdropapp.models.auth.RefreshTokenResponse
 import com.example.quickdropapp.models.auth.User
 import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.models.packages.PackageRequest
@@ -32,6 +34,9 @@ interface ApiService {
 
     @POST("users/login")
     fun loginUser(@Body loginRequest: LoginRequest): Call<LoginResponse>
+
+    @POST("users/refresh")
+    fun refreshToken(@Body refreshTokenRequest: RefreshTokenRequest): Call<RefreshTokenResponse>
 
     @PUT("users/{id}")
     fun updateUser(@Path("id") id: Int, @Body user: User): Call<User>

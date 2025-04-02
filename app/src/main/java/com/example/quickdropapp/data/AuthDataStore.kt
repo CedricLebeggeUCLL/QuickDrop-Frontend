@@ -1,4 +1,3 @@
-// com.example.quickdropapp.data/AuthDataStore.kt
 package com.example.quickdropapp.data
 
 import android.content.Context
@@ -18,13 +17,21 @@ object AuthDataStore {
 
     private val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
     private val USER_ID = intPreferencesKey("user_id")
-    private val TOKEN = stringPreferencesKey("token")
+    private val ACCESS_TOKEN = stringPreferencesKey("access_token")
+    private val REFRESH_TOKEN = stringPreferencesKey("refresh_token")
 
-    suspend fun saveAuthData(context: Context, userId: Int, token: String) {
+    suspend fun saveAuthData(context: Context, userId: Int, accessToken: String, refreshToken: String) {
         context.dataStore.edit { preferences: MutablePreferences ->
             preferences[IS_LOGGED_IN] = true
             preferences[USER_ID] = userId
-            preferences[TOKEN] = token // Sla het token op
+            preferences[ACCESS_TOKEN] = accessToken
+            preferences[REFRESH_TOKEN] = refreshToken
+        }
+    }
+
+    suspend fun updateAccessToken(context: Context, accessToken: String) {
+        context.dataStore.edit { preferences: MutablePreferences ->
+            preferences[ACCESS_TOKEN] = accessToken
         }
     }
 
@@ -32,7 +39,8 @@ object AuthDataStore {
         context.dataStore.edit { preferences: MutablePreferences ->
             preferences[IS_LOGGED_IN] = false
             preferences.remove(USER_ID)
-            preferences.remove(TOKEN) // Verwijder ook het token
+            preferences.remove(ACCESS_TOKEN)
+            preferences.remove(REFRESH_TOKEN)
         }
     }
 
@@ -46,8 +54,13 @@ object AuthDataStore {
         preferences[USER_ID]
     }
 
-    fun getToken(context: Context): String? = runBlocking {
+    fun getAccessToken(context: Context): String? = runBlocking {
         val preferences = context.dataStore.data.first()
-        preferences[TOKEN]
+        preferences[ACCESS_TOKEN]
+    }
+
+    fun getRefreshToken(context: Context): String? = runBlocking {
+        val preferences = context.dataStore.data.first()
+        preferences[REFRESH_TOKEN]
     }
 }

@@ -1,5 +1,7 @@
 package com.example.quickdropapp.models
 
+import com.google.gson.annotations.SerializedName
+
 data class Delivery(
     val id: Int? = null,
     val package_id: Int,
@@ -8,7 +10,9 @@ data class Delivery(
     val dropoff_address_id: Int,
     val pickup_time: String? = null,
     val delivery_time: String? = null,
-    val status: String? = "assigned"
+    val status: String? = "assigned",
+    @SerializedName("pickupAddress") val pickupAddress: Address? = null,
+    @SerializedName("dropoffAddress") val dropoffAddress: Address? = null
 )
 
 data class DeliveryRequest(

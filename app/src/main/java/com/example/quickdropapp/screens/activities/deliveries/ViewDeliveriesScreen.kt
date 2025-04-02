@@ -11,14 +11,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.quickdropapp.composables.deliveries.DeliveryItem
+import com.example.quickdropapp.composables.deliveries.DeliveryItem // Correcte import
 import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
@@ -36,13 +35,8 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
 
     val apiService = RetrofitClient.instance
 
-    LaunchedEffect(userId) {
-        if (userId <= 0) {
-            errorMessage = "Ongeldige user ID: $userId"
-            isLoading = false
-            return@LaunchedEffect
-        }
-
+    // Functie om deliveries opnieuw op te halen
+    val refreshDeliveries = {
         apiService.getCourierDeliveries(userId).enqueue(object : Callback<List<Delivery>> {
             override fun onResponse(call: Call<List<Delivery>>, response: Response<List<Delivery>>) {
                 if (response.isSuccessful) {
@@ -59,6 +53,15 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                 isLoading = false
             }
         })
+    }
+
+    LaunchedEffect(userId) {
+        if (userId <= 0) {
+            errorMessage = "Ongeldige user ID: $userId"
+            isLoading = false
+            return@LaunchedEffect
+        }
+        refreshDeliveries()
     }
 
     Scaffold(
@@ -109,7 +112,7 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Bekijk je leveringen",
+                    text = "Bekijk je actieve leveringen",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     color = DarkGreen.copy(alpha = 0.8f),
@@ -147,11 +150,11 @@ fun ViewDeliveriesScreen(navController: NavController, userId: Int) {
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             contentPadding = PaddingValues(bottom = 16.dp)
                         ) {
-                            items(deliveries!!) { deliveryItem ->
+                            items(deliveries!!) { delivery ->
                                 DeliveryItem(
-                                    delivery = deliveryItem,
+                                    delivery = delivery,
                                     navController = navController,
-                                    userId = userId // Geef userId door
+                                    userId = userId
                                 )
                             }
                         }

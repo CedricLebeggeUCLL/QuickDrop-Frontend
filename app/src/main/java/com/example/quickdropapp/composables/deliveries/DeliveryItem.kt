@@ -13,23 +13,43 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun DeliveryItem(delivery: Delivery, navController: NavController, userId: Int) {
+    val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("nl"))
+    val formattedPickupTime = delivery.pickup_time?.let {
+        try {
+            val date = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).parse(it)
+            dateFormat.format(date)
+        } catch (e: Exception) {
+            it
+        }
+    }
+    val formattedDeliveryTime = delivery.delivery_time?.let {
+        try {
+            val date = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).parse(it)
+            dateFormat.format(date)
+        } catch (e: Exception) {
+            it
+        }
+    }
+
     AnimatedVisibility(
         visible = true,
         enter = fadeIn(animationSpec = tween(durationMillis = 400)),
@@ -90,17 +110,17 @@ fun DeliveryItem(delivery: Delivery, navController: NavController, userId: Int) 
                         fontWeight = FontWeight.Medium,
                         color = GreenSustainable
                     )
-                    if (delivery.status == "delivered" && delivery.delivery_time != null) {
+                    if (delivery.status == "delivered" && formattedDeliveryTime != null) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Afgeleverd: ${delivery.delivery_time}",
+                            text = "Afgeleverd: $formattedDeliveryTime",
                             style = MaterialTheme.typography.bodySmall,
                             color = DarkGreen.copy(alpha = 0.6f)
                         )
-                    } else if (delivery.pickup_time != null) {
+                    } else if (formattedPickupTime != null) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Opgehaald: ${delivery.pickup_time}",
+                            text = "Opgehaald: $formattedPickupTime",
                             style = MaterialTheme.typography.bodySmall,
                             color = DarkGreen.copy(alpha = 0.6f)
                         )

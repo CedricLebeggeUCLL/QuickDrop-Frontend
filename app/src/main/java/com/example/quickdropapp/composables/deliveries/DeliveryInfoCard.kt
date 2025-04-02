@@ -24,8 +24,7 @@ import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.*
 
 @Composable
 fun DeliveryInfoCard(
@@ -36,6 +35,31 @@ fun DeliveryInfoCard(
     navController: NavController,
     onDeliveryUpdated: (Delivery) -> Unit
 ) {
+    val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("nl"))
+    val formattedPickupTime = delivery.pickup_time?.let {
+        try {
+            val date = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).parse(it)
+            dateFormat.format(date)
+        } catch (e: Exception) {
+            it
+        }
+    }
+    val formattedDeliveryTime = delivery.delivery_time?.let {
+        try {
+            val date = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).parse(it)
+            dateFormat.format(date)
+        } catch (e: Exception) {
+            it
+        }
+    }
+
+    val pickupAddress = delivery.pickupAddress?.let {
+        "${it.street_name} ${it.house_number}, ${it.postal_code} ${it.city}"
+    } ?: "Onbekend adres (ID: ${delivery.pickup_address_id})"
+    val dropoffAddress = delivery.dropoffAddress?.let {
+        "${it.street_name} ${it.house_number}, ${it.postal_code} ${it.city}"
+    } ?: "Onbekend adres (ID: ${delivery.dropoff_address_id})"
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -75,13 +99,13 @@ fun DeliveryInfoCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Ophaaladres: Onbekend (ID: ${delivery.pickup_address_id})",
+                text = "Ophaaladres: $pickupAddress",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DarkGreen.copy(alpha = 0.8f)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Afleveradres: Onbekend (ID: ${delivery.dropoff_address_id})",
+                text = "Afleveradres: $dropoffAddress",
                 style = MaterialTheme.typography.bodyMedium,
                 color = DarkGreen.copy(alpha = 0.8f)
             )
@@ -91,7 +115,7 @@ fun DeliveryInfoCard(
                 style = MaterialTheme.typography.bodyMedium,
                 color = GreenSustainable
             )
-            delivery.pickup_time?.let {
+            formattedPickupTime?.let {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Opgehaald: $it",
@@ -99,7 +123,7 @@ fun DeliveryInfoCard(
                     color = DarkGreen.copy(alpha = 0.7f)
                 )
             }
-            delivery.delivery_time?.let {
+            formattedDeliveryTime?.let {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Afgeleverd: $it",
@@ -121,7 +145,6 @@ fun DeliveryInfoCard(
                 ) {
                     Button(
                         onClick = {
-                            println("Ophalen knop geklikt")
                             val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
                             onUpdateStatus(apiService, delivery.id!!, "picked_up", currentTime, null, navController) { newDelivery ->
                                 onDeliveryUpdated(newDelivery)
@@ -151,7 +174,6 @@ fun DeliveryInfoCard(
                 ) {
                     Button(
                         onClick = {
-                            println("Afleveren knop geklikt")
                             val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
                             onUpdateStatus(apiService, delivery.id!!, "delivered", null, currentTime, navController) { newDelivery ->
                                 onDeliveryUpdated(newDelivery)
@@ -175,7 +197,7 @@ fun DeliveryInfoCard(
                     }
                 }
                 AnimatedVisibility(
-                    visible = delivery.status == "assigned", // Alleen bij "assigned"
+                    visible = delivery.status == "assigned",
                     enter = fadeIn(animationSpec = tween(durationMillis = 400)),
                     exit = fadeOut(animationSpec = tween(durationMillis = 400))
                 ) {

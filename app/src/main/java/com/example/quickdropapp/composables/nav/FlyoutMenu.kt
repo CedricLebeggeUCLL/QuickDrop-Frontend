@@ -7,14 +7,18 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.quickdropapp.data.AuthDataStore
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
+import kotlinx.coroutines.launch
 
 @Composable
 fun FlyoutMenu(
@@ -24,6 +28,9 @@ fun FlyoutMenu(
     onClose: () -> Unit,
     onLogout: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
     Column(
         modifier = Modifier
             .width(250.dp)
@@ -207,7 +214,12 @@ fun FlyoutMenu(
             label = { Text("Uitloggen", color = DarkGreen) },
             selected = false,
             onClick = {
-                onLogout()
+                scope.launch {
+                    AuthDataStore.clearAuthData(context)
+                    navController.navigate("login") {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    }
+                }
                 onClose()
             },
             icon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = GreenSustainable.copy(alpha = 0.8f)) },

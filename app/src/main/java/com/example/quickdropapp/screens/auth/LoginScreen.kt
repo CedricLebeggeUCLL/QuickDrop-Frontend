@@ -77,7 +77,7 @@ fun LoginScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(), // Wachtwoord tonen/verbergen
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -106,7 +106,7 @@ fun LoginScreen(navController: NavController) {
         Button(
             onClick = {
                 if (identifier.isNotEmpty() && password.isNotEmpty()) {
-                    val loginRequest = LoginRequest(identifier, password) // Identifier kan gebruikersnaam of e-mail zijn
+                    val loginRequest = LoginRequest(identifier, password)
                     val call = apiService.loginUser(loginRequest)
                     println("LoginScreen: Sending login request with identifier=$identifier")
                     call.enqueue(object : Callback<LoginResponse> {
@@ -131,7 +131,17 @@ fun LoginScreen(navController: NavController) {
                                 }
                             } else {
                                 errorMessage = when (response.code()) {
-                                    401 -> "Ongeldige gebruikersnaam/e-mail of wachtwoord"
+                                    401 -> {
+                                        scope.launch(Dispatchers.IO) {
+                                            AuthDataStore.clearAuthData(context)
+                                            launch(Dispatchers.Main) {
+                                                navController.navigate("login") {
+                                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                                }
+                                            }
+                                        }
+                                        "Ongeldige gebruikersnaam/e-mail of wachtwoord"
+                                    }
                                     500 -> "Serverfout, probeer het later opnieuw"
                                     else -> "Inloggen mislukt: ${response.message()}"
                                 }

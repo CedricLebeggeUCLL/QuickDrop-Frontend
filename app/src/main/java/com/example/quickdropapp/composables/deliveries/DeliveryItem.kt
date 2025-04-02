@@ -27,28 +27,19 @@ import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
-import java.text.SimpleDateFormat
-import java.util.*
+
+fun getStatusAlias(status: String?): Pair<String, Color> = when (status?.uppercase()) {
+    "ASSIGNED" -> "Toegewezen" to Color(0xFF2196F3)
+    "PICKED_UP" -> "Opgehaald" to Color(0xFFFF9800)
+    "DELIVERED" -> "Afgeleverd" to Color(0xFF4CAF50)
+    else -> "Onbekend" to Color.Gray
+}
 
 @Composable
 fun DeliveryItem(delivery: Delivery, navController: NavController, userId: Int) {
-    val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale("nl"))
-    val formattedPickupTime = delivery.pickup_time?.let {
-        try {
-            val date = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).parse(it)
-            dateFormat.format(date)
-        } catch (e: Exception) {
-            it
-        }
-    }
-    val formattedDeliveryTime = delivery.delivery_time?.let {
-        try {
-            val date = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).parse(it)
-            dateFormat.format(date)
-        } catch (e: Exception) {
-            it
-        }
-    }
+    val (statusAlias, statusColor) = getStatusAlias(delivery.status)
+    val dropoffCity = delivery.dropoffAddress?.city ?: "Onbekende stad"
+    val title = "Naar $dropoffCity"
 
     AnimatedVisibility(
         visible = true,
@@ -68,7 +59,7 @@ fun DeliveryItem(delivery: Delivery, navController: NavController, userId: Int) 
                     navController.navigate("deliveryInfo/${delivery.id}")
                 },
             colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // Schaduw verwijderd
         ) {
             Row(
                 modifier = Modifier
@@ -76,53 +67,40 @@ fun DeliveryItem(delivery: Delivery, navController: NavController, userId: Int) 
                     .background(
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                SandBeige.copy(alpha = 0.9f),
-                                SandBeige.copy(alpha = 0.5f)
+                                SandBeige.copy(alpha = 0.95f),
+                                SandBeige.copy(alpha = 0.6f)
                             )
                         )
                     )
-                    .padding(16.dp),
+                    .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Column {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.LocationOn,
-                            contentDescription = null,
-                            tint = GreenSustainable,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = "Levering #${delivery.id}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = DarkGreen
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Status: ${delivery.status?.uppercase() ?: "ASSIGNED"}",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium,
-                        color = GreenSustainable
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.LocationOn,
+                        contentDescription = null,
+                        tint = GreenSustainable,
+                        modifier = Modifier.size(20.dp)
                     )
-                    if (delivery.status == "delivered" && formattedDeliveryTime != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                    Column {
                         Text(
-                            text = "Afgeleverd: $formattedDeliveryTime",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = DarkGreen.copy(alpha = 0.6f)
+                            text = title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = DarkGreen,
+                            fontSize = 16.sp
                         )
-                    } else if (formattedPickupTime != null) {
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Opgehaald: $formattedPickupTime",
+                            text = "Status: $statusAlias",
                             style = MaterialTheme.typography.bodySmall,
-                            color = DarkGreen.copy(alpha = 0.6f)
+                            fontWeight = FontWeight.Medium,
+                            color = statusColor,
+                            fontSize = 12.sp
                         )
                     }
                 }
@@ -131,7 +109,7 @@ fun DeliveryItem(delivery: Delivery, navController: NavController, userId: Int) 
                         navController.navigate("trackingDeliveries/$userId?deliveryId=${delivery.id}")
                     },
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(36.dp)
                         .background(GreenSustainable.copy(alpha = 0.15f), CircleShape)
                 ) {
                     Icon(

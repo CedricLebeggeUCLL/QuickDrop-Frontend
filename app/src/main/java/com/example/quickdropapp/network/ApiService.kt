@@ -44,6 +44,12 @@ interface ApiService {
     @DELETE("users/{id}")
     fun deleteUser(@Path("id") id: Int): Call<Void>
 
+    @POST("users/forgot-password")
+    fun forgotPassword(@Body request: Map<String, String>): Call<Map<String, String>>
+
+    @POST("users/reset-password/{token}")
+    fun resetPassword(@Path("token") token: String, @Body request: Map<String, String>): Call<Map<String, String>>
+
     // Packages Endpoints
     @GET("packages")
     fun getPackages(): Call<List<Package>>
@@ -91,7 +97,6 @@ interface ApiService {
     @DELETE("couriers/{id}")
     fun deleteCourier(@Path("id") id: Int): Call<Void>
 
-    // New endpoint to update courier location
     @POST("couriers/{id}/location")
     fun updateCourierLocation(
         @Path("id") courierId: Int,

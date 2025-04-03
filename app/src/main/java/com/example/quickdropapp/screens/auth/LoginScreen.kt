@@ -76,7 +76,7 @@ fun LoginScreen(navController: NavController) {
             label = { Text("Wachtwoord", color = GreenSustainable) },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(bottom = 8.dp),
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
@@ -93,6 +93,17 @@ fun LoginScreen(navController: NavController) {
                 unfocusedBorderColor = DarkGreen
             )
         )
+
+        TextButton(
+            onClick = { navController.navigate("passwordRecovery") }, // Nieuwe navigatie naar wachtwoordherstel
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text(
+                text = "Wachtwoord vergeten?",
+                color = DarkGreen,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
 
         errorMessage?.let {
             Text(

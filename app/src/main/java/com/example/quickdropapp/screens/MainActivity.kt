@@ -23,7 +23,9 @@ import com.example.quickdropapp.screens.activities.packages.ViewPackagesScreen
 import com.example.quickdropapp.screens.activities.tracking.TrackPackagesScreen
 import com.example.quickdropapp.screens.activities.tracking.TrackingDeliveriesScreen
 import com.example.quickdropapp.screens.auth.LoginScreen
+import com.example.quickdropapp.screens.auth.PasswordRecoveryScreen
 import com.example.quickdropapp.screens.auth.RegisterScreen
+import com.example.quickdropapp.screens.auth.ResetPasswordScreen
 import com.example.quickdropapp.screens.auth.WelcomeScreen
 import com.example.quickdropapp.screens.main.ActivitiesOverviewScreen
 import com.example.quickdropapp.screens.main.HomeScreen
@@ -68,6 +70,14 @@ class MainActivity : ComponentActivity() {
                     composable("welcome") { WelcomeScreen(navController) }
                     composable("login") { LoginScreen(navController) }
                     composable("register") { RegisterScreen(navController) }
+                    composable("passwordRecovery") { PasswordRecoveryScreen(navController) }
+                    composable(
+                        route = "resetPassword/{token}",
+                        arguments = listOf(navArgument("token") { type = androidx.navigation.NavType.StringType })
+                    ) { backStackEntry ->
+                        val token = backStackEntry.arguments?.getString("token") ?: ""
+                        ResetPasswordScreen(navController, token)
+                    }
                     composable(
                         route = "home/{userId}",
                         arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })

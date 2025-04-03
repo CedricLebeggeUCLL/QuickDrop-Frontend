@@ -6,19 +6,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.QuestionAnswer
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.quickdropapp.composables.support.FAQItem
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
@@ -119,32 +118,6 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun FAQItem(question: String, answer: String) {
-    Row(modifier = Modifier.padding(vertical = 8.dp)) {
-        Icon(
-            imageVector = Icons.Default.QuestionAnswer,
-            contentDescription = "Vraag",
-            tint = DarkGreen,
-            modifier = Modifier.size(24.dp)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(
-                question,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                color = DarkGreen
-            )
-            Text(
-                answer,
-                style = MaterialTheme.typography.bodyLarge,
-                color = DarkGreen.copy(alpha = 0.7f)
-            )
         }
     }
 }

@@ -5,16 +5,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -22,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.quickdropapp.composables.history.HistoryDeliveryItem
+import com.example.quickdropapp.composables.history.HistoryPackageItem
 import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.models.auth.User
 import com.example.quickdropapp.models.packages.Package
@@ -196,7 +194,11 @@ fun HistoryScreen(navController: NavController, userId: Int) {
                                     )
                                 }
                                 items(packages) { pkg ->
-                                    PackageItem(pkg, navController, userId)
+                                    HistoryPackageItem(
+                                        pkg = pkg,
+                                        navController = navController,
+                                        userId = userId
+                                    )
                                 }
                             }
                             if (deliveries.isNotEmpty() && (user?.role == "courier" || user?.role == "admin")) {
@@ -210,153 +212,16 @@ fun HistoryScreen(navController: NavController, userId: Int) {
                                     )
                                 }
                                 items(deliveries) { delivery ->
-                                    DeliveryItem(delivery, navController, userId)
+                                    HistoryDeliveryItem(
+                                        delivery = delivery,
+                                        navController = navController,
+                                        userId = userId
+                                    )
                                 }
                             }
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun PackageItem(pkg: Package, navController: NavController, userId: Int) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .shadow(2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = "Pakket #${pkg.id}",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DarkGreen
-                )
-                Text(
-                    text = "Beschrijving: ${pkg.description ?: "Geen beschrijving"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "Status: ${pkg.status?.replaceFirstChar { it.uppercase() } ?: "Onbekend"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "Afleveradres: ${pkg.dropoffAddress?.let { "${it.street_name} ${it.house_number}, ${it.postal_code} ${it.city}" } ?: "Onbekend"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-            }
-            IconButton(
-                onClick = { navController.navigate("trackPackages/$userId?packageId=${pkg.id}") },
-                modifier = Modifier
-                    .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
-                    .size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.LocationOn,
-                    contentDescription = "Track Pakket",
-                    tint = GreenSustainable
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun DeliveryItem(delivery: Delivery, navController: NavController, userId: Int) {
-    var packageData by remember { mutableStateOf<Package?>(null) }
-    val apiService = RetrofitClient.create(LocalContext.current)
-
-    LaunchedEffect(delivery.package_id) {
-        apiService.getPackageById(delivery.package_id).enqueue(object : Callback<Package> {
-            override fun onResponse(call: Call<Package>, response: Response<Package>) {
-                if (response.isSuccessful) {
-                    packageData = response.body()
-                }
-            }
-
-            override fun onFailure(call: Call<Package>, t: Throwable) {
-                // Geen foutmelding, adres blijft "Onbekend"
-            }
-        })
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .shadow(2.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = "Levering #${delivery.id}",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DarkGreen
-                )
-                Text(
-                    text = "Pakket ID: ${delivery.package_id}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "Status: ${delivery.status?.replaceFirstChar { it.uppercase() } ?: "Onbekend"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "Opgehaald: ${delivery.pickup_time ?: "Niet opgehaald"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "Afgeleverd: ${delivery.delivery_time ?: "Niet afgeleverd"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "Afleveradres: ${packageData?.dropoffAddress?.let { "${it.street_name} ${it.house_number}, ${it.postal_code} ${it.city}" } ?: "Onbekend"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-            }
-            IconButton(
-                onClick = { navController.navigate("trackingDeliveries/$userId?deliveryId=${delivery.id}") },
-                modifier = Modifier
-                    .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
-                    .size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.LocationOn,
-                    contentDescription = "Track Levering",
-                    tint = GreenSustainable
-                )
             }
         }
     }

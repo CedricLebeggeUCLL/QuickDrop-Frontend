@@ -2,6 +2,7 @@ package com.example.quickdropapp.screens
 
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -42,17 +43,26 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Check for deep link outside of composable
+        var deepLinkToken: String? = null
+        val uri = intent.data
+        if (uri != null && uri.scheme == "quickdrop" && uri.host == "resetPassword") {
+            deepLinkToken = uri.pathSegments.firstOrNull()
+            Log.d("DeepLink", "Token received: $deepLinkToken")
+        }
+
         setContent {
             QuickDropAppTheme {
                 val navController = rememberNavController()
                 val context = LocalContext.current
                 val scope = rememberCoroutineScope()
 
-                // State voor inlogstatus en userId
+                // State for login status and userId
                 var isLoggedIn by remember { mutableStateOf(false) }
                 var initialUserId by remember { mutableStateOf(-1) }
 
-                // Controleer inlogstatus bij opstarten met LaunchedEffect
+                // Check login status on startup with LaunchedEffect
                 LaunchedEffect(Unit) {
                     isLoggedIn = AuthDataStore.isLoggedIn(context)
                     initialUserId = AuthDataStore.getUserId(context) ?: -1
@@ -60,6 +70,9 @@ class MainActivity : ComponentActivity() {
                         navController.navigate("home/$initialUserId") {
                             popUpTo("welcome") { inclusive = true }
                         }
+                    } else if (deepLinkToken != null) {
+                        Log.d("DeepLink", "Navigating to resetPassword with token: $deepLinkToken")
+                        navController.navigate("resetPassword/$deepLinkToken")
                     }
                 }
 

@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,6 +33,7 @@ fun AddressInputField(
     val placesClient = remember { Places.createClient(context) }
 
     var inputText by remember { mutableStateOf("") }
+    var extraInfo by remember { mutableStateOf(address.extra_info ?: "") }
     var suggestions by remember { mutableStateOf(listOf<com.google.android.libraries.places.api.model.AutocompletePrediction>()) }
     var showDropdown by remember { mutableStateOf(false) }
 
@@ -63,8 +65,8 @@ fun AddressInputField(
                 label = { Text("Zoek adres") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                    unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
                     focusedIndicatorColor = GreenSustainable,
                     unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
                     cursorColor = GreenSustainable,
@@ -107,7 +109,8 @@ fun AddressInputField(
                                             house_number = houseNumber,
                                             postal_code = postalCode,
                                             city = city,
-                                            country = country
+                                            country = country,
+                                            extra_info = extraInfo
                                         )
                                         onAddressChange(parsedAddress)
                                         inputText = "$street $houseNumber, $postalCode $city, $country"
@@ -123,8 +126,26 @@ fun AddressInputField(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            TextField(
+                value = extraInfo,
+                onValueChange = { newExtraInfo ->
+                    extraInfo = newExtraInfo
+                    onAddressChange(address.copy(extra_info = newExtraInfo))
+                },
+                label = { Text("Extra info (bus/appartement/verdiep)") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedIndicatorColor = GreenSustainable,
+                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
+                    cursorColor = GreenSustainable,
+                    focusedLabelColor = GreenSustainable
+                )
+            )
         } else {
-            // Alleen-lezen versie
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Filled.Home,

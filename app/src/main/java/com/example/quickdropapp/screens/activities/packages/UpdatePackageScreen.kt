@@ -58,7 +58,6 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
         animationSpec = tween(durationMillis = 150)
     )
 
-    // Debug logging
     fun log(message: String) {
         println("UpdatePackageScreen: $message")
     }
@@ -346,32 +345,41 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
 
                     Button(
                         onClick = {
-                            if (description.isNotEmpty()) {
-                                val updateRequest = PackageRequest(
-                                    user_id = packageItem?.user_id ?: 0,
-                                    description = description,
-                                    pickup_address = pickupAddress.copy(country = "Belgium"),
-                                    dropoff_address = dropoffAddress.copy(country = "Belgium"),
-                                    status = status
-                                )
-                                apiService.updatePackage(packageId, updateRequest).enqueue(object : Callback<Package> {
-                                    override fun onResponse(call: Call<Package>, response: Response<Package>) {
-                                        if (response.isSuccessful) {
-                                            successMessage = "Pakket succesvol bijgewerkt!"
-                                            log("Update successful, popping back stack once")
-                                            navController.popBackStack()
-                                        } else {
-                                            errorMessage = "Bijwerken mislukt: ${response.message()}"
-                                        }
-                                    }
-
-                                    override fun onFailure(call: Call<Package>, t: Throwable) {
-                                        errorMessage = "Netwerkfout: ${t.message}"
-                                    }
-                                })
-                            } else {
-                                errorMessage = "Vul alle verplichte velden in"
+                            if (description.isBlank()) {
+                                errorMessage = "Beschrijving van het pakket is verplicht"
+                                return@Button
                             }
+                            if (pickupAddress.street_name.isBlank() || pickupAddress.house_number.isBlank() || pickupAddress.postal_code.isBlank()) {
+                                errorMessage = "Een geldig vertrekpunt is verplicht (straat, huisnummer en postcode)"
+                                return@Button
+                            }
+                            if (dropoffAddress.street_name.isBlank() || dropoffAddress.house_number.isBlank() || dropoffAddress.postal_code.isBlank()) {
+                                errorMessage = "Een geldige bestemming is verplicht (straat, huisnummer en postcode)"
+                                return@Button
+                            }
+
+                            val updateRequest = PackageRequest(
+                                user_id = packageItem?.user_id ?: 0,
+                                description = description,
+                                pickup_address = pickupAddress.copy(country = "Belgium"),
+                                dropoff_address = dropoffAddress.copy(country = "Belgium"),
+                                status = status
+                            )
+                            apiService.updatePackage(packageId, updateRequest).enqueue(object : Callback<Package> {
+                                override fun onResponse(call: Call<Package>, response: Response<Package>) {
+                                    if (response.isSuccessful) {
+                                        successMessage = "Pakket succesvol bijgewerkt!"
+                                        log("Update successful, popping back stack once")
+                                        navController.popBackStack()
+                                    } else {
+                                        errorMessage = "Bijwerken mislukt: ${response.message()}"
+                                    }
+                                }
+
+                                override fun onFailure(call: Call<Package>, t: Throwable) {
+                                    errorMessage = "Netwerkfout: ${t.message}"
+                                }
+                            })
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -387,7 +395,13 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             containerColor = Color.Transparent,
                             contentColor = SandBeige
                         ),
-                        enabled = !isLoading && description.isNotEmpty(),
+                        enabled = !isLoading && description.isNotBlank() &&
+                                pickupAddress.street_name.isNotBlank() &&
+                                pickupAddress.house_number.isNotBlank() &&
+                                pickupAddress.postal_code.isNotBlank() &&
+                                dropoffAddress.street_name.isNotBlank() &&
+                                dropoffAddress.house_number.isNotBlank() &&
+                                dropoffAddress.postal_code.isNotBlank(),
                         interactionSource = interactionSource,
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
                     ) {

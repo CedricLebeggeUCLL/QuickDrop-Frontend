@@ -36,7 +36,8 @@ fun ModernFormField(
     label: String,
     placeholder: String,
     icon: ImageVector,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isError: Boolean = false // Added parameter for error handling
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
@@ -72,8 +73,8 @@ fun ModernFormField(
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = GreenSustainable,
-                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
+                    focusedIndicatorColor = if (isError) Color.Red else GreenSustainable,
+                    unfocusedIndicatorColor = if (isError) Color.Red else DarkGreen.copy(alpha = 0.6f),
                     cursorColor = GreenSustainable,
                     focusedLabelColor = GreenSustainable
                 ),

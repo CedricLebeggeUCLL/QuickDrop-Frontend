@@ -50,6 +50,11 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
     var pickupAddress by remember { mutableStateOf(Address()) }
     var dropoffAddress by remember { mutableStateOf(Address()) }
 
+    // Error states for required fields
+    var descriptionError by remember { mutableStateOf(false) }
+    var pickupAddressError by remember { mutableStateOf(false) }
+    var dropoffAddressError by remember { mutableStateOf(false) }
+
     val apiService = RetrofitClient.create(LocalContext.current)
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -220,7 +225,8 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                 label = "Beschrijving van het pakket",
                                 placeholder = "Bijv. Boeken of Kleding",
                                 icon = Icons.Filled.Description,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                isError = descriptionError
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Row(
@@ -292,7 +298,8 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                 label = "Vertrekpunt",
                                 address = pickupAddress,
                                 onAddressChange = { pickupAddress = it },
-                                isEditable = isAddressEditable
+                                isEditable = isAddressEditable,
+                                isError = pickupAddressError
                             )
                         }
                     }
@@ -336,7 +343,8 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                 label = "Bestemming",
                                 address = dropoffAddress,
                                 onAddressChange = { dropoffAddress = it },
-                                isEditable = isAddressEditable
+                                isEditable = isAddressEditable,
+                                isError = dropoffAddressError
                             )
                         }
                     }
@@ -345,41 +353,54 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
 
                     Button(
                         onClick = {
+                            // Reset error states and message
+                            descriptionError = false
+                            pickupAddressError = false
+                            dropoffAddressError = false
+                            errorMessage = null
+
+                            // Validate required fields
                             if (description.isBlank()) {
-                                errorMessage = "Beschrijving van het pakket is verplicht"
-                                return@Button
+                                descriptionError = true
                             }
                             if (pickupAddress.street_name.isBlank() || pickupAddress.house_number.isBlank() || pickupAddress.postal_code.isBlank()) {
-                                errorMessage = "Een geldig vertrekpunt is verplicht (straat, huisnummer en postcode)"
-                                return@Button
+                                pickupAddressError = true
                             }
                             if (dropoffAddress.street_name.isBlank() || dropoffAddress.house_number.isBlank() || dropoffAddress.postal_code.isBlank()) {
-                                errorMessage = "Een geldige bestemming is verplicht (straat, huisnummer en postcode)"
-                                return@Button
+                                dropoffAddressError = true
                             }
 
-                            val updateRequest = PackageRequest(
-                                user_id = packageItem?.user_id ?: 0,
-                                description = description,
-                                pickup_address = pickupAddress.copy(country = "Belgium"),
-                                dropoff_address = dropoffAddress.copy(country = "Belgium"),
-                                status = status
-                            )
-                            apiService.updatePackage(packageId, updateRequest).enqueue(object : Callback<Package> {
-                                override fun onResponse(call: Call<Package>, response: Response<Package>) {
-                                    if (response.isSuccessful) {
-                                        successMessage = "Pakket succesvol bijgewerkt!"
-                                        log("Update successful, popping back stack once")
-                                        navController.popBackStack()
-                                    } else {
-                                        errorMessage = "Bijwerken mislukt: ${response.message()}"
+                            // Check if there are any errors
+                            if (descriptionError || pickupAddressError || dropoffAddressError) {
+                                errorMessage = "Vul alle verplichte velden correct in:"
+                                if (descriptionError) errorMessage += "\n- Beschrijving van het pakket"
+                                if (pickupAddressError) errorMessage += "\n- Vertrekpunt (straat, huisnummer, postcode)"
+                                if (dropoffAddressError) errorMessage += "\n- Bestemming (straat, huisnummer, postcode)"
+                            } else {
+                                // Proceed with update if all fields are valid
+                                val updateRequest = PackageRequest(
+                                    user_id = packageItem?.user_id ?: 0,
+                                    description = description,
+                                    pickup_address = pickupAddress.copy(country = "Belgium"),
+                                    dropoff_address = dropoffAddress.copy(country = "Belgium"),
+                                    status = status
+                                )
+                                apiService.updatePackage(packageId, updateRequest).enqueue(object : Callback<Package> {
+                                    override fun onResponse(call: Call<Package>, response: Response<Package>) {
+                                        if (response.isSuccessful) {
+                                            successMessage = "Pakket succesvol bijgewerkt!"
+                                            log("Update successful, popping back stack once")
+                                            navController.popBackStack()
+                                        } else {
+                                            errorMessage = "Bijwerken mislukt: ${response.message()}"
+                                        }
                                     }
-                                }
 
-                                override fun onFailure(call: Call<Package>, t: Throwable) {
-                                    errorMessage = "Netwerkfout: ${t.message}"
-                                }
-                            })
+                                    override fun onFailure(call: Call<Package>, t: Throwable) {
+                                        errorMessage = "Netwerkfout: ${t.message}"
+                                    }
+                                })
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -395,13 +416,6 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             containerColor = Color.Transparent,
                             contentColor = SandBeige
                         ),
-                        enabled = !isLoading && description.isNotBlank() &&
-                                pickupAddress.street_name.isNotBlank() &&
-                                pickupAddress.house_number.isNotBlank() &&
-                                pickupAddress.postal_code.isNotBlank() &&
-                                dropoffAddress.street_name.isNotBlank() &&
-                                dropoffAddress.house_number.isNotBlank() &&
-                                dropoffAddress.postal_code.isNotBlank(),
                         interactionSource = interactionSource,
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
                     ) {

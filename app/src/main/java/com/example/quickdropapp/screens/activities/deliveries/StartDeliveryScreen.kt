@@ -50,7 +50,13 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
     var courierId by remember { mutableStateOf<Int?>(null) }
-    var packages = remember { mutableStateOf<List<Package>>(emptyList()) }
+    val packages = remember { mutableStateOf<List<Package>>(emptyList()) }
+
+    // Error states for required fields
+    var startAddressError by remember { mutableStateOf(false) }
+    var destinationAddressError by remember { mutableStateOf(false) }
+    var pickupRadiusError by remember { mutableStateOf(false) }
+    var dropoffRadiusError by remember { mutableStateOf(false) }
 
     val apiService = RetrofitClient.create(LocalContext.current)
 
@@ -181,7 +187,8 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                             AddressInputField(
                                 label = "Vertrekpunt",
                                 address = startAddress,
-                                onAddressChange = { startAddress = it }
+                                onAddressChange = { startAddress = it },
+                                isError = startAddressError
                             )
                         }
                     }
@@ -224,7 +231,8 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                             AddressInputField(
                                 label = "Bestemming",
                                 address = destinationAddress,
-                                onAddressChange = { destinationAddress = it }
+                                onAddressChange = { destinationAddress = it },
+                                isError = destinationAddressError
                             )
                         }
                     }
@@ -271,7 +279,8 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                     label = "Ophaalradius (km)",
                                     placeholder = "Bijv. 30.0",
                                     icon = Icons.Filled.LocationSearching,
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
+                                    isError = pickupRadiusError
                                 )
                                 RadiusInputForm(
                                     value = dropoffRadius,
@@ -279,7 +288,8 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                     label = "Afleverradius (km)",
                                     placeholder = "Bijv. 40.0",
                                     icon = Icons.Filled.LocationSearching,
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
+                                    isError = dropoffRadiusError
                                 )
                             }
                         }
@@ -301,69 +311,79 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                 return@Button
                             }
 
-                            val pickupRad = pickupRadius.toDoubleOrNull()
-                            val dropoffRad = dropoffRadius.toDoubleOrNull()
+                            // Reset error states
+                            startAddressError = false
+                            destinationAddressError = false
+                            pickupRadiusError = false
+                            dropoffRadiusError = false
+                            errorMessage = null
 
-                            if (pickupRad == null || dropoffRad == null) {
-                                errorMessage = "Vul geldige radius in"
-                                return@Button
-                            }
-
+                            // Validate required fields
                             if (startAddress.street_name.isBlank() || startAddress.house_number.isBlank() ||
                                 startAddress.postal_code.isBlank() || startAddress.city.isNullOrBlank() ||
-                                startAddress.country.isNullOrBlank() ||
-                                destinationAddress.street_name.isBlank() || destinationAddress.house_number.isBlank() ||
+                                startAddress.country.isNullOrBlank()) {
+                                startAddressError = true
+                            }
+                            if (destinationAddress.street_name.isBlank() || destinationAddress.house_number.isBlank() ||
                                 destinationAddress.postal_code.isBlank() || destinationAddress.city.isNullOrBlank() ||
                                 destinationAddress.country.isNullOrBlank()) {
-                                errorMessage = "Alle adresvelden zijn verplicht"
-                                return@Button
+                                destinationAddressError = true
+                            }
+                            val pickupRad = pickupRadius.toDoubleOrNull()
+                            val dropoffRad = dropoffRadius.toDoubleOrNull()
+                            if (pickupRadius.isBlank() || pickupRad == null) {
+                                pickupRadiusError = true
+                            }
+                            if (dropoffRadius.isBlank() || dropoffRad == null) {
+                                dropoffRadiusError = true
                             }
 
-                            val updateData = CourierUpdateRequest(
-                                start_address = startAddress,
-                                destination_address = destinationAddress,
-                                pickup_radius = pickupRad.toFloat(),
-                                dropoff_radius = dropoffRad.toFloat(),
-                                availability = true
-                            )
+                            // Check if there are any errors
+                            if (startAddressError || destinationAddressError || pickupRadiusError || dropoffRadiusError) {
+                                errorMessage = "Vul alle verplichte velden correct in:"
+                                if (startAddressError) errorMessage += "\n- Vertrekpunt (straat, huisnummer, postcode, stad, land)"
+                                if (destinationAddressError) errorMessage += "\n- Bestemming (straat, huisnummer, postcode, stad, land)"
+                                if (pickupRadiusError) errorMessage += "\n- Ophaalradius (moet een getal zijn)"
+                                if (dropoffRadiusError) errorMessage += "\n- Afleverradius (moet een getal zijn)"
+                            } else {
+                                // Proceed with API calls
+                                val updateData = CourierUpdateRequest(
+                                    start_address = startAddress,
+                                    destination_address = destinationAddress,
+                                    pickup_radius = pickupRad!!.toFloat(),
+                                    dropoff_radius = dropoffRad!!.toFloat(),
+                                    availability = true
+                                )
 
-                            println("StartDeliveryScreen: Updating courier with data: $updateData")
+                                val currentEntry = navController.currentBackStackEntry
+                                apiService.updateCourier(courierId!!, updateData).enqueue(object : Callback<Courier> {
+                                    override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
+                                        if
 
-                            val currentEntry = navController.currentBackStackEntry
-                            apiService.updateCourier(courierId!!, updateData).enqueue(object : Callback<Courier> {
-                                override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
-                                    println("StartDeliveryScreen: Update response: ${response.code()} - ${response.body()}")
-                                    if (response.isSuccessful) {
-                                        successMessage = "Locatie en radius succesvol ingesteld!"
-                                        errorMessage = null
-                                        scope.launch {
-                                            RecentFormDataStore.saveStartDeliveryData(
-                                                context,
-                                                startAddress,
-                                                destinationAddress,
-                                                pickupRadius,
-                                                dropoffRadius
-                                            )
-                                            // Inline searchPackages logic
-                                            val searchRequest = SearchRequest(
-                                                user_id = userId,
-                                                start_address = startAddress,
-                                                destination_address = destinationAddress,
-                                                pickup_radius = pickupRad,
-                                                dropoff_radius = dropoffRad,
-                                                use_current_as_start = false
-                                            )
-                                            println("StartDeliveryScreen: Sending search request: $searchRequest")
-                                            apiService.searchPackages(searchRequest).enqueue(object : Callback<SearchResponse> {
-                                                override fun onResponse(call: Call<SearchResponse>, response: Response<SearchResponse>) {
-                                                    println("StartDeliveryScreen: Search packages response received: code=${response.code()}, body=${response.body()}")
-                                                    println("StartDeliveryScreen: Raw response: ${response.raw()}")
-                                                    if (response.isSuccessful) {
-                                                        val result = response.body()
-                                                        println("StartDeliveryScreen: Parsed result: $result")
-                                                        if (result != null) {
-                                                            val packageList = result.packages ?: emptyList()
-                                                            println("StartDeliveryScreen: Package list after parsing: $packageList")
+                                                (response.isSuccessful) {
+                                            successMessage = "Locatie en radius succesvol ingesteld!"
+                                            errorMessage = null
+                                            scope.launch {
+                                                RecentFormDataStore.saveStartDeliveryData(
+                                                    context,
+                                                    startAddress,
+                                                    destinationAddress,
+                                                    pickupRadius,
+                                                    dropoffRadius
+                                                )
+                                                val searchRequest = SearchRequest(
+                                                    user_id = userId,
+                                                    start_address = startAddress,
+                                                    destination_address = destinationAddress,
+                                                    pickup_radius = pickupRad,
+                                                    dropoff_radius = dropoffRad,
+                                                    use_current_as_start = false
+                                                )
+                                                apiService.searchPackages(searchRequest).enqueue(object : Callback<SearchResponse> {
+                                                    override fun onResponse(call: Call<SearchResponse>, response: Response<SearchResponse>) {
+                                                        if (response.isSuccessful) {
+                                                            val result = response.body()
+                                                            val packageList = result?.packages ?: emptyList()
                                                             packages.value = packageList
                                                             currentEntry?.savedStateHandle?.set("packages", packageList)
                                                             if (packageList.isNotEmpty()) {
@@ -378,42 +398,33 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                                                 }
                                                             }
                                                         } else {
-                                                            navController.navigate("searchPackages/$userId?noPackages=true") {
+                                                            navController.navigate("searchPackages/$userId?error=true") {
                                                                 popUpTo("startDelivery/$userId") { inclusive = false }
                                                                 launchSingleTop = true
                                                             }
                                                         }
-                                                    } else {
-                                                        println("StartDeliveryScreen: Error response: ${response.errorBody()?.string()}")
+                                                    }
+
+                                                    override fun onFailure(call: Call<SearchResponse>, t: Throwable) {
                                                         navController.navigate("searchPackages/$userId?error=true") {
                                                             popUpTo("startDelivery/$userId") { inclusive = false }
                                                             launchSingleTop = true
                                                         }
                                                     }
-                                                }
-
-                                                override fun onFailure(call: Call<SearchResponse>, t: Throwable) {
-                                                    println("StartDeliveryScreen: Network failure: ${t.message}")
-                                                    navController.navigate("searchPackages/$userId?error=true") {
-                                                        popUpTo("startDelivery/$userId") { inclusive = false }
-                                                        launchSingleTop = true
-                                                    }
-                                                }
-                                            })
+                                                })
+                                            }
+                                        } else {
+                                            errorMessage = "Fout bij updaten: ${response.code()} - ${response.errorBody()?.string()}"
                                         }
-                                    } else {
-                                        errorMessage = "Fout bij updaten: ${response.code()} - ${response.errorBody()?.string()}"
-                                        println("StartDeliveryScreen: Update failed: ${response.code()} - ${response.errorBody()?.string()}")
                                     }
-                                }
 
-                                override fun onFailure(call: Call<Courier>, t: Throwable) {
-                                    errorMessage = "Netwerkfout bij update: ${t.message}"
-                                    println("StartDeliveryScreen: Network failure on update: ${t.message}")
-                                }
-                            })
+                                    override fun onFailure(call: Call<Courier>, t: Throwable) {
+                                        errorMessage = "Netwerkfout bij update: ${t.message}"
+                                    }
+                                })
+                            }
                         },
-                        Modifier
+                        modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp)
                             .graphicsLayer(scaleX = buttonScale, scaleY = buttonScale)
@@ -427,14 +438,6 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                             containerColor = Color.Transparent,
                             contentColor = SandBeige
                         ),
-                        enabled = courierId != null && startAddress.street_name.isNotBlank() && startAddress.house_number.isNotBlank() &&
-                                startAddress.postal_code.isNotBlank() && startAddress.city?.isNotBlank() == true &&
-                                startAddress.country?.isNotBlank() == true &&
-                                destinationAddress.street_name.isNotBlank() && destinationAddress.house_number.isNotBlank() &&
-                                destinationAddress.postal_code.isNotBlank() && destinationAddress.city?.isNotBlank() == true &&
-                                destinationAddress.country?.isNotBlank() == true &&
-                                pickupRadius.isNotBlank() && pickupRadius.toDoubleOrNull() != null &&
-                                dropoffRadius.isNotBlank() && dropoffRadius.toDoubleOrNull() != null,
                         elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp),
                         interactionSource = interactionSource
                     ) {

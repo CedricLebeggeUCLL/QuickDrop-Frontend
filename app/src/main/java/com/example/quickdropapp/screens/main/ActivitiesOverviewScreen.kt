@@ -1,29 +1,23 @@
 package com.example.quickdropapp.screens.main
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.quickdropapp.composables.activities.AnimatedSectionHeader
+import com.example.quickdropapp.composables.activities.EnhancedHeaderActivities
 import com.example.quickdropapp.composables.nav.FlyoutMenu
 import com.example.quickdropapp.composables.nav.ModernActionCard
 import com.example.quickdropapp.composables.nav.ModernBottomNavigation
@@ -90,7 +84,10 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     item {
-                        EnhancedHeaderActivities(onMenuClick = { scope.launch { drawerState.open() } }, onLogout = onLogout)
+                        EnhancedHeaderActivities(
+                            onMenuClick = { scope.launch { drawerState.open() } },
+                            onLogout = onLogout
+                        )
                     }
 
                     item {
@@ -178,7 +175,7 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                                     ModernActionCard(
                                         title = "Track Leveringen",
                                         description = "Volg live je leveringen",
-                                        icon = Icons.Filled.LocalShipping, // Kan je aanpassen naar een ander icoon
+                                        icon = Icons.Filled.LocalShipping,
                                         onClick = { navController.navigate("trackingDeliveries/$userId") },
                                         containerColor = DarkGreen
                                     )
@@ -190,97 +187,4 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
             }
         }
     )
-}
-
-@Composable
-fun EnhancedHeaderActivities(onMenuClick: () -> Unit, onLogout: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 16.dp) // Aangepaste padding voor consistentie met HomeScreen en ProfileScreen
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(GreenSustainable.copy(alpha = 0.2f), SandBeige)
-                ),
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = onMenuClick,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .shadow(2.dp, CircleShape)
-                        .background(Color.White)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Menu,
-                        contentDescription = "Menu",
-                        tint = GreenSustainable
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Activiteiten",
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = DarkGreen,
-                    modifier = Modifier.align(Alignment.CenterVertically)
-                )
-            }
-            IconButton(
-                onClick = onLogout,
-                modifier = Modifier
-                    .size(48.dp)
-                    .shadow(2.dp, CircleShape)
-                    .background(Color.White)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                    contentDescription = "Uitloggen",
-                    tint = GreenSustainable
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun AnimatedSectionHeader(title: String) {
-    var animateTrigger by remember { mutableStateOf(false) }
-    val animatedValue by animateFloatAsState(
-        targetValue = if (animateTrigger) 1f else 0f,
-        animationSpec = tween(durationMillis = 800, easing = { it * it * (3 - 2 * it) })
-    )
-
-    LaunchedEffect(Unit) { animateTrigger = true }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .graphicsLayer(alpha = animatedValue, scaleY = animatedValue),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = title,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = DarkGreen,
-            modifier = Modifier.weight(1f)
-        )
-        Box(
-            modifier = Modifier
-                .height(2.dp)
-                .width(50.dp)
-                .background(GreenSustainable)
-                .clip(RoundedCornerShape(1.dp))
-        )
-    }
 }

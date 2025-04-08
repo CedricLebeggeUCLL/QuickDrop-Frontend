@@ -28,7 +28,7 @@ fun EnhancedHeaderActivities(onMenuClick: () -> Unit, onLogout: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(bottom = 16.dp)
             .background(
                 brush = Brush.linearGradient(
                     colors = listOf(GreenSustainable.copy(alpha = 0.2f), SandBeige)

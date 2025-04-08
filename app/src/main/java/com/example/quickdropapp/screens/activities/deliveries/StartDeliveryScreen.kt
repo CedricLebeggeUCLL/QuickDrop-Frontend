@@ -8,7 +8,6 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -21,18 +20,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavBackStackEntry
 import com.example.quickdropapp.composables.forms.AddressInputField
+import com.example.quickdropapp.composables.forms.RadiusInputForm
 import com.example.quickdropapp.data.RecentFormDataStore
 import com.example.quickdropapp.models.*
 import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.models.packages.SearchRequest
 import com.example.quickdropapp.models.packages.SearchResponse
-import com.example.quickdropapp.network.ApiService
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -57,7 +54,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
 
     val apiService = RetrofitClient.create(LocalContext.current)
 
-    // Haal courierId op bij het laden van het scherm
+    // Fetch courierId when the screen loads
     LaunchedEffect(userId) {
         if (userId <= 0) {
             errorMessage = "Ongeldige user ID: $userId"
@@ -268,22 +265,20 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                             }
                             Spacer(modifier = Modifier.height(12.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                ModernFormField(
+                                RadiusInputForm(
                                     value = pickupRadius,
                                     onValueChange = { pickupRadius = it.filter { char -> char.isDigit() || char == '.' } },
                                     label = "Ophaalradius (km)",
                                     placeholder = "Bijv. 30.0",
                                     icon = Icons.Filled.LocationSearching,
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                     modifier = Modifier.weight(1f)
                                 )
-                                ModernFormField(
+                                RadiusInputForm(
                                     value = dropoffRadius,
                                     onValueChange = { dropoffRadius = it.filter { char -> char.isDigit() || char == '.' } },
                                     label = "Afleverradius (km)",
                                     placeholder = "Bijv. 40.0",
                                     icon = Icons.Filled.LocationSearching,
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                     modifier = Modifier.weight(1f)
                                 )
                             }
@@ -349,7 +344,62 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                                 pickupRadius,
                                                 dropoffRadius
                                             )
-                                            searchPackages(apiService, userId, startAddress, destinationAddress, pickupRad, dropoffRad, packages, navController, currentEntry)
+                                            // Inline searchPackages logic
+                                            val searchRequest = SearchRequest(
+                                                user_id = userId,
+                                                start_address = startAddress,
+                                                destination_address = destinationAddress,
+                                                pickup_radius = pickupRad,
+                                                dropoff_radius = dropoffRad,
+                                                use_current_as_start = false
+                                            )
+                                            println("StartDeliveryScreen: Sending search request: $searchRequest")
+                                            apiService.searchPackages(searchRequest).enqueue(object : Callback<SearchResponse> {
+                                                override fun onResponse(call: Call<SearchResponse>, response: Response<SearchResponse>) {
+                                                    println("StartDeliveryScreen: Search packages response received: code=${response.code()}, body=${response.body()}")
+                                                    println("StartDeliveryScreen: Raw response: ${response.raw()}")
+                                                    if (response.isSuccessful) {
+                                                        val result = response.body()
+                                                        println("StartDeliveryScreen: Parsed result: $result")
+                                                        if (result != null) {
+                                                            val packageList = result.packages ?: emptyList()
+                                                            println("StartDeliveryScreen: Package list after parsing: $packageList")
+                                                            packages.value = packageList
+                                                            currentEntry?.savedStateHandle?.set("packages", packageList)
+                                                            if (packageList.isNotEmpty()) {
+                                                                navController.navigate("searchPackages/$userId") {
+                                                                    popUpTo("startDelivery/$userId") { inclusive = false }
+                                                                    launchSingleTop = true
+                                                                }
+                                                            } else {
+                                                                navController.navigate("searchPackages/$userId?noPackages=true") {
+                                                                    popUpTo("startDelivery/$userId") { inclusive = false }
+                                                                    launchSingleTop = true
+                                                                }
+                                                            }
+                                                        } else {
+                                                            navController.navigate("searchPackages/$userId?noPackages=true") {
+                                                                popUpTo("startDelivery/$userId") { inclusive = false }
+                                                                launchSingleTop = true
+                                                            }
+                                                        }
+                                                    } else {
+                                                        println("StartDeliveryScreen: Error response: ${response.errorBody()?.string()}")
+                                                        navController.navigate("searchPackages/$userId?error=true") {
+                                                            popUpTo("startDelivery/$userId") { inclusive = false }
+                                                            launchSingleTop = true
+                                                        }
+                                                    }
+                                                }
+
+                                                override fun onFailure(call: Call<SearchResponse>, t: Throwable) {
+                                                    println("StartDeliveryScreen: Network failure: ${t.message}")
+                                                    navController.navigate("searchPackages/$userId?error=true") {
+                                                        popUpTo("startDelivery/$userId") { inclusive = false }
+                                                        launchSingleTop = true
+                                                    }
+                                                }
+                                            })
                                         }
                                     } else {
                                         errorMessage = "Fout bij updaten: ${response.code()} - ${response.errorBody()?.string()}"
@@ -363,7 +413,7 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                                 }
                             })
                         },
-                        modifier = Modifier
+                        Modifier
                             .fillMaxWidth()
                             .height(56.dp)
                             .graphicsLayer(scaleX = buttonScale, scaleY = buttonScale)
@@ -441,128 +491,4 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
             }
         }
     }
-}
-
-@Composable
-fun ModernFormField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    placeholder: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    modifier: Modifier = Modifier,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 1.02f else 1f,
-        animationSpec = tween(durationMillis = 200)
-    )
-
-    Row(
-        modifier = modifier.graphicsLayer(scaleX = scale, scaleY = scale),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = GreenSustainable,
-            modifier = Modifier.size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(
-                text = label,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = DarkGreen.copy(alpha = 0.8f)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            TextField(
-                value = value,
-                onValueChange = onValueChange,
-                placeholder = { Text(placeholder, color = DarkGreen.copy(alpha = 0.5f)) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = GreenSustainable,
-                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
-                    cursorColor = GreenSustainable,
-                    focusedLabelColor = GreenSustainable
-                ),
-                keyboardOptions = keyboardOptions,
-                interactionSource = interactionSource
-            )
-        }
-    }
-}
-
-fun searchPackages(
-    apiService: ApiService,
-    userId: Int,
-    startAddress: Address,
-    destinationAddress: Address,
-    pickupRadius: Double,
-    dropoffRadius: Double,
-    packages: MutableState<List<Package>>,
-    navController: NavController,
-    currentEntry: NavBackStackEntry?
-) {
-    val searchRequest = SearchRequest(
-        user_id = userId,
-        start_address = startAddress,
-        destination_address = destinationAddress,
-        pickup_radius = pickupRadius,
-        dropoff_radius = dropoffRadius,
-        use_current_as_start = false
-    )
-    println("StartDeliveryScreen: Sending search request: $searchRequest")
-    apiService.searchPackages(searchRequest).enqueue(object : Callback<SearchResponse> {
-        override fun onResponse(call: Call<SearchResponse>, response: Response<SearchResponse>) {
-            println("StartDeliveryScreen: Search packages response received: code=${response.code()}, body=${response.body()}")
-            println("StartDeliveryScreen: Raw response: ${response.raw()}")
-            if (response.isSuccessful) {
-                val result = response.body()
-                println("StartDeliveryScreen: Parsed result: $result")
-                if (result != null) {
-                    val packageList = result.packages ?: emptyList()
-                    println("StartDeliveryScreen: Package list after parsing: $packageList")
-                    packages.value = packageList
-                    currentEntry?.savedStateHandle?.set("packages", packageList)
-                    if (packageList.isNotEmpty()) {
-                        navController.navigate("searchPackages/$userId") {
-                            popUpTo("startDelivery/$userId") { inclusive = false }
-                            launchSingleTop = true
-                        }
-                    } else {
-                        navController.navigate("searchPackages/$userId?noPackages=true") {
-                            popUpTo("startDelivery/$userId") { inclusive = false }
-                            launchSingleTop = true
-                        }
-                    }
-                } else {
-                    navController.navigate("searchPackages/$userId?noPackages=true") {
-                        popUpTo("startDelivery/$userId") { inclusive = false }
-                        launchSingleTop = true
-                    }
-                }
-            } else {
-                println("StartDeliveryScreen: Error response: ${response.errorBody()?.string()}")
-                navController.navigate("searchPackages/$userId?error=true") {
-                    popUpTo("startDelivery/$userId") { inclusive = false }
-                    launchSingleTop = true
-                }
-            }
-        }
-
-        override fun onFailure(call: Call<SearchResponse>, t: Throwable) {
-            println("StartDeliveryScreen: Network failure: ${t.message}")
-            navController.navigate("searchPackages/$userId?error=true") {
-                popUpTo("startDelivery/$userId") { inclusive = false }
-                launchSingleTop = true
-            }
-        }
-    })
 }

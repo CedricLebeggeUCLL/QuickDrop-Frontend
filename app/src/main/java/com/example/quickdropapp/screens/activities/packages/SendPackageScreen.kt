@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.composables.forms.AddressInputField
+import com.example.quickdropapp.composables.forms.LabeledIconTextField // New import for the extracted composable
 import com.example.quickdropapp.data.RecentFormDataStore
 import com.example.quickdropapp.models.Address
 import com.example.quickdropapp.models.packages.Package
@@ -165,7 +166,7 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             )
                         }
                         Spacer(modifier = Modifier.height(12.dp))
-                        ModernFormField(
+                        LabeledIconTextField(
                             value = recipientName,
                             onValueChange = { recipientName = it },
                             label = "Naam van de ontvanger",
@@ -297,7 +298,7 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             )
                         }
                         Spacer(modifier = Modifier.height(12.dp))
-                        ModernFormField(
+                        LabeledIconTextField(
                             value = packageDescription,
                             onValueChange = { packageDescription = it },
                             label = "Beschrijving van het pakket",
@@ -306,7 +307,7 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-                        ModernFormField(
+                        LabeledIconTextField(
                             value = packageWeight,
                             onValueChange = { packageWeight = it.filter { char -> char.isDigit() || char == '.' } },
                             label = "Gewicht van het pakket (kg)",
@@ -448,7 +449,7 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .wrapContentHeight()
-                            .padding(bottom = 8.dp),
+                            .padding(horizontal = 8.dp),
                         maxLines = 5
                     )
                 }
@@ -461,69 +462,13 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .wrapContentHeight()
-                            .padding(bottom = 8.dp),
+                            .padding(horizontal = 8.dp),
                         maxLines = 5
                     )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
-        }
-    }
-}
-
-@Composable
-fun ModernFormField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    placeholder: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    modifier: Modifier = Modifier,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 1.02f else 1f,
-        animationSpec = tween(durationMillis = 200)
-    )
-
-    Row(
-        modifier = modifier.graphicsLayer(scaleX = scale, scaleY = scale),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = GreenSustainable,
-            modifier = Modifier.size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(
-                text = label,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = DarkGreen.copy(alpha = 0.8f)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            TextField(
-                value = value,
-                onValueChange = onValueChange,
-                placeholder = { Text(placeholder, color = DarkGreen.copy(alpha = 0.5f)) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = GreenSustainable,
-                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
-                    cursorColor = GreenSustainable,
-                    focusedLabelColor = GreenSustainable
-                ),
-                keyboardOptions = keyboardOptions,
-                interactionSource = interactionSource
-            )
         }
     }
 }

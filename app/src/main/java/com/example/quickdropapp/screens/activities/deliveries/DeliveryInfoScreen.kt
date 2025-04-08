@@ -22,8 +22,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.composables.deliveries.DeliveryInfoCard
 import com.example.quickdropapp.models.Delivery
-import com.example.quickdropapp.models.DeliveryUpdate
-import com.example.quickdropapp.network.ApiService
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -39,6 +37,7 @@ fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
 
     val apiService = RetrofitClient.create(LocalContext.current)
 
+    // Fetch delivery details
     LaunchedEffect(deliveryId) {
         apiService.getDeliveryById(deliveryId).enqueue(object : Callback<Delivery> {
             override fun onResponse(call: Call<Delivery>, response: Response<Delivery>) {
@@ -67,15 +66,15 @@ fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
                 .padding(paddingValues)
                 .background(
                     brush = Brush.verticalGradient(
-                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f)) // Match SendPackageScreen
+                        colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
                     )
                 )
         ) {
-            // Clean header (matched with SendPackageScreen)
+            // Header with back button and title
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(SandBeige) // Solid background, no gradient
+                    .background(SandBeige)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -93,14 +92,14 @@ fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
                 }
                 Text(
                     text = "Levering Details",
-                    color = GreenSustainable, // Match SendPackageScreen
+                    color = GreenSustainable,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
                 )
-                Spacer(modifier = Modifier.width(48.dp)) // Match SendPackageScreen
+                Spacer(modifier = Modifier.width(48.dp))
             }
 
-            // Content with animated card
+            // Main content with delivery card
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -117,7 +116,7 @@ fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
                     delivery == null -> {
                         Text(
                             text = "Levering niet gevonden",
-                            color = DarkGreen.copy(alpha = 0.8f), // Match SendPackageScreen
+                            color = DarkGreen.copy(alpha = 0.8f),
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier.padding(8.dp)
                         )
@@ -131,8 +130,6 @@ fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
                             ) {
                                 DeliveryInfoCard(
                                     delivery = del,
-                                    onUpdateStatus = ::updateDeliveryStatus,
-                                    onCancel = ::cancelDelivery,
                                     apiService = apiService,
                                     navController = navController,
                                     onDeliveryUpdated = { newDelivery ->
@@ -149,56 +146,4 @@ fun DeliveryInfoScreen(navController: NavController, deliveryId: Int) {
             }
         }
     }
-}
-
-// Helper-functie om de status bij te werken
-fun updateDeliveryStatus(
-    apiService: ApiService,
-    deliveryId: Int,
-    newStatus: String,
-    pickupTime: String? = null,
-    deliveryTime: String? = null,
-    navController: NavController,
-    onUpdate: (Delivery) -> Unit
-) {
-    println("Updating delivery $deliveryId to status $newStatus with pickupTime: $pickupTime, deliveryTime: $deliveryTime")
-    val deliveryUpdate = DeliveryUpdate(status = newStatus, pickup_time = pickupTime, delivery_time = deliveryTime)
-    apiService.updateDelivery(deliveryId, deliveryUpdate).enqueue(object : Callback<Delivery> {
-        override fun onResponse(call: Call<Delivery>, response: Response<Delivery>) {
-            if (response.isSuccessful) {
-                response.body()?.let { newDelivery ->
-                    println("Status succesvol bijgewerkt naar $newStatus: $newDelivery")
-                    onUpdate(newDelivery)
-                } ?: println("Response body is null")
-            } else {
-                println("Fout bij het updaten van de status: ${response.code()} - ${response.message()}")
-            }
-        }
-
-        override fun onFailure(call: Call<Delivery>, t: Throwable) {
-            println("Netwerkfout bij het updaten van de status: ${t.message}")
-        }
-    })
-}
-
-// Helper-functie om de levering te annuleren
-fun cancelDelivery(
-    apiService: ApiService,
-    deliveryId: Int,
-    navController: NavController
-) {
-    apiService.cancelDelivery(deliveryId).enqueue(object : Callback<Void> {
-        override fun onResponse(call: Call<Void>, response: Response<Void>) {
-            if (response.isSuccessful) {
-                println("Levering succesvol geannuleerd!")
-                navController.popBackStack()
-            } else {
-                println("Fout bij het annuleren: ${response.code()} - ${response.message()}")
-            }
-        }
-
-        override fun onFailure(call: Call<Void>, t: Throwable) {
-            println("Netwerkfout bij het annuleren: ${t.message}")
-        }
-    })
 }

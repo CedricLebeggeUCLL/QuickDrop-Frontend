@@ -24,18 +24,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.Delivery
+import com.example.quickdropapp.models.DeliveryUpdate
 import com.example.quickdropapp.network.ApiService
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 fun DeliveryInfoCard(
     delivery: Delivery,
-    onUpdateStatus: (ApiService, Int, String, String?, String?, NavController, (Delivery) -> Unit) -> Unit,
-    onCancel: (ApiService, Int, NavController) -> Unit?,
     apiService: ApiService,
     navController: NavController,
     onDeliveryUpdated: (Delivery) -> Unit
@@ -53,7 +55,7 @@ fun DeliveryInfoCard(
             if (date != null) {
                 displayFormat.format(date)
             } else {
-                "Ongeldige datum" // Fallback for null (e.g., empty string)
+                "Ongeldige datum"
             }
         } catch (e: Exception) {
             try {
@@ -65,7 +67,7 @@ fun DeliveryInfoCard(
                     "Ongeldige datum"
                 }
             } catch (e: Exception) {
-                pickupTime // Laat originele string staan als parsing mislukt
+                pickupTime
             }
         }
     }
@@ -220,9 +222,20 @@ fun DeliveryInfoCard(
                     Button(
                         onClick = {
                             val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-                            onUpdateStatus(apiService, delivery.id!!, "picked_up", currentTime, null, navController) { newDelivery ->
-                                onDeliveryUpdated(newDelivery)
-                            }
+                            val deliveryUpdate = DeliveryUpdate(status = "picked_up", pickup_time = currentTime)
+                            apiService.updateDelivery(delivery.id!!, deliveryUpdate).enqueue(object : Callback<Delivery> {
+                                override fun onResponse(call: Call<Delivery>, response: Response<Delivery>) {
+                                    if (response.isSuccessful) {
+                                        response.body()?.let { updatedDelivery ->
+                                            onDeliveryUpdated(updatedDelivery)
+                                        }
+                                    }
+                                }
+
+                                override fun onFailure(call: Call<Delivery>, t: Throwable) {
+                                    // Handle error (e.g., log or show a toast)
+                                }
+                            })
                         },
                         enabled = true,
                         colors = ButtonDefaults.buttonColors(
@@ -250,9 +263,20 @@ fun DeliveryInfoCard(
                     Button(
                         onClick = {
                             val currentTime = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-                            onUpdateStatus(apiService, delivery.id!!, "delivered", null, currentTime, navController) { newDelivery ->
-                                onDeliveryUpdated(newDelivery)
-                            }
+                            val deliveryUpdate = DeliveryUpdate(status = "delivered", delivery_time = currentTime)
+                            apiService.updateDelivery(delivery.id!!, deliveryUpdate).enqueue(object : Callback<Delivery> {
+                                override fun onResponse(call: Call<Delivery>, response: Response<Delivery>) {
+                                    if (response.isSuccessful) {
+                                        response.body()?.let { updatedDelivery ->
+                                            onDeliveryUpdated(updatedDelivery)
+                                        }
+                                    }
+                                }
+
+                                override fun onFailure(call: Call<Delivery>, t: Throwable) {
+                                    // Handle error
+                                }
+                            })
                         },
                         enabled = true,
                         colors = ButtonDefaults.buttonColors(
@@ -279,7 +303,17 @@ fun DeliveryInfoCard(
                 ) {
                     OutlinedButton(
                         onClick = {
-                            onCancel.invoke(apiService, delivery.id!!, navController)
+                            apiService.cancelDelivery(delivery.id!!).enqueue(object : Callback<Void> {
+                                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                                    if (response.isSuccessful) {
+                                        navController.popBackStack()
+                                    }
+                                }
+
+                                override fun onFailure(call: Call<Void>, t: Throwable) {
+                                    // Handle error
+                                }
+                            })
                         },
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = MaterialTheme.colorScheme.error

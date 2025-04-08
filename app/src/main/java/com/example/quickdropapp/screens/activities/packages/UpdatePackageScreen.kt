@@ -4,7 +4,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -27,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.composables.forms.AddressInputField
+import com.example.quickdropapp.composables.forms.ModernFormField
 import com.example.quickdropapp.models.Address
 import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.models.packages.PackageRequest
@@ -495,60 +495,6 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun ModernFormField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    placeholder: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    modifier: Modifier = Modifier
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isFocused by interactionSource.collectIsFocusedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isFocused) 1.02f else 1f,
-        animationSpec = tween(durationMillis = 200)
-    )
-
-    Row(
-        modifier = modifier.graphicsLayer(scaleX = scale, scaleY = scale),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = GreenSustainable,
-            modifier = Modifier.size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(
-                text = label,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = DarkGreen.copy(alpha = 0.8f)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            TextField(
-                value = value,
-                onValueChange = onValueChange,
-                placeholder = { Text(placeholder, color = DarkGreen.copy(alpha = 0.5f)) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = GreenSustainable,
-                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
-                    cursorColor = GreenSustainable,
-                    focusedLabelColor = GreenSustainable
-                ),
-                interactionSource = interactionSource
-            )
         }
     }
 }

@@ -27,7 +27,8 @@ fun AddressInputField(
     label: String,
     address: Address,
     onAddressChange: (Address) -> Unit,
-    isEditable: Boolean = true
+    isEditable: Boolean = true,
+    isError: Boolean = false
 ) {
     val context = LocalContext.current
     val placesClient = remember { Places.createClient(context) }
@@ -36,6 +37,16 @@ fun AddressInputField(
     var extraInfo by remember { mutableStateOf(address.extra_info ?: "") }
     var suggestions by remember { mutableStateOf(listOf<com.google.android.libraries.places.api.model.AutocompletePrediction>()) }
     var showDropdown by remember { mutableStateOf(false) }
+
+    LaunchedEffect(address) {
+        if (isEditable) {
+            inputText = if (address.street_name.isNotBlank() && address.house_number.isNotBlank() && address.postal_code.isNotBlank()) {
+                "${address.street_name} ${address.house_number}, ${address.postal_code} ${address.city}, ${address.country}"
+            } else {
+                ""
+            }
+        }
+    }
 
     Column {
         Text(label, style = MaterialTheme.typography.titleMedium, color = DarkGreen)
@@ -49,13 +60,13 @@ fun AddressInputField(
                     if (newText.isNotEmpty()) {
                         val request = FindAutocompletePredictionsRequest.builder()
                             .setQuery(newText)
-                            .setCountries("BE") // Beperk tot België
+                            .setCountries("BE")
                             .build()
                         placesClient.findAutocompletePredictions(request).addOnSuccessListener { response ->
                             suggestions = response.autocompletePredictions
                             showDropdown = suggestions.isNotEmpty()
                         }.addOnFailureListener { exception ->
-                            // Log fout of toon een melding
+                            // Log fout of toon melding
                         }
                     } else {
                         suggestions = emptyList()
@@ -67,8 +78,8 @@ fun AddressInputField(
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
-                    focusedIndicatorColor = GreenSustainable,
-                    unfocusedIndicatorColor = DarkGreen.copy(alpha = 0.6f),
+                    focusedIndicatorColor = if (isError) Color.Red else GreenSustainable,
+                    unfocusedIndicatorColor = if (isError) Color.Red else DarkGreen.copy(alpha = 0.6f),
                     cursorColor = GreenSustainable,
                     focusedLabelColor = GreenSustainable
                 )
@@ -116,7 +127,7 @@ fun AddressInputField(
                                         inputText = "$street $houseNumber, $postalCode $city, $country"
                                         showDropdown = false
                                     }.addOnFailureListener { exception ->
-                                        // Log fout of toon een melding
+                                        // Log fout of toon melding
                                     }
                                 }
                                 .padding(8.dp),
@@ -134,7 +145,7 @@ fun AddressInputField(
                     extraInfo = newExtraInfo
                     onAddressChange(address.copy(extra_info = newExtraInfo))
                 },
-                label = { Text("Extra info (bus/appartement/verdiep)") },
+                label = { Text("Extra info (bus/appartement/verdiep)", color = DarkGreen.copy(alpha = 0.4f)) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,

@@ -91,4 +91,7 @@ dependencies {
     // Dependencies for live tracking
     implementation(libs.play.services.location)
     implementation(libs.accompanist.permissions)
+
+    // Places SDK dependency
+    implementation(libs.places)
 }

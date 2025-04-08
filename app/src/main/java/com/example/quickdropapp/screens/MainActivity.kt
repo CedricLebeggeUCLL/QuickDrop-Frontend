@@ -36,6 +36,7 @@ import com.example.quickdropapp.screens.profile.HelpSupportScreen
 import com.example.quickdropapp.screens.profile.HistoryScreen
 import com.example.quickdropapp.screens.profile.SettingsScreen
 import com.example.quickdropapp.ui.theme.QuickDropAppTheme
+import com.google.android.libraries.places.api.Places
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -44,12 +45,15 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Check for deep link outside of composable
+        // Initialiseer de Places API met de API-sleutel
+        Places.initialize(applicationContext, "AIzaSyBhUNOle29taWD_B58yNpmsUDBihvkqq98")
+
+        // Controleer deep link buiten de composable
         var deepLinkToken: String? = null
         val uri = intent.data
         if (uri != null && uri.scheme == "quickdrop" && uri.host == "resetPassword") {
             deepLinkToken = uri.pathSegments.firstOrNull()
-            Log.d("DeepLink", "Token received: $deepLinkToken")
+            Log.d("DeepLink", "Token ontvangen: $deepLinkToken")
         }
 
         setContent {
@@ -58,11 +62,11 @@ class MainActivity : ComponentActivity() {
                 val context = LocalContext.current
                 val scope = rememberCoroutineScope()
 
-                // State for login status and userId
+                // State voor loginstatus en userId
                 var isLoggedIn by remember { mutableStateOf(false) }
                 var initialUserId by remember { mutableStateOf(-1) }
 
-                // Check login status on startup with LaunchedEffect
+                // Controleer loginstatus bij opstarten met LaunchedEffect
                 LaunchedEffect(Unit) {
                     isLoggedIn = AuthDataStore.isLoggedIn(context)
                     initialUserId = AuthDataStore.getUserId(context) ?: -1
@@ -71,7 +75,7 @@ class MainActivity : ComponentActivity() {
                             popUpTo("welcome") { inclusive = true }
                         }
                     } else if (deepLinkToken != null) {
-                        Log.d("DeepLink", "Navigating to resetPassword with token: $deepLinkToken")
+                        Log.d("DeepLink", "Navigeren naar resetPassword met token: $deepLinkToken")
                         navController.navigate("resetPassword/$deepLinkToken")
                     }
                 }

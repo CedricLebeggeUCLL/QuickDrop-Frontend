@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Optioneel voor live locatie later, nu niet nodig maar handig om alvast te hebben -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
@@ -27,7 +26,6 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Deep link intent-filter voor wachtwoordherstel -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -40,6 +38,10 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyBwMjsNiecyBf8YyjiuZBN7Dtizdee4nJY" />
-    </application>
 
+        <!-- Google Places API-sleutel -->
+        <meta-data
+            android:name="com.google.android.libraries.places.API_KEY"
+            android:value="AIzaSyBhUNOle29taWD_B58yNpmsUDBihvkqq98" />
+    </application>
 </manifest>

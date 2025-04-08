@@ -1,7 +1,6 @@
 package com.example.quickdropapp.screens.activities.tracking
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.quickdropapp.composables.tracking.TrackingDeliveryCard
 import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.models.tracking.DeliveryTrackingInfo
 import com.example.quickdropapp.network.RetrofitClient
@@ -99,7 +99,7 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(deliveries.filter { it.status in listOf("assigned", "picked_up", "delivered") }) { delivery ->
-                    DeliveryCard(delivery, selectedDeliveryId == delivery.id) {
+                    TrackingDeliveryCard(delivery, selectedDeliveryId == delivery.id) {
                         selectedDeliveryId = delivery.id
                     }
                 }
@@ -286,37 +286,6 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun DeliveryCard(delivery: Delivery, isSelected: Boolean, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clickable { onClick() }
-            .shadow(if (isSelected) 8.dp else 4.dp, RoundedCornerShape(12.dp)),
-        colors = CardDefaults.cardColors(containerColor = if (isSelected) GreenSustainable else Color.White)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                text = "Levering #${delivery.id}",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isSelected) Color.White else DarkGreen
-            )
-            Text(
-                text = "Status: ${delivery.status}",
-                fontSize = 12.sp,
-                color = if (isSelected) Color.White.copy(alpha = 0.6f) else DarkGreen.copy(alpha = 0.6f)
-            )
         }
     }
 }

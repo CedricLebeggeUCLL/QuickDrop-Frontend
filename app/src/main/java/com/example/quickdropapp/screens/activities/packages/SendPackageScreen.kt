@@ -53,6 +53,13 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
 
+    // Foutstatussen voor elk verplicht veld
+    var recipientNameError by remember { mutableStateOf(false) }
+    var pickupAddressError by remember { mutableStateOf(false) }
+    var dropoffAddressError by remember { mutableStateOf(false) }
+    var packageDescriptionError by remember { mutableStateOf(false) }
+    var packageWeightError by remember { mutableStateOf(false) }
+
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val buttonScale by animateFloatAsState(
@@ -172,7 +179,8 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             label = "Naam van de ontvanger",
                             placeholder = "Bijv. Jan Jansen",
                             icon = Icons.Filled.Person,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            isError = recipientNameError
                         )
                     }
                 }
@@ -215,7 +223,8 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                         AddressInputField(
                             label = "Vertrekpunt",
                             address = pickupAddress,
-                            onAddressChange = { pickupAddress = it }
+                            onAddressChange = { pickupAddress = it },
+                            isError = pickupAddressError
                         )
                     }
                 }
@@ -258,7 +267,8 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                         AddressInputField(
                             label = "Bestemming",
                             address = dropoffAddress,
-                            onAddressChange = { dropoffAddress = it }
+                            onAddressChange = { dropoffAddress = it },
+                            isError = dropoffAddressError
                         )
                     }
                 }
@@ -304,7 +314,8 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             label = "Beschrijving van het pakket",
                             placeholder = "Bijv. Boeken of Kleding",
                             icon = Icons.Filled.Description,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            isError = packageDescriptionError
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         LabeledIconTextField(
@@ -314,7 +325,8 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             placeholder = "Bijv. 2.5",
                             icon = Icons.Filled.FitnessCenter,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            isError = packageWeightError
                         )
                     }
                 }
@@ -323,74 +335,78 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
                 Button(
                     onClick = {
+                        // Reset foutstatussen
+                        recipientNameError = false
+                        pickupAddressError = false
+                        dropoffAddressError = false
+                        packageDescriptionError = false
+                        packageWeightError = false
+                        errorMessage = null
+
+                        // Validatie van alle verplichte velden
                         if (recipientName.isBlank()) {
-                            errorMessage = "De naam van de ontvanger is verplicht"
-                            return@Button
+                            recipientNameError = true
                         }
                         if (pickupAddress.street_name.isBlank() || pickupAddress.house_number.isBlank() || pickupAddress.postal_code.isBlank()) {
-                            errorMessage = "Een geldig vertrekpunt is verplicht (straat, huisnummer en postcode)"
-                            return@Button
+                            pickupAddressError = true
                         }
                         if (dropoffAddress.street_name.isBlank() || dropoffAddress.house_number.isBlank() || dropoffAddress.postal_code.isBlank()) {
-                            errorMessage = "Een geldige bestemming is verplicht (straat, huisnummer en postcode)"
-                            return@Button
+                            dropoffAddressError = true
                         }
                         if (packageDescription.isBlank()) {
-                            errorMessage = "Een beschrijving van het pakket is verplicht"
-                            return@Button
+                            packageDescriptionError = true
                         }
                         if (packageWeight.isBlank() || packageWeight.toDoubleOrNull() == null) {
-                            errorMessage = "Het gewicht van het pakket is verplicht en moet een geldig getal zijn"
-                            return@Button
-                        }
-                        if (userId <= 0) {
-                            errorMessage = "Ongeldige gebruikers-ID: $userId"
-                            return@Button
+                            packageWeightError = true
                         }
 
-                        val fullDescription = "$packageDescription - Ontvanger: $recipientName, Gewicht: $packageWeight kg"
-                        val packageRequest = PackageRequest(
-                            user_id = userId,
-                            description = fullDescription,
-                            pickup_address = pickupAddress,
-                            dropoff_address = dropoffAddress
-                        )
+                        // Controleer of er fouten zijn
+                        if (recipientNameError || pickupAddressError || dropoffAddressError || packageDescriptionError || packageWeightError) {
+                            errorMessage = "Vul alle verplichte velden correct in:"
+                            if (recipientNameError) errorMessage += "\n- Naam van de ontvanger"
+                            if (pickupAddressError) errorMessage += "\n- Vertrekpunt (straat, huisnummer, postcode)"
+                            if (dropoffAddressError) errorMessage += "\n- Bestemming (straat, huisnummer, postcode)"
+                            if (packageDescriptionError) errorMessage += "\n- Beschrijving van het pakket"
+                            if (packageWeightError) errorMessage += "\n- Gewicht van het pakket (moet een getal zijn)"
+                        } else {
+                            // Als alles correct is ingevuld, verstuur het pakket
+                            val fullDescription = "$packageDescription - Ontvanger: $recipientName, Gewicht: $packageWeight kg"
+                            val packageRequest = PackageRequest(
+                                user_id = userId,
+                                description = fullDescription,
+                                pickup_address = pickupAddress,
+                                dropoff_address = dropoffAddress
+                            )
 
-                        println("Sending package request: $packageRequest")
-                        println("Sending with userId: $userId")
-
-                        val call = apiService.addPackage(packageRequest)
-                        call.enqueue(object : Callback<Package> {
-                            override fun onResponse(call: Call<Package>, response: Response<Package>) {
-                                if (response.isSuccessful) {
-                                    val responseBody = response.body()
-                                    successMessage = "Je pakket is succesvol aangemaakt! (ID: ${responseBody?.id ?: "onbekend"})"
-                                    errorMessage = null
-                                    scope.launch {
-                                        RecentFormDataStore.saveSendPackageData(
-                                            context,
-                                            recipientName,
-                                            pickupAddress,
-                                            dropoffAddress,
-                                            packageDescription,
-                                            packageWeight
-                                        )
-                                        navController.popBackStack()
+                            val call = apiService.addPackage(packageRequest)
+                            call.enqueue(object : Callback<Package> {
+                                override fun onResponse(call: Call<Package>, response: Response<Package>) {
+                                    if (response.isSuccessful) {
+                                        successMessage = "Je pakket is succesvol aangemaakt! (ID: ${response.body()?.id ?: "onbekend"})"
+                                        errorMessage = null
+                                        scope.launch {
+                                            RecentFormDataStore.saveSendPackageData(
+                                                context,
+                                                recipientName,
+                                                pickupAddress,
+                                                dropoffAddress,
+                                                packageDescription,
+                                                packageWeight
+                                            )
+                                            navController.popBackStack()
+                                        }
+                                    } else {
+                                        errorMessage = "Er ging iets mis: ${response.code()} - ${response.errorBody()?.string() ?: "Geen details"}"
+                                        successMessage = null
                                     }
-                                } else {
-                                    val errorBody = response.errorBody()?.string() ?: "Geen details"
-                                    errorMessage = "Er ging iets mis: ${response.code()} - ${errorBody}"
-                                    successMessage = null
-                                    println("Error response: ${response.code()} - ${errorBody}")
                                 }
-                            }
 
-                            override fun onFailure(call: Call<Package>, t: Throwable) {
-                                errorMessage = "Netwerkfout: ${t.message}"
-                                successMessage = null
-                                println("Failure: ${t.message}")
-                            }
-                        })
+                                override fun onFailure(call: Call<Package>, t: Throwable) {
+                                    errorMessage = "Netwerkfout: ${t.message}"
+                                    successMessage = null
+                                }
+                            })
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -406,16 +422,6 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                         containerColor = Color.Transparent,
                         contentColor = SandBeige
                     ),
-                    enabled = recipientName.isNotBlank() &&
-                            pickupAddress.street_name.isNotBlank() &&
-                            pickupAddress.house_number.isNotBlank() &&
-                            pickupAddress.postal_code.isNotBlank() &&
-                            dropoffAddress.street_name.isNotBlank() &&
-                            dropoffAddress.house_number.isNotBlank() &&
-                            dropoffAddress.postal_code.isNotBlank() &&
-                            packageDescription.isNotBlank() &&
-                            packageWeight.isNotBlank() &&
-                            packageWeight.toDoubleOrNull() != null,
                     interactionSource = interactionSource,
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
                 ) {

@@ -4,7 +4,6 @@ import android.Manifest
 import android.os.Looper
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.quickdropapp.composables.tracking.TrackingPackageCard
 import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.models.tracking.TrackingInfo
 import com.example.quickdropapp.network.LocationUpdate
@@ -46,7 +47,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import android.util.Log
-import androidx.compose.ui.draw.shadow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -66,12 +66,14 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
     val locationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
 
+    // Request location permission if not granted
     LaunchedEffect(Unit) {
         if (!locationPermissionState.status.isGranted) {
             locationPermissionState.launchPermissionRequest()
         }
     }
 
+    // Fetch packages for the user
     LaunchedEffect(userId) {
         apiService.getPackagesByUserId(userId).enqueue(object : Callback<List<Package>> {
             override fun onResponse(call: Call<List<Package>>, response: Response<List<Package>>) {
@@ -91,6 +93,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
         })
     }
 
+    // Poll tracking info for the selected package
     LaunchedEffect(selectedPackageId) {
         selectedPackageId?.let { packageId ->
             shouldPoll = true
@@ -121,6 +124,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
         }
     }
 
+    // Update courier location periodically
     DisposableEffect(selectedPackageId) {
         val callback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
@@ -171,7 +175,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(packages.filter { it.status in listOf("assigned", "in_transit", "delivered") }) { pkg ->
-                    PackageCard(pkg, isSelected = selectedPackageId == pkg.id) {
+                    TrackingPackageCard(pkg, isSelected = selectedPackageId == pkg.id) {
                         selectedPackageId = pkg.id
                     }
                 }
@@ -208,7 +212,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                     .padding(paddingValues)
                     .background(SandBeige)
             ) {
-                // Uniforme header
+                // Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -344,57 +348,6 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun PackageCard(pkg: Package, isSelected: Boolean, onClick: () -> Unit) {
-    val pickupCity = pkg.pickupAddress?.city ?: "Onbekend"
-    val dropoffCity = pkg.dropoffAddress?.city ?: "Onbekend"
-    val statusText = when (pkg.status) {
-        "assigned" -> "Toegewezen"
-        "in_transit" -> "Onderweg"
-        "delivered" -> "Geleverd"
-        else -> "Onbekend"
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clickable { onClick() }
-            .shadow(if (isSelected) 8.dp else 4.dp, RoundedCornerShape(12.dp)),
-        colors = CardDefaults.cardColors(containerColor = if (isSelected) GreenSustainable else Color.White)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Text(
-                text = "Pakket #${pkg.id}",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isSelected) Color.White else DarkGreen
-            )
-            Text(
-                text = pkg.description ?: "Geen beschrijving",
-                fontSize = 14.sp,
-                color = if (isSelected) Color.White.copy(alpha = 0.8f) else DarkGreen.copy(alpha = 0.8f)
-            )
-            Text(
-                text = "Van $pickupCity naar $dropoffCity",
-                fontSize = 12.sp,
-                color = if (isSelected) Color.White.copy(alpha = 0.6f) else DarkGreen.copy(alpha = 0.6f)
-            )
-            Text(
-                text = "Status: $statusText",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = if (isSelected) Color.White else GreenSustainable
-            )
         }
     }
 }

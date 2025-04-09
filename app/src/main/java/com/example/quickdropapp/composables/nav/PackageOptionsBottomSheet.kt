@@ -86,14 +86,14 @@ fun PackageOptionsBottomSheet(
         ) {
             SelectionButton(
                 text = "Verzenden",
-                icon = Icons.Filled.SubdirectoryArrowRight,
+                icon = Icons.Filled.ArrowUpward,
                 isSelected = selectedAction == "Send",
                 onClick = { selectedAction = "Send" }
             )
             Spacer(modifier = Modifier.width(16.dp))
             SelectionButton(
                 text = "Ontvangen",
-                icon = Icons.Filled.Inbox,
+                icon = Icons.Filled.ArrowDownward,
                 isSelected = selectedAction == "Receive",
                 onClick = { selectedAction = "Receive" }
             )

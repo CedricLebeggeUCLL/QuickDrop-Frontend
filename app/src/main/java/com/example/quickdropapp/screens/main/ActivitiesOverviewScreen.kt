@@ -160,8 +160,8 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                                     verticalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
                                     ModernActionCard(
-                                        title = "Verzenden/Ontvangen",
-                                        description = "Verstuur of ontvang duurzaam en snel",
+                                        title = "Start een Verzending",
+                                        description = "Begin met verzenden of ontvangen",
                                         icon = Icons.Filled.DoubleArrow,
                                         onClick = {
                                             scope.launch { scaffoldState.bottomSheetState.expand() }
@@ -170,7 +170,7 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                                     )
                                     ModernActionCard(
                                         title = "Mijn Pakketten",
-                                        description = "Beheer je verzonden pakketten",
+                                        description = "Beheer je actieve pakketten",
                                         icon = Icons.Filled.LocalShipping,
                                         onClick = { navController.navigate("viewPackages/$userId") },
                                         containerColor = DarkGreen

@@ -14,7 +14,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.composables.activities.AnimatedSectionHeader
 import com.example.quickdropapp.composables.activities.EnhancedHeaderActivities
@@ -31,12 +33,18 @@ import retrofit2.Callback
 import retrofit2.Response
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout: () -> Unit) {
     var isCourier by remember { mutableStateOf<Boolean?>(null) }
     var userRole by remember { mutableStateOf<String?>(null) }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scaffoldState = rememberBottomSheetScaffoldState()
     val scope = rememberCoroutineScope()
+
+    // State for the flyout menu
+    var showPackageOptions by remember { mutableStateOf(false) }
+    var selectedAction by remember { mutableStateOf<String?>(null) } // "Send" or "Receive"
 
     val apiService = RetrofitClient.create(LocalContext.current)
 
@@ -66,63 +74,161 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
             )
         },
         content = {
-            Scaffold(
-                bottomBar = { ModernBottomNavigation(navController, userId) },
-                containerColor = SandBeige
-            ) { paddingValues ->
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .padding(horizontal = 20.dp, vertical = 16.dp)
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
-                            )
-                        ),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    item {
-                        EnhancedHeaderActivities(
-                            onMenuClick = { scope.launch { drawerState.open() } },
-                            onLogout = onLogout
+            BottomSheetScaffold(
+                scaffoldState = scaffoldState,
+                sheetContent = {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = "Wat wil je doen?",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = DarkGreen,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
-                    }
-
-                    item {
-                        AnimatedSectionHeader(title = "Pakketten")
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .shadow(4.dp, RoundedCornerShape(12.dp)),
-                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            Button(
+                                onClick = { selectedAction = "Send" },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (selectedAction == "Send") GreenSustainable else Color.Gray,
+                                    contentColor = Color.White
+                                )
                             ) {
-                                ModernActionCard(
-                                    title = "Pakket Versturen",
-                                    description = "Verstuur duurzaam en snel",
-                                    icon = Icons.Filled.DoubleArrow,
-                                    onClick = { navController.navigate("sendPackage/$userId") },
-                                    containerColor = GreenSustainable
+                                Text("Verzenden")
+                            }
+                            Button(
+                                onClick = { selectedAction = "Receive" },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (selectedAction == "Receive") GreenSustainable else Color.Gray,
+                                    contentColor = Color.White
                                 )
-                                ModernActionCard(
-                                    title = "Mijn Pakketten",
-                                    description = "Beheer je verzonden pakketten",
-                                    icon = Icons.Filled.LocalShipping,
-                                    onClick = { navController.navigate("viewPackages/$userId") },
-                                    containerColor = DarkGreen
-                                )
+                            ) {
+                                Text("Ontvangen")
                             }
                         }
-                    }
 
-                    if (userRole != null && (userRole == "courier" || userRole == "admin")) {
+                        if (selectedAction != null) {
+                            Text(
+                                text = "Wat ga je verzenden/ontvangen?",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = DarkGreen,
+                                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+                            )
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Button(
+                                    onClick = {
+                                        if (selectedAction == "Send") {
+                                            navController.navigate("sendPackage/$userId")
+                                            scope.launch { scaffoldState.bottomSheetState.hide() }
+                                        } else {
+                                            // Placeholder for "Receive Package" navigation
+                                            scope.launch { scaffoldState.bottomSheetState.hide() }
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = GreenSustainable,
+                                        contentColor = Color.White
+                                    )
+                                ) {
+                                    Text("Pakket")
+                                }
+                                Button(
+                                    onClick = {
+                                        // Placeholder for "Send/Receive Food" navigation
+                                        scope.launch { scaffoldState.bottomSheetState.hide() }
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = GreenSustainable,
+                                        contentColor = Color.White
+                                    )
+                                ) {
+                                    Text("Eten")
+                                }
+                                Button(
+                                    onClick = {
+                                        // Placeholder for "Send/Receive Drink" navigation
+                                        scope.launch { scaffoldState.bottomSheetState.hide() }
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = GreenSustainable,
+                                        contentColor = Color.White
+                                    )
+                                ) {
+                                    Text("Drinken")
+                                }
+                            }
+                        }
+
+                        Button(
+                            onClick = {
+                                if (selectedAction != null) {
+                                    // Navigate based on selection
+                                    if (selectedAction == "Send") {
+                                        navController.navigate("sendPackage/$userId")
+                                    }
+                                    // Add more navigation logic for other options as needed
+                                    scope.launch { scaffoldState.bottomSheetState.hide() }
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            enabled = selectedAction != null,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = DarkGreen,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text("Volgende")
+                        }
+                    }
+                },
+                sheetPeekHeight = 0.dp,
+                sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                sheetContainerColor = Color.White
+            ) {
+                Scaffold(
+                    bottomBar = { ModernBottomNavigation(navController, userId) },
+                    containerColor = SandBeige
+                ) { paddingValues ->
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                            .padding(horizontal = 20.dp, vertical = 16.dp)
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
+                                )
+                            ),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
                         item {
-                            AnimatedSectionHeader(title = "Leveringen")
+                            EnhancedHeaderActivities(
+                                onMenuClick = { scope.launch { drawerState.open() } },
+                                onLogout = onLogout
+                            )
+                        }
+
+                        item {
+                            AnimatedSectionHeader(title = "Pakketten")
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -134,51 +240,86 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                                     verticalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
                                     ModernActionCard(
-                                        title = "Start een Levering",
-                                        description = "Stel je locatie en radius in",
-                                        icon = Icons.Filled.DriveEta,
-                                        onClick = { navController.navigate("startDelivery/$userId") },
-                                        containerColor = DarkGreen
+                                        title = "Pakket Verzenden/Ontvangen",
+                                        description = "Verstuur of ontvang duurzaam en snel",
+                                        icon = Icons.Filled.DoubleArrow,
+                                        onClick = {
+                                            showPackageOptions = true
+                                            scope.launch { scaffoldState.bottomSheetState.expand() }
+                                        },
+                                        containerColor = GreenSustainable
                                     )
                                     ModernActionCard(
-                                        title = "Mijn Leveringen",
-                                        description = "Bekijk je historie",
-                                        icon = Icons.Filled.FormatListNumbered,
-                                        onClick = { navController.navigate("viewDeliveries/$userId") },
-                                        containerColor = GreenSustainable
+                                        title = "Mijn Pakketten",
+                                        description = "Beheer je verzonden pakketten",
+                                        icon = Icons.Filled.LocalShipping,
+                                        onClick = { navController.navigate("viewPackages/$userId") },
+                                        containerColor = DarkGreen
                                     )
                                 }
                             }
                         }
-                    }
 
-                    item {
-                        AnimatedSectionHeader(title = "Tracking")
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .shadow(4.dp, RoundedCornerShape(12.dp)),
-                            colors = CardDefaults.cardColors(containerColor = Color.White)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                        if (userRole != null && (userRole == "courier" || userRole == "admin")) {
+                            item {
+                                AnimatedSectionHeader(title = "Leveringen")
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .shadow(4.dp, RoundedCornerShape(12.dp)),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        ModernActionCard(
+                                            title = "Start een Levering",
+                                            description = "Stel je locatie en radius in",
+                                            icon = Icons.Filled.DriveEta,
+                                            onClick = { navController.navigate("startDelivery/$userId") },
+                                            containerColor = DarkGreen
+                                        )
+                                        ModernActionCard(
+                                            title = "Mijn Leveringen",
+                                            description = "Bekijk je historie",
+                                            icon = Icons.Filled.FormatListNumbered,
+                                            onClick = { navController.navigate("viewDeliveries/$userId") },
+                                            containerColor = GreenSustainable
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        item {
+                            AnimatedSectionHeader(title = "Tracking")
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .shadow(4.dp, RoundedCornerShape(12.dp)),
+                                colors = CardDefaults.cardColors(containerColor = Color.White)
                             ) {
-                                ModernActionCard(
-                                    title = "Track Pakketten",
-                                    description = "Volg live je pakket",
-                                    icon = Icons.Filled.LocationOn,
-                                    onClick = { navController.navigate("trackPackages/$userId") },
-                                    containerColor = GreenSustainable
-                                )
-                                if (userRole != null && (userRole == "courier" || userRole == "admin")) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
                                     ModernActionCard(
-                                        title = "Track Leveringen",
-                                        description = "Volg live je leveringen",
-                                        icon = Icons.Filled.LocalShipping,
-                                        onClick = { navController.navigate("trackingDeliveries/$userId") },
-                                        containerColor = DarkGreen
+                                        title = "Track Pakketten",
+                                        description = "Volg live je pakket",
+                                        icon = Icons.Filled.LocationOn,
+                                        onClick = { navController.navigate("trackPackages/$userId") },
+                                        containerColor = GreenSustainable
                                     )
+                                    if (userRole != null && (userRole == "courier" || userRole == "admin")) {
+                                        ModernActionCard(
+                                            title = "Track Leveringen",
+                                            description = "Volg live je leveringen",
+                                            icon = Icons.Filled.LocalShipping,
+                                            onClick = { navController.navigate("trackingDeliveries/$userId") },
+                                            containerColor = DarkGreen
+                                        )
+                                    }
                                 }
                             }
                         }

@@ -1,5 +1,6 @@
 package com.example.quickdropapp.screens.main
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,15 +15,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.composables.activities.AnimatedSectionHeader
 import com.example.quickdropapp.composables.activities.EnhancedHeaderActivities
 import com.example.quickdropapp.composables.nav.FlyoutMenu
 import com.example.quickdropapp.composables.nav.ModernActionCard
 import com.example.quickdropapp.composables.nav.ModernBottomNavigation
+import com.example.quickdropapp.composables.nav.PackageOptionsBottomSheet
 import com.example.quickdropapp.models.Courier
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
@@ -42,9 +42,41 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
     val scaffoldState = rememberBottomSheetScaffoldState()
     val scope = rememberCoroutineScope()
 
-    // State for the flyout menu
-    var showPackageOptions by remember { mutableStateOf(false) }
-    var selectedAction by remember { mutableStateOf<String?>(null) } // "Send" or "Receive"
+    // State voor navigatie en bottom sheet
+    var navigationTrigger by remember { mutableStateOf<String?>(null) }
+    var shouldHideBottomSheet by remember { mutableStateOf(false) }
+
+    // Beheer bottom sheet verbergen en navigeren
+    LaunchedEffect(shouldHideBottomSheet) {
+        if (shouldHideBottomSheet) {
+            try {
+                // Gebruik expand() en vervolgens collapse() om animatieproblemen te vermijden
+                scaffoldState.bottomSheetState.expand()
+                scaffoldState.bottomSheetState.hide()
+                Log.d("BottomSheet", "Bottom sheet succesvol verborgen")
+            } catch (e: Exception) {
+                Log.e("BottomSheetError", "Fout bij verbergen bottom sheet: ${e.message}")
+            }
+            shouldHideBottomSheet = false
+        }
+    }
+
+    // Navigatie uitvoeren wanneer navigationTrigger verandert
+    LaunchedEffect(navigationTrigger) {
+        if (navigationTrigger != null) {
+            when (navigationTrigger) {
+                "sendPackage" -> {
+                    Log.d("Navigation", "Navigeren naar sendPackage met userId: $userId")
+                    try {
+                        navController.navigate("sendPackage/$userId")
+                    } catch (e: Exception) {
+                        Log.e("NavigationError", "Fout bij navigeren naar sendPackage: ${e.message}")
+                    }
+                }
+            }
+            navigationTrigger = null // Reset de trigger na navigatie
+        }
+    }
 
     val apiService = RetrofitClient.create(LocalContext.current)
 
@@ -77,131 +109,19 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
             BottomSheetScaffold(
                 scaffoldState = scaffoldState,
                 sheetContent = {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(
-                            text = "Wat wil je doen?",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkGreen,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Button(
-                                onClick = { selectedAction = "Send" },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (selectedAction == "Send") GreenSustainable else Color.Gray,
-                                    contentColor = Color.White
-                                )
-                            ) {
-                                Text("Verzenden")
+                    PackageOptionsBottomSheet(
+                        onConfirmSelection = { action, itemType ->
+                            if (action == "Send" && itemType == "Package") {
+                                navigationTrigger = "sendPackage"
                             }
-                            Button(
-                                onClick = { selectedAction = "Receive" },
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (selectedAction == "Receive") GreenSustainable else Color.Gray,
-                                    contentColor = Color.White
-                                )
-                            ) {
-                                Text("Ontvangen")
-                            }
+                            shouldHideBottomSheet = true
                         }
-
-                        if (selectedAction != null) {
-                            Text(
-                                text = "Wat ga je verzenden/ontvangen?",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = DarkGreen,
-                                modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
-                            )
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Button(
-                                    onClick = {
-                                        if (selectedAction == "Send") {
-                                            navController.navigate("sendPackage/$userId")
-                                            scope.launch { scaffoldState.bottomSheetState.hide() }
-                                        } else {
-                                            // Placeholder for "Receive Package" navigation
-                                            scope.launch { scaffoldState.bottomSheetState.hide() }
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = GreenSustainable,
-                                        contentColor = Color.White
-                                    )
-                                ) {
-                                    Text("Pakket")
-                                }
-                                Button(
-                                    onClick = {
-                                        // Placeholder for "Send/Receive Food" navigation
-                                        scope.launch { scaffoldState.bottomSheetState.hide() }
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = GreenSustainable,
-                                        contentColor = Color.White
-                                    )
-                                ) {
-                                    Text("Eten")
-                                }
-                                Button(
-                                    onClick = {
-                                        // Placeholder for "Send/Receive Drink" navigation
-                                        scope.launch { scaffoldState.bottomSheetState.hide() }
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = GreenSustainable,
-                                        contentColor = Color.White
-                                    )
-                                ) {
-                                    Text("Drinken")
-                                }
-                            }
-                        }
-
-                        Button(
-                            onClick = {
-                                if (selectedAction != null) {
-                                    // Navigate based on selection
-                                    if (selectedAction == "Send") {
-                                        navController.navigate("sendPackage/$userId")
-                                    }
-                                    // Add more navigation logic for other options as needed
-                                    scope.launch { scaffoldState.bottomSheetState.hide() }
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp),
-                            enabled = selectedAction != null,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = DarkGreen,
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Text("Volgende")
-                        }
-                    }
+                    )
                 },
                 sheetPeekHeight = 0.dp,
                 sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                sheetContainerColor = Color.White
+                sheetContainerColor = Color.White,
+                modifier = Modifier.shadow(4.dp)
             ) {
                 Scaffold(
                     bottomBar = { ModernBottomNavigation(navController, userId) },
@@ -240,11 +160,10 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                                     verticalArrangement = Arrangement.spacedBy(16.dp)
                                 ) {
                                     ModernActionCard(
-                                        title = "Pakket Verzenden/Ontvangen",
+                                        title = "Verzenden/Ontvangen",
                                         description = "Verstuur of ontvang duurzaam en snel",
                                         icon = Icons.Filled.DoubleArrow,
                                         onClick = {
-                                            showPackageOptions = true
                                             scope.launch { scaffoldState.bottomSheetState.expand() }
                                         },
                                         containerColor = GreenSustainable

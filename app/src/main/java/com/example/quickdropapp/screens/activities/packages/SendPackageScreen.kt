@@ -97,6 +97,13 @@ fun SendPackageScreen(
         else -> "Bijv. Boeken of Kleding"
     }
 
+    // Dynamische placeholder voor ophaallocatie (voor "receive")
+    val pickupLocationPlaceholder = when (category) {
+        "food" -> "Restaurant Chez Paul, Brussels"
+        "drink" -> "Café Central, Brussels"
+        else -> "Postkantoor Brussel"
+    }
+
     LaunchedEffect(userId) {
         println("Received userId: $userId, actionType: $actionType, category: $category")
     }
@@ -435,7 +442,7 @@ fun SendPackageScreen(
                                 value = pickupLocationName,
                                 onValueChange = { pickupLocationName = it },
                                 label = "Van welke locatie moet je $itemTypeText opgehaald worden?",
-                                placeholder = "Bijv. Postkantoor Brussel",
+                                placeholder = pickupLocationPlaceholder, // Dynamische placeholder
                                 icon = Icons.Filled.LocationOn,
                                 modifier = Modifier.fillMaxWidth(),
                                 isError = pickupLocationNameError

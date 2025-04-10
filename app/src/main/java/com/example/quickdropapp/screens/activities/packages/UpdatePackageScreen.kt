@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.composables.forms.AddressInputField
 import com.example.quickdropapp.composables.forms.LabeledIconTextField
-import com.example.quickdropapp.composables.forms.ModernFormField
 import com.example.quickdropapp.models.Address
 import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.models.packages.PackageRequest
@@ -56,17 +55,23 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
     var size by remember { mutableStateOf("medium") }
     var pickupAddress by remember { mutableStateOf(Address()) }
     var dropoffAddress by remember { mutableStateOf(Address()) }
+    var receiverName by remember { mutableStateOf("") } // Voor "send"
+    var pickupLocationName by remember { mutableStateOf("") } // Voor "receive"
+    var packageHolderName by remember { mutableStateOf("") } // Voor "receive"
+    var packageWeight by remember { mutableStateOf("") }
 
     // Error states for required fields
     var descriptionError by remember { mutableStateOf(false) }
     var pickupAddressError by remember { mutableStateOf(false) }
     var dropoffAddressError by remember { mutableStateOf(false) }
+    var receiverNameError by remember { mutableStateOf(false) }
+    var pickupLocationNameError by remember { mutableStateOf(false) }
+    var packageHolderNameError by remember { mutableStateOf(false) }
+    var packageWeightError by remember { mutableStateOf(false) }
 
     val apiService = RetrofitClient.create(LocalContext.current)
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    var packageWeight by remember { mutableStateOf("") }
-    var packageWeightError by remember { mutableStateOf(false) }
     val buttonScale by animateFloatAsState(
         targetValue = if (isPressed) 1.05f else 1f,
         animationSpec = tween(durationMillis = 150)
@@ -88,6 +93,13 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
         else -> "Bijv. Boeken of Kleding"
     }
 
+    // Dynamische placeholder voor ophaallocatie
+    val pickupLocationPlaceholder = when (category) {
+        "food" -> "Restaurant Chez Paul, Brussels"
+        "drink" -> "Café Central, Brussels"
+        else -> "Postkantoor Brussel"
+    }
+
     fun log(message: String) {
         println("UpdatePackageScreen: $message")
     }
@@ -106,6 +118,12 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                     packageItem?.let { pkg ->
                         description = pkg.description?.substringBefore(" - ") ?: ""
                         packageWeight = pkg.description?.substringAfter("Gewicht: ")?.substringBefore(" kg") ?: ""
+                        if (pkg.action_type == "send") {
+                            receiverName = pkg.description?.substringAfter("Ontvanger: ")?.substringBefore(", Gewicht:") ?: ""
+                        } else {
+                            pickupLocationName = pkg.description?.substringAfter("Ophaallocatie: ")?.substringBefore(", Naam:") ?: ""
+                            packageHolderName = pkg.description?.substringAfter("Naam: ")?.substringBefore(", Gewicht:") ?: ""
+                        }
                         status = pkg.status ?: "pending"
                         actionType = pkg.action_type
                         category = pkg.category
@@ -135,7 +153,12 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(
+                    top = paddingValues.calculateTopPadding(),
+                    bottom = 0.dp,
+                    start = 0.dp,
+                    end = 0.dp
+                )
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
@@ -147,7 +170,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(SandBeige)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -248,7 +271,42 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                 )
                             }
                             Spacer(modifier = Modifier.height(12.dp))
-                            ModernFormField(
+
+                            // Dynamische velden op basis van actionType
+                            if (actionType == "send") {
+                                LabeledIconTextField(
+                                    value = receiverName,
+                                    onValueChange = { receiverName = it },
+                                    label = "Naar wie stuur je je $itemTypeText?",
+                                    placeholder = "Bijv. Jan Jansen",
+                                    icon = Icons.Filled.Person,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    isError = receiverNameError
+                                )
+                            } else {
+                                LabeledIconTextField(
+                                    value = pickupLocationName,
+                                    onValueChange = { pickupLocationName = it },
+                                    label = "Van welke locatie moet je $itemTypeText opgehaald worden?",
+                                    placeholder = pickupLocationPlaceholder,
+                                    icon = Icons.Filled.LocationOn,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    isError = pickupLocationNameError
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                LabeledIconTextField(
+                                    value = packageHolderName,
+                                    onValueChange = { packageHolderName = it },
+                                    label = "Wie heeft het $itemTypeText besteld?",
+                                    placeholder = "Bijv. John Smith",
+                                    icon = Icons.Filled.Person,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    isError = packageHolderNameError
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+                            LabeledIconTextField(
                                 value = description,
                                 onValueChange = { description = it },
                                 label = "Wat is je $itemTypeText?",
@@ -503,6 +561,9 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             descriptionError = false
                             pickupAddressError = false
                             dropoffAddressError = false
+                            receiverNameError = false
+                            pickupLocationNameError = false
+                            packageHolderNameError = false
                             packageWeightError = false
                             errorMessage = null
 
@@ -519,20 +580,34 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             if (packageWeight.isBlank() || packageWeight.toDoubleOrNull() == null) {
                                 packageWeightError = true
                             }
+                            if (actionType == "send" && receiverName.isBlank()) {
+                                receiverNameError = true
+                            }
+                            if (actionType == "receive") {
+                                if (pickupLocationName.isBlank()) {
+                                    pickupLocationNameError = true
+                                }
+                                if (packageHolderName.isBlank()) {
+                                    packageHolderNameError = true
+                                }
+                            }
 
                             // Check if there are any errors
-                            if (descriptionError || pickupAddressError || dropoffAddressError || packageWeightError) {
+                            if (descriptionError || pickupAddressError || dropoffAddressError || receiverNameError || pickupLocationNameError || packageHolderNameError || packageWeightError) {
                                 errorMessage = "Vul alle verplichte velden correct in:"
                                 if (descriptionError) errorMessage += "\n- Wat is je $itemTypeText?"
                                 if (pickupAddressError) errorMessage += "\n- ${if (actionType == "send") "Vertrekpunt" else "Ophaaladres"} (straat, huisnummer, postcode)"
                                 if (dropoffAddressError) errorMessage += "\n- Bestemming (straat, huisnummer, postcode)"
+                                if (receiverNameError) errorMessage += "\n- Naar wie stuur je je $itemTypeText?"
+                                if (pickupLocationNameError) errorMessage += "\n- Van welke locatie moet je $itemTypeText opgehaald worden?"
+                                if (packageHolderNameError) errorMessage += "\n- Wie heeft het $itemTypeText besteld?"
                                 if (packageWeightError) errorMessage += "\n- Hoe zwaar is je $itemTypeText? (moet een getal zijn)"
                             } else {
                                 // Proceed with update if all fields are valid
                                 val fullDescription = if (actionType == "send") {
-                                    "$description - Ontvanger: ${packageItem?.description?.substringAfter("Ontvanger: ")?.substringBefore(", Gewicht:") ?: ""}, Gewicht: $packageWeight kg"
+                                    "$description - Ontvanger: $receiverName, Gewicht: $packageWeight kg"
                                 } else {
-                                    "$description - Ophaallocatie: ${packageItem?.description?.substringAfter("Ophaallocatie: ")?.substringBefore(", Naam:") ?: ""}, Naam: ${packageItem?.description?.substringAfter("Naam: ")?.substringBefore(", Gewicht:") ?: ""}, Gewicht: $packageWeight kg"
+                                    "$description - Ophaallocatie: $pickupLocationName, Naam: $packageHolderName, Gewicht: $packageWeight kg"
                                 }
                                 val updateRequest = PackageRequest(
                                     user_id = packageItem?.user_id ?: 0,

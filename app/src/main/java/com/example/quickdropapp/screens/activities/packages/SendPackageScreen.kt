@@ -112,7 +112,12 @@ fun SendPackageScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(
+                    top = paddingValues.calculateTopPadding(),
+                    bottom = 0.dp,
+                    start = 0.dp,
+                    end = 0.dp
+                )
                 .background(
                     brush = Brush.verticalGradient(
                         colors = listOf(SandBeige, Color.White.copy(alpha = 0.8f))
@@ -124,7 +129,7 @@ fun SendPackageScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(SandBeige)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -150,6 +155,8 @@ fun SendPackageScreen(
                             packageDescription = recentData.packageDescription
                             packageWeight = recentData.packageWeight
                             receiverName = recentData.recipientName
+                            pickupLocationName = recentData.pickupLocationName
+                            packageHolderName = recentData.packageHolderName
                         }
                     }
                 }) {
@@ -442,7 +449,7 @@ fun SendPackageScreen(
                                 value = pickupLocationName,
                                 onValueChange = { pickupLocationName = it },
                                 label = "Van welke locatie moet je $itemTypeText opgehaald worden?",
-                                placeholder = pickupLocationPlaceholder, // Dynamische placeholder
+                                placeholder = pickupLocationPlaceholder,
                                 icon = Icons.Filled.LocationOn,
                                 modifier = Modifier.fillMaxWidth(),
                                 isError = pickupLocationNameError
@@ -545,8 +552,8 @@ fun SendPackageScreen(
                             val packageRequest = PackageRequest(
                                 user_id = userId,
                                 description = fullDescription,
-                                pickup_address = pickupAddress,
-                                dropoff_address = dropoffAddress,
+                                pickup_address = pickupAddress.copy(country = "Belgium"),
+                                dropoff_address = dropoffAddress.copy(country = "Belgium"),
                                 action_type = actionType,
                                 category = category,
                                 size = size
@@ -565,7 +572,9 @@ fun SendPackageScreen(
                                                 pickupAddress,
                                                 dropoffAddress,
                                                 packageDescription,
-                                                packageWeight
+                                                packageWeight,
+                                                pickupLocationName,
+                                                packageHolderName
                                             )
                                             navController.popBackStack()
                                         }

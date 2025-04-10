@@ -16,6 +16,8 @@ val Context.recentFormDataStore: DataStore<Preferences> by preferencesDataStore(
 object RecentFormDataStore {
     // Sleutels voor SendPackageScreen
     private val RECIPIENT_NAME = stringPreferencesKey("recipient_name")
+    private val PICKUP_LOCATION_NAME = stringPreferencesKey("pickup_location_name") // Nieuw
+    private val PACKAGE_HOLDER_NAME = stringPreferencesKey("package_holder_name") // Nieuw
     private val PACKAGE_DESCRIPTION = stringPreferencesKey("package_description")
     private val PACKAGE_WEIGHT = stringPreferencesKey("package_weight")
     private val PICKUP_STREET = stringPreferencesKey("pickup_street")
@@ -54,21 +56,25 @@ object RecentFormDataStore {
         pickupAddress: Address,
         dropoffAddress: Address,
         packageDescription: String,
-        packageWeight: String
+        packageWeight: String,
+        pickupLocationName: String = "", // Nieuw
+        packageHolderName: String = "" // Nieuw
     ) {
         context.recentFormDataStore.edit { preferences ->
             preferences[RECIPIENT_NAME] = recipientName
+            preferences[PICKUP_LOCATION_NAME] = pickupLocationName
+            preferences[PACKAGE_HOLDER_NAME] = packageHolderName
             preferences[PACKAGE_DESCRIPTION] = packageDescription
             preferences[PACKAGE_WEIGHT] = packageWeight
-            preferences[PICKUP_STREET] = pickupAddress.street_name ?: ""
-            preferences[PICKUP_HOUSE_NUMBER] = pickupAddress.house_number ?: ""
-            preferences[PICKUP_POSTAL_CODE] = pickupAddress.postal_code ?: ""
+            preferences[PICKUP_STREET] = pickupAddress.street_name
+            preferences[PICKUP_HOUSE_NUMBER] = pickupAddress.house_number
+            preferences[PICKUP_POSTAL_CODE] = pickupAddress.postal_code
             preferences[PICKUP_CITY] = pickupAddress.city ?: ""
             preferences[PICKUP_COUNTRY] = pickupAddress.country ?: ""
             preferences[PICKUP_EXTRA_INFO] = pickupAddress.extra_info ?: ""
-            preferences[DROPOFF_STREET] = dropoffAddress.street_name ?: ""
-            preferences[DROPOFF_HOUSE_NUMBER] = dropoffAddress.house_number ?: ""
-            preferences[DROPOFF_POSTAL_CODE] = dropoffAddress.postal_code ?: ""
+            preferences[DROPOFF_STREET] = dropoffAddress.street_name
+            preferences[DROPOFF_HOUSE_NUMBER] = dropoffAddress.house_number
+            preferences[DROPOFF_POSTAL_CODE] = dropoffAddress.postal_code
             preferences[DROPOFF_CITY] = dropoffAddress.city ?: ""
             preferences[DROPOFF_COUNTRY] = dropoffAddress.country ?: ""
             preferences[DROPOFF_EXTRA_INFO] = dropoffAddress.extra_info ?: ""
@@ -84,15 +90,15 @@ object RecentFormDataStore {
         dropoffRadius: String
     ) {
         context.recentFormDataStore.edit { preferences ->
-            preferences[START_STREET] = startAddress.street_name ?: ""
-            preferences[START_HOUSE_NUMBER] = startAddress.house_number ?: ""
-            preferences[START_POSTAL_CODE] = startAddress.postal_code ?: ""
+            preferences[START_STREET] = startAddress.street_name
+            preferences[START_HOUSE_NUMBER] = startAddress.house_number
+            preferences[START_POSTAL_CODE] = startAddress.postal_code
             preferences[START_CITY] = startAddress.city ?: ""
             preferences[START_COUNTRY] = startAddress.country ?: ""
             preferences[START_EXTRA_INFO] = startAddress.extra_info ?: ""
-            preferences[DEST_STREET] = destinationAddress.street_name ?: ""
-            preferences[DEST_HOUSE_NUMBER] = destinationAddress.house_number ?: ""
-            preferences[DEST_POSTAL_CODE] = destinationAddress.postal_code ?: ""
+            preferences[DEST_STREET] = destinationAddress.street_name
+            preferences[DEST_HOUSE_NUMBER] = destinationAddress.house_number
+            preferences[DEST_POSTAL_CODE] = destinationAddress.postal_code
             preferences[DEST_CITY] = destinationAddress.city ?: ""
             preferences[DEST_COUNTRY] = destinationAddress.country ?: ""
             preferences[DEST_EXTRA_INFO] = destinationAddress.extra_info ?: ""
@@ -106,6 +112,8 @@ object RecentFormDataStore {
         return context.recentFormDataStore.data.map { preferences ->
             SendPackageData(
                 recipientName = preferences[RECIPIENT_NAME] ?: "",
+                pickupLocationName = preferences[PICKUP_LOCATION_NAME] ?: "", // Nieuw
+                packageHolderName = preferences[PACKAGE_HOLDER_NAME] ?: "", // Nieuw
                 pickupAddress = Address(
                     street_name = preferences[PICKUP_STREET] ?: "",
                     house_number = preferences[PICKUP_HOUSE_NUMBER] ?: "",
@@ -158,6 +166,8 @@ object RecentFormDataStore {
 // Data classes voor het ophalen van recente gegevens
 data class SendPackageData(
     val recipientName: String,
+    val pickupLocationName: String, // Nieuw
+    val packageHolderName: String, // Nieuw
     val pickupAddress: Address,
     val dropoffAddress: Address,
     val packageDescription: String,

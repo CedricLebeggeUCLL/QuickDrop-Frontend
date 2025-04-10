@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -22,10 +23,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.composables.forms.AddressInputField
+import com.example.quickdropapp.composables.forms.LabeledIconTextField
 import com.example.quickdropapp.composables.forms.ModernFormField
 import com.example.quickdropapp.models.Address
 import com.example.quickdropapp.models.packages.Package
@@ -37,6 +40,7 @@ import com.example.quickdropapp.ui.theme.SandBeige
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.util.Locale
 
 @Composable
 fun UpdatePackageScreen(navController: NavController, packageId: Int) {
@@ -47,6 +51,9 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
 
     var description by remember { mutableStateOf("") }
     var status by remember { mutableStateOf("pending") }
+    var actionType by remember { mutableStateOf("send") }
+    var category by remember { mutableStateOf("package") }
+    var size by remember { mutableStateOf("medium") }
     var pickupAddress by remember { mutableStateOf(Address()) }
     var dropoffAddress by remember { mutableStateOf(Address()) }
 
@@ -62,6 +69,14 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
         targetValue = if (isPressed) 1.05f else 1f,
         animationSpec = tween(durationMillis = 150)
     )
+
+    // Dynamische tekst gebaseerd op category
+    val itemTypeText = when (category) {
+        "package" -> "pakket"
+        "food" -> "eten"
+        "drink" -> "drinken"
+        else -> "pakket"
+    }
 
     fun log(message: String) {
         println("UpdatePackageScreen: $message")
@@ -81,6 +96,9 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                     packageItem?.let { pkg ->
                         description = pkg.description ?: ""
                         status = pkg.status ?: "pending"
+                        actionType = pkg.action_type
+                        category = pkg.category
+                        size = pkg.size
                         pickupAddress = pkg.pickupAddress?.copy() ?: Address()
                         dropoffAddress = pkg.dropoffAddress?.copy() ?: Address()
                     }
@@ -148,7 +166,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                     )
                 }
                 Text(
-                    text = "Pakket Bijwerken",
+                    text = "${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }} Bijwerken",
                     color = GreenSustainable,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
@@ -171,14 +189,14 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                     )
                 } else if (packageItem == null) {
                     Text(
-                        text = "Pakket niet gevonden",
+                        text = "${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }} niet gevonden",
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(16.dp)
                     )
                 } else {
                     Text(
-                        text = "Werk de details van pakket #$packageId bij",
+                        text = "Werk de details van $itemTypeText #$packageId bij",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium,
                         color = DarkGreen.copy(alpha = 0.8f)
@@ -212,7 +230,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Pakketdetails",
+                                    text = "Details van het $itemTypeText",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = DarkGreen
@@ -222,7 +240,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             ModernFormField(
                                 value = description,
                                 onValueChange = { description = it },
-                                label = "Beschrijving van het pakket",
+                                label = "Beschrijving van het $itemTypeText",
                                 placeholder = "Bijv. Boeken of Kleding",
                                 icon = Icons.Filled.Description,
                                 modifier = Modifier.fillMaxWidth(),
@@ -249,7 +267,105 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = status.replaceFirstChar { it.uppercase() },
+                                        text = status.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() },
+                                        fontSize = 16.sp,
+                                        color = DarkGreen,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.SubdirectoryArrowRight,
+                                    contentDescription = null,
+                                    tint = GreenSustainable,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "Actie",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = DarkGreen.copy(alpha = 0.8f)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = when (actionType) {
+                                            "send" -> "Verzenden"
+                                            "receive" -> "Ontvangen"
+                                            else -> "Verzenden"
+                                        },
+                                        fontSize = 16.sp,
+                                        color = DarkGreen,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Category,
+                                    contentDescription = null,
+                                    tint = GreenSustainable,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "Categorie",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = DarkGreen.copy(alpha = 0.8f)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = when (category) {
+                                            "package" -> "Pakket"
+                                            "food" -> "Eten"
+                                            "drink" -> "Drinken"
+                                            else -> "Pakket"
+                                        },
+                                        fontSize = 16.sp,
+                                        color = DarkGreen,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Expand,
+                                    contentDescription = null,
+                                    tint = GreenSustainable,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "Grootte",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = DarkGreen.copy(alpha = 0.8f)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = when (size) {
+                                            "small" -> "Klein"
+                                            "medium" -> "Medium"
+                                            "large" -> "Groot"
+                                            else -> "Medium"
+                                        },
                                         fontSize = 16.sp,
                                         color = DarkGreen,
                                         fontWeight = FontWeight.SemiBold
@@ -287,7 +403,8 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Vanwaar vertrekt je pakket?",
+                                    text = if (actionType == "send") "Vanwaar vertrekt je $itemTypeText?"
+                                    else "Waar moet het $itemTypeText opgehaald worden?",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = DarkGreen
@@ -295,7 +412,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             }
                             Spacer(modifier = Modifier.height(12.dp))
                             AddressInputField(
-                                label = "Vertrekpunt",
+                                label = if (actionType == "send") "Vertrekpunt" else "Ophaallocatie",
                                 address = pickupAddress,
                                 onAddressChange = { pickupAddress = it },
                                 isEditable = isAddressEditable,
@@ -332,7 +449,8 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Waar stuur je het naartoe?",
+                                    text = if (actionType == "send") "Waar stuur je het $itemTypeText naartoe?"
+                                    else "Waar moet het $itemTypeText afgeleverd worden?",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = DarkGreen
@@ -373,8 +491,8 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             // Check if there are any errors
                             if (descriptionError || pickupAddressError || dropoffAddressError) {
                                 errorMessage = "Vul alle verplichte velden correct in:"
-                                if (descriptionError) errorMessage += "\n- Beschrijving van het pakket"
-                                if (pickupAddressError) errorMessage += "\n- Vertrekpunt (straat, huisnummer, postcode)"
+                                if (descriptionError) errorMessage += "\n- Beschrijving van het $itemTypeText"
+                                if (pickupAddressError) errorMessage += "\n- ${if (actionType == "send") "Vertrekpunt" else "Ophaallocatie"} (straat, huisnummer, postcode)"
                                 if (dropoffAddressError) errorMessage += "\n- Bestemming (straat, huisnummer, postcode)"
                             } else {
                                 // Proceed with update if all fields are valid
@@ -383,12 +501,15 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                     description = description,
                                     pickup_address = pickupAddress.copy(country = "Belgium"),
                                     dropoff_address = dropoffAddress.copy(country = "Belgium"),
+                                    action_type = actionType,
+                                    category = category,
+                                    size = size,
                                     status = status
                                 )
                                 apiService.updatePackage(packageId, updateRequest).enqueue(object : Callback<Package> {
                                     override fun onResponse(call: Call<Package>, response: Response<Package>) {
                                         if (response.isSuccessful) {
-                                            successMessage = "Pakket succesvol bijgewerkt!"
+                                            successMessage = "${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }} succesvol bijgewerkt!"
                                             log("Update successful, popping back stack once")
                                             navController.popBackStack()
                                         } else {
@@ -431,7 +552,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Pakket Bijwerken",
+                                text = "${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }} Bijwerken",
                                 color = SandBeige,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -446,7 +567,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                 apiService.deletePackage(packageId).enqueue(object : Callback<Void> {
                                     override fun onResponse(call: Call<Void>, response: Response<Void>) {
                                         if (response.isSuccessful) {
-                                            successMessage = "Pakket succesvol verwijderd!"
+                                            successMessage = "${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }} succesvol verwijderd!"
                                             log("Delete successful, executing double popBackStack")
                                             navController.popBackStack()
                                             if (navController.previousBackStackEntry != null) {
@@ -484,7 +605,7 @@ fun UpdatePackageScreen(navController: NavController, packageId: Int) {
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Pakket Verwijderen",
+                                    text = "${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }} Verwijderen",
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.SemiBold
                                 )

@@ -44,6 +44,8 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
 
     // State voor navigatie en bottom sheet
     var navigationTrigger by remember { mutableStateOf<String?>(null) }
+    var actionTrigger by remember { mutableStateOf<String?>(null) }
+    var categoryTrigger by remember { mutableStateOf<String?>(null) }
     var shouldHideBottomSheet by remember { mutableStateOf(false) }
 
     // Beheer bottom sheet verbergen en navigeren
@@ -62,19 +64,21 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
     }
 
     // Navigatie uitvoeren wanneer navigationTrigger verandert
-    LaunchedEffect(navigationTrigger) {
-        if (navigationTrigger != null) {
+    LaunchedEffect(navigationTrigger, actionTrigger, categoryTrigger) {
+        if (navigationTrigger != null && actionTrigger != null && categoryTrigger != null) {
             when (navigationTrigger) {
                 "sendPackage" -> {
-                    Log.d("Navigation", "Navigeren naar sendPackage met userId: $userId")
+                    Log.d("Navigation", "Navigeren naar sendPackage met userId: $userId, actionType: $actionTrigger, category: $categoryTrigger")
                     try {
-                        navController.navigate("sendPackage/$userId")
+                        navController.navigate("sendPackage/$userId/$actionTrigger/$categoryTrigger")
                     } catch (e: Exception) {
                         Log.e("NavigationError", "Fout bij navigeren naar sendPackage: ${e.message}")
                     }
                 }
             }
-            navigationTrigger = null // Reset de trigger na navigatie
+            navigationTrigger = null
+            actionTrigger = null
+            categoryTrigger = null
         }
     }
 
@@ -110,10 +114,10 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                 scaffoldState = scaffoldState,
                 sheetContent = {
                     PackageOptionsBottomSheet(
-                        onConfirmSelection = { action, itemType ->
-                            if (action == "Send" && itemType == "Package") {
-                                navigationTrigger = "sendPackage"
-                            }
+                        onConfirmSelection = { actionType, category ->
+                            navigationTrigger = "sendPackage"
+                            actionTrigger = actionType
+                            categoryTrigger = category
                             shouldHideBottomSheet = true
                         }
                     )
@@ -203,7 +207,7 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                                             title = "Mijn Leveringen",
                                             description = "Bekijk je historie",
                                             icon = Icons.Filled.FormatListNumbered,
-                                            onClick = { navController.navigate("viewDeliveries/$userId") },
+                                            onClick = { navController.navigate("viewPackages/$userId") },
                                             containerColor = GreenSustainable
                                         )
                                     }

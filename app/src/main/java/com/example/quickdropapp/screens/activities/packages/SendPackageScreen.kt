@@ -40,25 +40,37 @@ import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.util.Locale // Toegevoegd voor Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SendPackageScreen(navController: NavController, userId: Int) {
+fun SendPackageScreen(
+    navController: NavController,
+    userId: Int,
+    actionType: String, // "send" of "receive"
+    category: String // "package", "food", "drink"
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var recipientName by remember { mutableStateOf("") }
     var pickupAddress by remember { mutableStateOf(Address()) }
     var dropoffAddress by remember { mutableStateOf(Address()) }
+    var size by remember { mutableStateOf("medium") }
     var packageDescription by remember { mutableStateOf("") }
     var packageWeight by remember { mutableStateOf("") }
+    var receiverName by remember { mutableStateOf("") } // Voor "Verzenden"
+    var pickupLocationName by remember { mutableStateOf("") } // Voor "Ontvangen"
+    var packageHolderName by remember { mutableStateOf("") } // Voor "Ontvangen"
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
 
     // Foutstatussen voor elk verplicht veld
-    var recipientNameError by remember { mutableStateOf(false) }
     var pickupAddressError by remember { mutableStateOf(false) }
     var dropoffAddressError by remember { mutableStateOf(false) }
     var packageDescriptionError by remember { mutableStateOf(false) }
     var packageWeightError by remember { mutableStateOf(false) }
+    var receiverNameError by remember { mutableStateOf(false) } // Voor "Verzenden"
+    var pickupLocationNameError by remember { mutableStateOf(false) } // Voor "Ontvangen"
+    var packageHolderNameError by remember { mutableStateOf(false) } // Voor "Ontvangen"
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -69,8 +81,16 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
     val apiService = RetrofitClient.create(LocalContext.current)
 
+    // Dynamische tekst gebaseerd op category
+    val itemTypeText = when (category) {
+        "package" -> "pakket"
+        "food" -> "eten"
+        "drink" -> "drinken"
+        else -> "pakket"
+    }
+
     LaunchedEffect(userId) {
-        println("Received userId: $userId")
+        println("Received userId: $userId, actionType: $actionType, category: $category")
     }
 
     Scaffold(containerColor = SandBeige) { paddingValues ->
@@ -101,7 +121,8 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                     )
                 }
                 Text(
-                    text = "Nieuw Pakket",
+                    text = if (actionType == "send") "Nieuw ${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }} Verzenden"
+                    else "Nieuw ${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }} Ontvangen",
                     color = GreenSustainable,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
@@ -109,11 +130,11 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                 IconButton(onClick = {
                     scope.launch {
                         RecentFormDataStore.getRecentSendPackageDataFlow(context).collect { recentData ->
-                            recipientName = recentData.recipientName
                             pickupAddress = recentData.pickupAddress
                             dropoffAddress = recentData.dropoffAddress
                             packageDescription = recentData.packageDescription
                             packageWeight = recentData.packageWeight
+                            receiverName = recentData.recipientName
                         }
                     }
                 }) {
@@ -132,7 +153,8 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Vul de details in om je pakket duurzaam te versturen",
+                    text = if (actionType == "send") "Vul de details in om je $itemTypeText te verzenden"
+                    else "Vul de details in om een $itemTypeText te laten ophalen",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     color = DarkGreen.copy(alpha = 0.8f)
@@ -140,53 +162,7 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp)),
-                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(Color.White, SandBeige.copy(alpha = 0.3f))
-                                )
-                            )
-                            .padding(16.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Filled.Person,
-                                contentDescription = null,
-                                tint = GreenSustainable,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Wie ontvangt je pakket?",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = DarkGreen
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        LabeledIconTextField(
-                            value = recipientName,
-                            onValueChange = { recipientName = it },
-                            label = "Naam van de ontvanger",
-                            placeholder = "Bijv. Jan Jansen",
-                            icon = Icons.Filled.Person,
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = recipientNameError
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
+                // Pickup-locatie
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -213,7 +189,8 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Vanwaar vertrekt je pakket?",
+                                text = if (actionType == "send") "Vanwaar vertrekt je $itemTypeText?"
+                                else "Waar moet het $itemTypeText opgehaald worden?",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = DarkGreen
@@ -221,7 +198,7 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                         }
                         Spacer(modifier = Modifier.height(12.dp))
                         AddressInputField(
-                            label = "Vertrekpunt",
+                            label = if (actionType == "send") "Vertrekpunt" else "Ophaallocatie",
                             address = pickupAddress,
                             onAddressChange = { pickupAddress = it },
                             isError = pickupAddressError
@@ -231,6 +208,7 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Dropoff-locatie
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -257,7 +235,8 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Waar stuur je het naartoe?",
+                                text = if (actionType == "send") "Waar stuur je het $itemTypeText naartoe?"
+                                else "Waar moet het $itemTypeText afgeleverd worden?",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = DarkGreen
@@ -275,6 +254,129 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Categorie en grootte
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp)),
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    colors = listOf(Color.White, SandBeige.copy(alpha = 0.3f))
+                                )
+                            )
+                            .padding(16.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Category,
+                                contentDescription = null,
+                                tint = GreenSustainable,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Type en grootte van het $itemTypeText",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = DarkGreen
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Categorie (alleen weergeven, niet aanpasbaar)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.Category,
+                                contentDescription = null,
+                                tint = GreenSustainable,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Categorie",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = DarkGreen.copy(alpha = 0.8f)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = when (category) {
+                                        "package" -> "Pakket"
+                                        "food" -> "Eten"
+                                        "drink" -> "Drinken"
+                                        else -> "Pakket"
+                                    },
+                                    fontSize = 16.sp,
+                                    color = DarkGreen
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Grootte selectie
+                        var sizeExpanded by remember { mutableStateOf(false) }
+                        ExposedDropdownMenuBox(
+                            expanded = sizeExpanded,
+                            onExpandedChange = { sizeExpanded = !sizeExpanded }
+                        ) {
+                            OutlinedTextField(
+                                value = when (size) {
+                                    "small" -> "Klein"
+                                    "medium" -> "Medium"
+                                    "large" -> "Groot"
+                                    else -> "Medium"
+                                },
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Grootte") },
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = sizeExpanded)
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor()
+                            )
+                            ExposedDropdownMenu(
+                                expanded = sizeExpanded,
+                                onDismissRequest = { sizeExpanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Klein") },
+                                    onClick = {
+                                        size = "small"
+                                        sizeExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Medium") },
+                                    onClick = {
+                                        size = "medium"
+                                        sizeExpanded = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Groot") },
+                                    onClick = {
+                                        size = "large"
+                                        sizeExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Pakketdetails en dynamische velden
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -301,17 +403,52 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Wat zit er in je pakket?",
+                                text = "Details van je $itemTypeText",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = DarkGreen
                             )
                         }
                         Spacer(modifier = Modifier.height(12.dp))
+
+                        // Dynamische velden op basis van actionType
+                        if (actionType == "send") {
+                            LabeledIconTextField(
+                                value = receiverName,
+                                onValueChange = { receiverName = it },
+                                label = "Wie ontvangt je $itemTypeText?",
+                                placeholder = "Bijv. Jan Jansen",
+                                icon = Icons.Filled.Person,
+                                modifier = Modifier.fillMaxWidth(),
+                                isError = receiverNameError
+                            )
+                        } else {
+                            LabeledIconTextField(
+                                value = pickupLocationName,
+                                onValueChange = { pickupLocationName = it },
+                                label = "Waar moet het $itemTypeText opgehaald worden?",
+                                placeholder = "Bijv. Postkantoor Brussel",
+                                icon = Icons.Filled.LocationOn,
+                                modifier = Modifier.fillMaxWidth(),
+                                isError = pickupLocationNameError
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            LabeledIconTextField(
+                                value = packageHolderName,
+                                onValueChange = { packageHolderName = it },
+                                label = "Op welke naam staat het $itemTypeText?",
+                                placeholder = "Bijv. John Smith",
+                                icon = Icons.Filled.Person,
+                                modifier = Modifier.fillMaxWidth(),
+                                isError = packageHolderNameError
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
                         LabeledIconTextField(
                             value = packageDescription,
                             onValueChange = { packageDescription = it },
-                            label = "Beschrijving van het pakket",
+                            label = "Beschrijving van het $itemTypeText",
                             placeholder = "Bijv. Boeken of Kleding",
                             icon = Icons.Filled.Description,
                             modifier = Modifier.fillMaxWidth(),
@@ -321,7 +458,7 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                         LabeledIconTextField(
                             value = packageWeight,
                             onValueChange = { packageWeight = it.filter { char -> char.isDigit() || char == '.' } },
-                            label = "Gewicht van het pakket (kg)",
+                            label = "Gewicht van het $itemTypeText (kg)",
                             placeholder = "Bijv. 2.5",
                             icon = Icons.Filled.FitnessCenter,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -333,20 +470,20 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // Bevestig knop
                 Button(
                     onClick = {
                         // Reset foutstatussen
-                        recipientNameError = false
                         pickupAddressError = false
                         dropoffAddressError = false
                         packageDescriptionError = false
                         packageWeightError = false
+                        receiverNameError = false
+                        pickupLocationNameError = false
+                        packageHolderNameError = false
                         errorMessage = null
 
                         // Validatie van alle verplichte velden
-                        if (recipientName.isBlank()) {
-                            recipientNameError = true
-                        }
                         if (pickupAddress.street_name.isBlank() || pickupAddress.house_number.isBlank() || pickupAddress.postal_code.isBlank()) {
                             pickupAddressError = true
                         }
@@ -359,35 +496,57 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                         if (packageWeight.isBlank() || packageWeight.toDoubleOrNull() == null) {
                             packageWeightError = true
                         }
+                        if (actionType == "send" && receiverName.isBlank()) {
+                            receiverNameError = true
+                        }
+                        if (actionType == "receive") {
+                            if (pickupLocationName.isBlank()) {
+                                pickupLocationNameError = true
+                            }
+                            if (packageHolderName.isBlank()) {
+                                packageHolderNameError = true
+                            }
+                        }
 
                         // Controleer of er fouten zijn
-                        if (recipientNameError || pickupAddressError || dropoffAddressError || packageDescriptionError || packageWeightError) {
+                        if (pickupAddressError || dropoffAddressError || packageDescriptionError || packageWeightError || receiverNameError || pickupLocationNameError || packageHolderNameError) {
                             errorMessage = "Vul alle verplichte velden correct in:"
-                            if (recipientNameError) errorMessage += "\n- Naam van de ontvanger"
-                            if (pickupAddressError) errorMessage += "\n- Vertrekpunt (straat, huisnummer, postcode)"
+                            if (pickupAddressError) errorMessage += "\n- Ophaallocatie (straat, huisnummer, postcode)"
                             if (dropoffAddressError) errorMessage += "\n- Bestemming (straat, huisnummer, postcode)"
-                            if (packageDescriptionError) errorMessage += "\n- Beschrijving van het pakket"
-                            if (packageWeightError) errorMessage += "\n- Gewicht van het pakket (moet een getal zijn)"
+                            if (packageDescriptionError) errorMessage += "\n- Beschrijving van het $itemTypeText"
+                            if (packageWeightError) errorMessage += "\n- Gewicht van het $itemTypeText (moet een getal zijn)"
+                            if (receiverNameError) errorMessage += "\n- Naam van de ontvanger"
+                            if (pickupLocationNameError) errorMessage += "\n- Waar moet het $itemTypeText opgehaald worden?"
+                            if (packageHolderNameError) errorMessage += "\n- Op welke naam staat het $itemTypeText?"
                         } else {
-                            // Als alles correct is ingevuld, verstuur het pakket
-                            val fullDescription = "$packageDescription - Ontvanger: $recipientName, Gewicht: $packageWeight kg"
+                            // Stel de description samen
+                            val fullDescription = if (actionType == "send") {
+                                "$packageDescription - Ontvanger: $receiverName, Gewicht: $packageWeight kg"
+                            } else {
+                                "$packageDescription - Ophaallocatie: $pickupLocationName, Naam: $packageHolderName, Gewicht: $packageWeight kg"
+                            }
+
+                            // Maak het pakket aan
                             val packageRequest = PackageRequest(
                                 user_id = userId,
                                 description = fullDescription,
                                 pickup_address = pickupAddress,
-                                dropoff_address = dropoffAddress
+                                dropoff_address = dropoffAddress,
+                                action_type = actionType,
+                                category = category,
+                                size = size
                             )
 
                             val call = apiService.addPackage(packageRequest)
                             call.enqueue(object : Callback<Package> {
                                 override fun onResponse(call: Call<Package>, response: Response<Package>) {
                                     if (response.isSuccessful) {
-                                        successMessage = "Je pakket is succesvol aangemaakt! (ID: ${response.body()?.id ?: "onbekend"})"
+                                        successMessage = "Je $itemTypeText is succesvol aangemaakt! (ID: ${response.body()?.id ?: "onbekend"})"
                                         errorMessage = null
                                         scope.launch {
                                             RecentFormDataStore.saveSendPackageData(
                                                 context,
-                                                recipientName,
+                                                receiverName,
                                                 pickupAddress,
                                                 dropoffAddress,
                                                 packageDescription,
@@ -431,13 +590,14 @@ fun SendPackageScreen(navController: NavController, userId: Int) {
                     ) {
                         Icon(
                             imageVector = Icons.Filled.DoubleArrow,
-                            contentDescription = "Verstuur",
+                            contentDescription = if (actionType == "send") "Verstuur" else "Ontvang",
                             tint = SandBeige,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Verstuur Pakket",
+                            text = if (actionType == "send") "Verstuur ${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }}"
+                            else "Ontvang ${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }}",
                             color = SandBeige,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.SemiBold

@@ -32,7 +32,7 @@ fun SelectionButton(
             .shadow(2.dp, CircleShape),
         shape = CircleShape,
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSelected) GreenSustainable else Color(0xFFE0E0E0), // Light gray for inactive
+            containerColor = if (isSelected) GreenSustainable else Color(0xFFE0E0E0),
             contentColor = if (isSelected) Color.White else DarkGreen
         ),
         contentPadding = PaddingValues(0.dp)
@@ -58,7 +58,7 @@ fun SelectionButton(
 
 @Composable
 fun PackageOptionsBottomSheet(
-    onConfirmSelection: (action: String, itemType: String) -> Unit
+    onConfirmSelection: (actionType: String, category: String) -> Unit
 ) {
     var selectedAction by remember { mutableStateOf<String?>(null) }
     var selectedItemType by remember { mutableStateOf<String?>(null) }
@@ -80,20 +80,20 @@ fun PackageOptionsBottomSheet(
 
         // Action Buttons
         Row(
-            horizontalArrangement = Arrangement.Center, // Gecentreerd
+            horizontalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             SelectionButton(
                 text = "Verzenden",
-                icon = Icons.Filled.ArrowUpward,
+                icon = Icons.Filled.SubdirectoryArrowRight,
                 isSelected = selectedAction == "Send",
                 onClick = { selectedAction = "Send" }
             )
             Spacer(modifier = Modifier.width(16.dp))
             SelectionButton(
                 text = "Ontvangen",
-                icon = Icons.Filled.ArrowDownward,
+                icon = Icons.Filled.Inbox,
                 isSelected = selectedAction == "Receive",
                 onClick = { selectedAction = "Receive" }
             )
@@ -103,16 +103,16 @@ fun PackageOptionsBottomSheet(
         if (selectedAction != null) {
             Text(
                 text = when (selectedAction) {
-                    "Send" -> "Wat wil je verzenden?"
-                    "Receive" -> "Wat wil je ontvangen?"
-                    else -> "Wat wil je verzenden/ontvangen?" // Fallback, zou niet moeten gebeuren
+                    "Send" -> "Wat ga je verzenden?"
+                    "Receive" -> "Wat ga je ontvangen?"
+                    else -> "Wat ga je verzenden/ontvangen?"
                 },
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = DarkGreen
             )
             Row(
-                horizontalArrangement = Arrangement.Center, // Gecentreerd
+                horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 SelectionButton(
@@ -143,7 +143,18 @@ fun PackageOptionsBottomSheet(
         Button(
             onClick = {
                 if (isEnabled) {
-                    onConfirmSelection(selectedAction!!, selectedItemType!!)
+                    val actionType = when (selectedAction) {
+                        "Send" -> "send"
+                        "Receive" -> "receive"
+                        else -> "send"
+                    }
+                    val category = when (selectedItemType) {
+                        "Package" -> "package"
+                        "Food" -> "food"
+                        "Drink" -> "drink"
+                        else -> "package"
+                    }
+                    onConfirmSelection(actionType, category)
                 }
             },
             modifier = Modifier

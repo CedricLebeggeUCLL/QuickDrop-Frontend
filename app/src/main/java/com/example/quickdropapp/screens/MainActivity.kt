@@ -113,11 +113,17 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable(
-                        route = "sendPackage/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        route = "sendPackage/{userId}/{actionType}/{category}",
+                        arguments = listOf(
+                            navArgument("userId") { type = androidx.navigation.NavType.IntType },
+                            navArgument("actionType") { type = androidx.navigation.NavType.StringType },
+                            navArgument("category") { type = androidx.navigation.NavType.StringType }
+                        )
                     ) { backStackEntry ->
                         val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        SendPackageScreen(navController, userId)
+                        val actionType = backStackEntry.arguments?.getString("actionType") ?: "send"
+                        val category = backStackEntry.arguments?.getString("category") ?: "package"
+                        SendPackageScreen(navController, userId, actionType, category)
                     }
                     composable(
                         route = "becomeCourier/{userId}",

@@ -3,7 +3,6 @@ package com.example.quickdropapp.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -21,7 +20,7 @@ object AuthDataStore {
     private val REFRESH_TOKEN = stringPreferencesKey("refresh_token")
 
     suspend fun saveAuthData(context: Context, userId: Int, accessToken: String, refreshToken: String) {
-        context.dataStore.edit { preferences: MutablePreferences ->
+        context.dataStore.edit { preferences ->
             preferences[IS_LOGGED_IN] = true
             preferences[USER_ID] = userId
             preferences[ACCESS_TOKEN] = accessToken
@@ -30,13 +29,19 @@ object AuthDataStore {
     }
 
     suspend fun updateAccessToken(context: Context, accessToken: String) {
-        context.dataStore.edit { preferences: MutablePreferences ->
+        context.dataStore.edit { preferences ->
             preferences[ACCESS_TOKEN] = accessToken
         }
     }
 
+    suspend fun updateRefreshToken(context: Context, refreshToken: String) {
+        context.dataStore.edit { preferences ->
+            preferences[REFRESH_TOKEN] = refreshToken
+        }
+    }
+
     suspend fun clearAuthData(context: Context) {
-        context.dataStore.edit { preferences: MutablePreferences ->
+        context.dataStore.edit { preferences ->
             preferences[IS_LOGGED_IN] = false
             preferences.remove(USER_ID)
             preferences.remove(ACCESS_TOKEN)
@@ -45,22 +50,18 @@ object AuthDataStore {
     }
 
     fun isLoggedIn(context: Context): Boolean = runBlocking {
-        val preferences = context.dataStore.data.first()
-        preferences[IS_LOGGED_IN] ?: false
+        context.dataStore.data.first()[IS_LOGGED_IN] ?: false
     }
 
     fun getUserId(context: Context): Int? = runBlocking {
-        val preferences = context.dataStore.data.first()
-        preferences[USER_ID]
+        context.dataStore.data.first()[USER_ID]
     }
 
     fun getAccessToken(context: Context): String? = runBlocking {
-        val preferences = context.dataStore.data.first()
-        preferences[ACCESS_TOKEN]
+        context.dataStore.data.first()[ACCESS_TOKEN]
     }
 
     fun getRefreshToken(context: Context): String? = runBlocking {
-        val preferences = context.dataStore.data.first()
-        preferences[REFRESH_TOKEN]
+        context.dataStore.data.first()[REFRESH_TOKEN]
     }
 }

@@ -40,7 +40,7 @@ import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.util.Locale // Toegevoegd voor Locale
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,6 +89,14 @@ fun SendPackageScreen(
         else -> "pakket"
     }
 
+    // Dynamische placeholder voor beschrijving
+    val descriptionPlaceholder = when (category) {
+        "package" -> "Bijv. Boeken of Kleding"
+        "food" -> "Bijv. Pizza of Sushi"
+        "drink" -> "Bijv. Koffie of Frisdrank"
+        else -> "Bijv. Boeken of Kleding"
+    }
+
     LaunchedEffect(userId) {
         println("Received userId: $userId, actionType: $actionType, category: $category")
     }
@@ -121,8 +129,8 @@ fun SendPackageScreen(
                     )
                 }
                 Text(
-                    text = if (actionType == "send") "Nieuw ${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }} Verzenden"
-                    else "Nieuw ${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }} Ontvangen",
+                    text = if (actionType == "send") "Verzend je $itemTypeText"
+                    else "Laat je $itemTypeText ophalen",
                     color = GreenSustainable,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
@@ -153,8 +161,8 @@ fun SendPackageScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = if (actionType == "send") "Vul de details in om je $itemTypeText te verzenden"
-                    else "Vul de details in om een $itemTypeText te laten ophalen",
+                    text = if (actionType == "send") "Geef de details om je $itemTypeText te verzenden"
+                    else "Geef de details om je $itemTypeText te laten ophalen",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium,
                     color = DarkGreen.copy(alpha = 0.8f)
@@ -190,7 +198,7 @@ fun SendPackageScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = if (actionType == "send") "Vanwaar vertrekt je $itemTypeText?"
-                                else "Waar moet het $itemTypeText opgehaald worden?",
+                                else "Waar kan je $itemTypeText opgehaald worden?",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = DarkGreen
@@ -198,7 +206,7 @@ fun SendPackageScreen(
                         }
                         Spacer(modifier = Modifier.height(12.dp))
                         AddressInputField(
-                            label = if (actionType == "send") "Vertrekpunt" else "Ophaallocatie",
+                            label = if (actionType == "send") "Vertrekpunt" else "Ophaaladres",
                             address = pickupAddress,
                             onAddressChange = { pickupAddress = it },
                             isError = pickupAddressError
@@ -235,8 +243,8 @@ fun SendPackageScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (actionType == "send") "Waar stuur je het $itemTypeText naartoe?"
-                                else "Waar moet het $itemTypeText afgeleverd worden?",
+                                text = if (actionType == "send") "Naar welk adres stuur je je $itemTypeText?"
+                                else "Naar welk adres moet je $itemTypeText gebracht worden?",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = DarkGreen
@@ -281,7 +289,7 @@ fun SendPackageScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Type en grootte van het $itemTypeText",
+                                text = "Type en grootte van je $itemTypeText",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = DarkGreen
@@ -416,7 +424,7 @@ fun SendPackageScreen(
                             LabeledIconTextField(
                                 value = receiverName,
                                 onValueChange = { receiverName = it },
-                                label = "Wie ontvangt je $itemTypeText?",
+                                label = "Naar wie stuur je je $itemTypeText?",
                                 placeholder = "Bijv. Jan Jansen",
                                 icon = Icons.Filled.Person,
                                 modifier = Modifier.fillMaxWidth(),
@@ -426,7 +434,7 @@ fun SendPackageScreen(
                             LabeledIconTextField(
                                 value = pickupLocationName,
                                 onValueChange = { pickupLocationName = it },
-                                label = "Waar moet het $itemTypeText opgehaald worden?",
+                                label = "Van welke locatie moet je $itemTypeText opgehaald worden?",
                                 placeholder = "Bijv. Postkantoor Brussel",
                                 icon = Icons.Filled.LocationOn,
                                 modifier = Modifier.fillMaxWidth(),
@@ -436,7 +444,7 @@ fun SendPackageScreen(
                             LabeledIconTextField(
                                 value = packageHolderName,
                                 onValueChange = { packageHolderName = it },
-                                label = "Op welke naam staat het $itemTypeText?",
+                                label = "Wie heeft het $itemTypeText besteld?",
                                 placeholder = "Bijv. John Smith",
                                 icon = Icons.Filled.Person,
                                 modifier = Modifier.fillMaxWidth(),
@@ -448,8 +456,8 @@ fun SendPackageScreen(
                         LabeledIconTextField(
                             value = packageDescription,
                             onValueChange = { packageDescription = it },
-                            label = "Beschrijving van het $itemTypeText",
-                            placeholder = "Bijv. Boeken of Kleding",
+                            label = "Wat is je $itemTypeText?",
+                            placeholder = descriptionPlaceholder,
                             icon = Icons.Filled.Description,
                             modifier = Modifier.fillMaxWidth(),
                             isError = packageDescriptionError
@@ -458,7 +466,7 @@ fun SendPackageScreen(
                         LabeledIconTextField(
                             value = packageWeight,
                             onValueChange = { packageWeight = it.filter { char -> char.isDigit() || char == '.' } },
-                            label = "Gewicht van het $itemTypeText (kg)",
+                            label = "Hoe zwaar is je $itemTypeText? (kg)",
                             placeholder = "Bijv. 2.5",
                             icon = Icons.Filled.FitnessCenter,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -511,13 +519,13 @@ fun SendPackageScreen(
                         // Controleer of er fouten zijn
                         if (pickupAddressError || dropoffAddressError || packageDescriptionError || packageWeightError || receiverNameError || pickupLocationNameError || packageHolderNameError) {
                             errorMessage = "Vul alle verplichte velden correct in:"
-                            if (pickupAddressError) errorMessage += "\n- Ophaallocatie (straat, huisnummer, postcode)"
+                            if (pickupAddressError) errorMessage += "\n- ${if (actionType == "send") "Vertrekpunt" else "Ophaaladres"} (straat, huisnummer, postcode)"
                             if (dropoffAddressError) errorMessage += "\n- Bestemming (straat, huisnummer, postcode)"
-                            if (packageDescriptionError) errorMessage += "\n- Beschrijving van het $itemTypeText"
-                            if (packageWeightError) errorMessage += "\n- Gewicht van het $itemTypeText (moet een getal zijn)"
-                            if (receiverNameError) errorMessage += "\n- Naam van de ontvanger"
-                            if (pickupLocationNameError) errorMessage += "\n- Waar moet het $itemTypeText opgehaald worden?"
-                            if (packageHolderNameError) errorMessage += "\n- Op welke naam staat het $itemTypeText?"
+                            if (packageDescriptionError) errorMessage += "\n- Wat is je $itemTypeText?"
+                            if (packageWeightError) errorMessage += "\n- Hoe zwaar is je $itemTypeText? (moet een getal zijn)"
+                            if (receiverNameError) errorMessage += "\n- Naar wie stuur je je $itemTypeText?"
+                            if (pickupLocationNameError) errorMessage += "\n- Van welke locatie moet je $itemTypeText opgehaald worden?"
+                            if (packageHolderNameError) errorMessage += "\n- Wie heeft het $itemTypeText besteld?"
                         } else {
                             // Stel de description samen
                             val fullDescription = if (actionType == "send") {
@@ -596,8 +604,8 @@ fun SendPackageScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (actionType == "send") "Verstuur ${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }}"
-                            else "Ontvang ${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }}",
+                            text = if (actionType == "send") "Verzend ${itemTypeText.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() }}"
+                            else "Bevestig ophalen",
                             color = SandBeige,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.SemiBold

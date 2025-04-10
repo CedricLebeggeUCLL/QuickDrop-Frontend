@@ -7,8 +7,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -45,10 +47,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Initialiseer de Places API met de API-sleutel
         Places.initialize(applicationContext, "AIzaSyBhUNOle29taWD_B58yNpmsUDBihvkqq98")
 
-        // Controleer deep link buiten de composable
         var deepLinkToken: String? = null
         val uri = intent.data
         if (uri != null && uri.scheme == "quickdrop" && uri.host == "resetPassword") {
@@ -59,17 +59,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             QuickDropAppTheme {
                 val navController = rememberNavController()
-                val context = LocalContext.current
-                val scope = rememberCoroutineScope()
+                val snackbarHostState = remember { SnackbarHostState() }
+                val coroutineScope = rememberCoroutineScope()
 
-                // State voor loginstatus en userId
-                var isLoggedIn by remember { mutableStateOf(false) }
-                var initialUserId by remember { mutableStateOf(-1) }
+                val isLoggedIn = AuthDataStore.isLoggedIn(this)
+                val initialUserId = if (isLoggedIn) AuthDataStore.getUserId(this) ?: -1 else -1
 
-                // Controleer loginstatus bij opstarten met LaunchedEffect
                 LaunchedEffect(Unit) {
-                    isLoggedIn = AuthDataStore.isLoggedIn(context)
-                    initialUserId = AuthDataStore.getUserId(context) ?: -1
                     if (isLoggedIn && initialUserId != -1) {
                         navController.navigate("home/$initialUserId") {
                             popUpTo("welcome") { inclusive = true }
@@ -80,168 +76,179 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                NavHost(
-                    navController = navController,
-                    startDestination = "welcome"
-                ) {
-                    composable("welcome") { WelcomeScreen(navController) }
-                    composable("login") { LoginScreen(navController) }
-                    composable("register") { RegisterScreen(navController) }
-                    composable("passwordRecovery") { PasswordRecoveryScreen(navController) }
-                    composable(
-                        route = "resetPassword/{token}",
-                        arguments = listOf(navArgument("token") { type = androidx.navigation.NavType.StringType })
-                    ) { backStackEntry ->
-                        val token = backStackEntry.arguments?.getString("token") ?: ""
-                        ResetPasswordScreen(navController, token)
-                    }
-                    composable(
-                        route = "home/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        HomeScreen(
-                            navController = navController,
-                            userId = userId,
-                            onLogout = {
-                                scope.launch {
-                                    AuthDataStore.clearAuthData(context)
+                androidx.compose.material3.Scaffold(
+                    snackbarHost = { SnackbarHost(snackbarHostState) }
+                ) { paddingValues ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = "welcome",
+                        modifier = androidx.compose.ui.Modifier.padding(paddingValues)
+                    ) {
+                        composable("welcome") { WelcomeScreen(navController) }
+                        composable("login") { LoginScreen(navController) }
+                        composable("register") { RegisterScreen(navController) }
+                        composable("passwordRecovery") { PasswordRecoveryScreen(navController) }
+                        composable(
+                            route = "resetPassword/{token}",
+                            arguments = listOf(navArgument("token") { type = androidx.navigation.NavType.StringType })
+                        ) { backStackEntry ->
+                            val token = backStackEntry.arguments?.getString("token") ?: ""
+                            ResetPasswordScreen(navController, token)
+                        }
+                        composable(
+                            route = "home/{userId}",
+                            arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                            HomeScreen(
+                                navController = navController,
+                                userId = userId,
+                                onLogout = {
+                                    coroutineScope.launch {
+                                        AuthDataStore.clearAuthData(this@MainActivity)
+                                        navController.navigate("welcome") {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                        snackbarHostState.showSnackbar("Uitgelogd")
+                                    }
                                 }
-                                navController.popBackStack("welcome", inclusive = false)
-                                navController.navigate("welcome")
-                            }
-                        )
-                    }
-                    composable(
-                        route = "sendPackage/{userId}/{actionType}/{category}",
-                        arguments = listOf(
-                            navArgument("userId") { type = androidx.navigation.NavType.IntType },
-                            navArgument("actionType") { type = androidx.navigation.NavType.StringType },
-                            navArgument("category") { type = androidx.navigation.NavType.StringType }
-                        )
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        val actionType = backStackEntry.arguments?.getString("actionType") ?: "send"
-                        val category = backStackEntry.arguments?.getString("category") ?: "package"
-                        SendPackageScreen(navController, userId, actionType, category)
-                    }
-                    composable(
-                        route = "becomeCourier/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        BecomeCourierScreen(navController, userId)
-                    }
-                    composable(
-                        route = "startDelivery/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        StartDeliveryScreen(navController, userId)
-                    }
-                    composable(
-                        route = "searchPackages/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        SearchPackagesScreen(navController, userId)
-                    }
-                    composable(
-                        route = "trackPackages/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        TrackPackagesScreen(navController = navController, userId = userId)
-                    }
-                    composable(
-                        route = "viewDeliveries/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        ViewDeliveriesScreen(navController, userId)
-                    }
-                    composable(
-                        route = "deliveryInfo/{deliveryId}",
-                        arguments = listOf(navArgument("deliveryId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val deliveryId = backStackEntry.arguments?.getInt("deliveryId") ?: 0
-                        DeliveryInfoScreen(navController, deliveryId)
-                    }
-                    composable(
-                        route = "activitiesOverview/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        ActivitiesOverviewScreen(
-                            navController = navController,
-                            userId = userId,
-                            onLogout = {
-                                scope.launch {
-                                    AuthDataStore.clearAuthData(context)
+                            )
+                        }
+                        composable(
+                            route = "sendPackage/{userId}/{actionType}/{category}",
+                            arguments = listOf(
+                                navArgument("userId") { type = androidx.navigation.NavType.IntType },
+                                navArgument("actionType") { type = androidx.navigation.NavType.StringType },
+                                navArgument("category") { type = androidx.navigation.NavType.StringType }
+                            )
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                            val actionType = backStackEntry.arguments?.getString("actionType") ?: "send"
+                            val category = backStackEntry.arguments?.getString("category") ?: "package"
+                            SendPackageScreen(navController, userId, actionType, category)
+                        }
+                        composable(
+                            route = "becomeCourier/{userId}",
+                            arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                            BecomeCourierScreen(navController, userId)
+                        }
+                        composable(
+                            route = "startDelivery/{userId}",
+                            arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                            StartDeliveryScreen(navController, userId)
+                        }
+                        composable(
+                            route = "searchPackages/{userId}",
+                            arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                            SearchPackagesScreen(navController, userId)
+                        }
+                        composable(
+                            route = "trackPackages/{userId}",
+                            arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                            TrackPackagesScreen(navController = navController, userId = userId)
+                        }
+                        composable(
+                            route = "viewDeliveries/{userId}",
+                            arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                            ViewDeliveriesScreen(navController, userId)
+                        }
+                        composable(
+                            route = "deliveryInfo/{deliveryId}",
+                            arguments = listOf(navArgument("deliveryId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val deliveryId = backStackEntry.arguments?.getInt("deliveryId") ?: 0
+                            DeliveryInfoScreen(navController, deliveryId)
+                        }
+                        composable(
+                            route = "activitiesOverview/{userId}",
+                            arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                            ActivitiesOverviewScreen(
+                                navController = navController,
+                                userId = userId,
+                                onLogout = {
+                                    coroutineScope.launch {
+                                        AuthDataStore.clearAuthData(this@MainActivity)
+                                        navController.navigate("welcome") {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                        snackbarHostState.showSnackbar("Uitgelogd")
+                                    }
                                 }
-                                navController.popBackStack("welcome", inclusive = false)
-                                navController.navigate("welcome")
-                            }
-                        )
-                    }
-                    composable(
-                        route = "profile/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        ProfileScreen(
-                            navController = navController,
-                            userId = userId,
-                            onLogout = {
-                                scope.launch {
-                                    AuthDataStore.clearAuthData(context)
+                            )
+                        }
+                        composable(
+                            route = "profile/{userId}",
+                            arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                            ProfileScreen(
+                                navController = navController,
+                                userId = userId,
+                                onLogout = {
+                                    coroutineScope.launch {
+                                        AuthDataStore.clearAuthData(this@MainActivity)
+                                        navController.navigate("welcome") {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                        snackbarHostState.showSnackbar("Uitgelogd")
+                                    }
                                 }
-                                navController.popBackStack("welcome", inclusive = false)
-                                navController.navigate("welcome")
-                            }
-                        )
-                    }
-                    composable(
-                        route = "viewPackages/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        ViewPackagesScreen(navController, userId)
-                    }
-                    composable(
-                        route = "updatePackage/{packageId}",
-                        arguments = listOf(navArgument("packageId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val packageId = backStackEntry.arguments?.getInt("packageId") ?: 0
-                        UpdatePackageScreen(navController, packageId)
-                    }
-                    composable(
-                        route = "settings/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        SettingsScreen(navController, userId)
-                    }
-                    composable(
-                        route = "history/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        HistoryScreen(navController, userId)
-                    }
-                    composable(
-                        route = "helpSupport/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        HelpSupportScreen(navController, userId)
-                    }
-                    composable(
-                        route = "trackingDeliveries/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
-                    ) { backStackEntry ->
-                        val userId = backStackEntry.arguments?.getInt("userId") ?: 0
-                        TrackingDeliveriesScreen(navController = navController, userId = userId)
+                            )
+                        }
+                        composable(
+                            route = "viewPackages/{userId}",
+                            arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                            ViewPackagesScreen(navController, userId)
+                        }
+                        composable(
+                            route = "updatePackage/{packageId}",
+                            arguments = listOf(navArgument("packageId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val packageId = backStackEntry.arguments?.getInt("packageId") ?: 0
+                            UpdatePackageScreen(navController, packageId)
+                        }
+                        composable(
+                            route = "settings/{userId}",
+                            arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                            SettingsScreen(navController, userId)
+                        }
+                        composable(
+                            route = "history/{userId}",
+                            arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                            HistoryScreen(navController, userId)
+                        }
+                        composable(
+                            route = "helpSupport/{userId}",
+                            arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                            HelpSupportScreen(navController, userId)
+                        }
+                        composable(
+                            route = "trackingDeliveries/{userId}",
+                            arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                            TrackingDeliveriesScreen(navController = navController, userId = userId)
+                        }
                     }
                 }
             }

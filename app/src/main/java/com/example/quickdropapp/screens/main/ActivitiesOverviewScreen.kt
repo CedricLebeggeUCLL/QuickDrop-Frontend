@@ -207,7 +207,7 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
                                             title = "Mijn Leveringen",
                                             description = "Bekijk je historie",
                                             icon = Icons.Filled.FormatListNumbered,
-                                            onClick = { navController.navigate("viewPackages/$userId") },
+                                            onClick = { navController.navigate("viewDeliveries/$userId") },
                                             containerColor = GreenSustainable
                                         )
                                     }

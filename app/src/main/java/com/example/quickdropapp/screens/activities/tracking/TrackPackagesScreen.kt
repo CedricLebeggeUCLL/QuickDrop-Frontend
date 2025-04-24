@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -96,6 +97,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
     // Poll tracking info for the selected package
     LaunchedEffect(selectedPackageId) {
         selectedPackageId?.let { packageId ->
+            Log.d("TrackPackages", "Start polling for packageId: $packageId")
             shouldPoll = true
             while (shouldPoll) {
                 apiService.trackPackage(packageId).enqueue(object : Callback<TrackingInfo> {
@@ -106,15 +108,20 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                                 Log.d("Tracking", "Nieuwe tracking info: lat=${info.currentLocation.lat}, lng=${info.currentLocation.lng}")
                                 trackingInfo = info
                                 shouldPoll = info.status == "in_transit"
+                            } else {
+                                Log.e("Tracking", "Geen tracking info ontvangen")
+                                errorMessage = "Geen tracking informatie beschikbaar"
+                                shouldPoll = false
                             }
-                            errorMessage = null
                         } else {
+                            Log.e("Tracking", "Fout bij ophalen tracking: ${response.code()}")
                             errorMessage = "Fout bij ophalen tracking: ${response.code()}"
                             shouldPoll = false
                         }
                     }
 
                     override fun onFailure(call: Call<TrackingInfo>, t: Throwable) {
+                        Log.e("Tracking", "Netwerkfout: ${t.message}")
                         errorMessage = "Netwerkfout: ${t.message}"
                         shouldPoll = false
                     }
@@ -168,22 +175,88 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetContent = {
-            LazyColumn(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .background(SandBeige)
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+                    .padding(bottom = 32.dp) // Extra statische padding aan de onderkant
             ) {
-                items(packages.filter { it.status in listOf("assigned", "in_transit", "delivered") }) { pkg ->
-                    TrackingPackageCard(pkg, isSelected = selectedPackageId == pkg.id) {
-                        selectedPackageId = pkg.id
+                // Header for the bottom sheet
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Actieve Pakketten",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DarkGreen
+                    )
+                }
+
+                // Package list or empty state
+                val filteredPackages = packages.filter { it.status in listOf("assigned", "in_transit", "delivered") }
+                if (filteredPackages.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Filled.Inbox,
+                                contentDescription = null,
+                                tint = DarkGreen.copy(alpha = 0.6f),
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Text(
+                                text = "Geen actieve pakketten",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = DarkGreen.copy(alpha = 0.8f)
+                            )
+                            Text(
+                                text = "Er zijn nog geen actieve pakketten om te volgen.",
+                                fontSize = 14.sp,
+                                color = DarkGreen.copy(alpha = 0.6f),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(bottom = 32.dp) // Extra padding onder de pakketten
+                    ) {
+                        items(filteredPackages) { pkg ->
+                            TrackingPackageCard(pkg, isSelected = selectedPackageId == pkg.id) {
+                                Log.d("TrackPackages", "Pakket geselecteerd: ${pkg.id}")
+                                selectedPackageId = pkg.id
+                                scope.launch {
+                                    try {
+                                        scaffoldState.bottomSheetState.hide()
+                                        Log.d("TrackPackages", "Bottom sheet verborgen")
+                                    } catch (e: Exception) {
+                                        Log.e("TrackPackages", "Fout bij verbergen bottom sheet: ${e.message}")
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         },
         sheetPeekHeight = 0.dp,
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-        sheetContainerColor = SandBeige
+        sheetContainerColor = SandBeige,
+        sheetShadowElevation = 8.dp
     ) {
         Scaffold(
             containerColor = SandBeige,
@@ -191,16 +264,22 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                 FloatingActionButton(
                     onClick = {
                         scope.launch {
-                            if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
-                                scaffoldState.bottomSheetState.hide()
-                            } else {
-                                scaffoldState.bottomSheetState.expand()
+                            try {
+                                if (scaffoldState.bottomSheetState.currentValue != SheetValue.Expanded) {
+                                    scaffoldState.bottomSheetState.expand()
+                                    Log.d("TrackPackages", "Bottom sheet geopend")
+                                }
+                            } catch (e: Exception) {
+                                Log.e("TrackPackages", "Fout bij openen bottom sheet: ${e.message}")
                             }
                         }
                     },
                     containerColor = GreenSustainable,
                     contentColor = Color.White,
-                    modifier = Modifier.padding(16.dp)
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .shadow(6.dp, CircleShape)
                 ) {
                     Icon(Icons.Filled.Inbox, contentDescription = "Pakkettenlijst")
                 }
@@ -248,12 +327,25 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                 when {
                     isLoading -> {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
+                            CircularProgressIndicator(
+                                color = GreenSustainable,
+                                strokeWidth = 4.dp
+                            )
                         }
                     }
                     errorMessage != null -> {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text(errorMessage!!, color = Color.Red, fontSize = 16.sp)
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            ) {
+                                Text(
+                                    text = errorMessage!!,
+                                    color = Color.Red,
+                                    fontSize = 16.sp,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
                         }
                     }
                     else -> {
@@ -283,6 +375,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
+                                .padding(horizontal = 16.dp)
                                 .clip(RoundedCornerShape(16.dp))
                                 .shadow(8.dp, RoundedCornerShape(16.dp)),
                             colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -298,7 +391,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                                             position = LatLng(info.currentLocation.lat, info.currentLocation.lng)
                                         ),
                                         title = "Pakket Locatie",
-                                        snippet = "Huidige positie van pakket #${info.packageId}"
+                                        snippet = "Huidige positie van pakket"
                                     )
                                 }
                             }
@@ -309,38 +402,44 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 16.dp)
                                     .clip(RoundedCornerShape(16.dp))
                                     .animateContentSize(),
-                                colors = CardDefaults.cardColors(containerColor = SandBeige),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                             ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        text = "Pakket ID: ${info.packageId}",
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = GreenSustainable
-                                    )
-                                    Text(
-                                        text = "Status: ${info.status}",
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = GreenSustainable
-                                    )
-                                    Text(
-                                        text = "Geschatte aankomst: ${info.estimatedDelivery}",
-                                        fontSize = 14.sp,
-                                        color = DarkGreen.copy(alpha = 0.8f)
-                                    )
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.LocationOn,
+                                            contentDescription = null,
+                                            tint = GreenSustainable,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Text(
+                                            text = "Status: ${info.status.replaceFirstChar { it.uppercase() }}",
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = GreenSustainable
+                                        )
+                                    }
                                     Text(
                                         text = "Afhaaladres: ${info.pickupAddress.street_name} ${info.pickupAddress.house_number}${info.pickupAddress.extra_info?.let { ", $it" } ?: ""}, ${info.pickupAddress.postal_code} ${info.pickupAddress.city ?: ""}${info.pickupAddress.country?.let { ", $it" } ?: ""}",
                                         fontSize = 14.sp,
-                                        color = DarkGreen.copy(alpha = 0.8f)
+                                        color = DarkGreen.copy(alpha = 0.8f),
+                                        lineHeight = 20.sp
                                     )
                                     Text(
                                         text = "Afleveradres: ${info.dropoffAddress.street_name} ${info.dropoffAddress.house_number}${info.dropoffAddress.extra_info?.let { ", $it" } ?: ""}, ${info.dropoffAddress.postal_code} ${info.dropoffAddress.city ?: ""}${info.dropoffAddress.country?.let { ", $it" } ?: ""}",
                                         fontSize = 14.sp,
-                                        color = DarkGreen.copy(alpha = 0.8f)
+                                        color = DarkGreen.copy(alpha = 0.8f),
+                                        lineHeight = 20.sp
                                     )
                                 }
                             }

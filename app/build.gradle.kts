@@ -84,6 +84,7 @@ dependencies {
     // Google Maps dependencies
     implementation(libs.maps.compose)
     implementation(libs.play.services.maps)
+    implementation(libs.android.maps.utils) // Added for official polyline decoding
 
     // DataStore for persisting auth data (e.g., JWT token)
     implementation(libs.datastore.preferences)

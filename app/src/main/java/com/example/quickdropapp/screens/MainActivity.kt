@@ -1,5 +1,6 @@
 package com.example.quickdropapp.screens
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -40,19 +41,23 @@ import com.google.android.libraries.places.api.Places
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    private val TAG = "DeepLink"
+    private var pendingDeepLink: String? = null // Bewaar de deep link tijdelijk
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(TAG, "onCreate aangeroepen")
         enableEdgeToEdge()
 
         Places.initialize(applicationContext, "AIzaSyBhUNOle29taWD_B58yNpmsUDBihvkqq98")
 
-        // Verwerk inkomende deep link
-        var deepLinkToken: String? = null
-        intent.data?.let { uri ->
-            if (uri.scheme == "quickdrop" && uri.host == "resetPassword") {
-                deepLinkToken = uri.pathSegments.firstOrNull()
-                Log.d("DeepLink", "Token ontvangen: $deepLinkToken")
+        // Controleer of er een deep link is bij het starten
+        intent?.data?.let { uri ->
+            Log.d(TAG, "Inkomende URI in onCreate: $uri")
+            if (uri.scheme == "quickdrop" && uri.host == "resetPassword" && uri.pathSegments.isNotEmpty()) {
+                pendingDeepLink = uri.pathSegments.firstOrNull()
+                Log.d(TAG, "Pending deep link token: $pendingDeepLink")
             }
         }
 
@@ -64,16 +69,21 @@ class MainActivity : ComponentActivity() {
                 val isLoggedIn = AuthDataStore.isLoggedIn(this)
                 val initialUserId = if (isLoggedIn) AuthDataStore.getUserId(this) ?: -1 else -1
 
+                // Verwerk de deep link zodra navController beschikbaar is
                 LaunchedEffect(Unit) {
                     if (isLoggedIn && initialUserId != -1) {
+                        Log.d(TAG, "Gebruiker is ingelogd, navigeren naar home met userId: $initialUserId")
                         navController.navigate("home/$initialUserId") {
                             popUpTo("welcome") { inclusive = true }
                         }
-                    } else if (deepLinkToken != null) {
-                        Log.d("DeepLink", "Navigeren naar resetPassword met token: $deepLinkToken")
-                        navController.navigate("resetPassword/$deepLinkToken") {
+                    } else if (pendingDeepLink != null) {
+                        Log.d(TAG, "Navigeren naar resetPassword met token: $pendingDeepLink")
+                        navController.navigate("resetPassword/$pendingDeepLink") {
                             popUpTo("welcome") { inclusive = true }
                         }
+                        pendingDeepLink = null // Reset na navigatie
+                    } else {
+                        Log.d(TAG, "Geen deep link of ingelogde gebruiker, start bij welcome")
                     }
                 }
 
@@ -91,6 +101,7 @@ class MainActivity : ComponentActivity() {
                         arguments = listOf(navArgument("token") { type = androidx.navigation.NavType.StringType })
                     ) { backStackEntry ->
                         val token = backStackEntry.arguments?.getString("token") ?: ""
+                        Log.d(TAG, "ResetPasswordScreen geopend met token: $token")
                         ResetPasswordScreen(navController, token)
                     }
                     composable(
@@ -247,5 +258,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        Log.d(TAG, "onNewIntent aangeroepen")
+        intent?.data?.let { uri ->
+            Log.d(TAG, "Inkomende URI in onNewIntent: $uri")
+            if (uri.scheme == "quickdrop" && uri.host == "resetPassword" && uri.pathSegments.isNotEmpty()) {
+                pendingDeepLink = uri.pathSegments.firstOrNull()
+                Log.d(TAG, "Pending deep link token in onNewIntent: $pendingDeepLink")
+            }
+        } ?: Log.d(TAG, "Geen URI in intent ontvangen in onNewIntent")
     }
 }

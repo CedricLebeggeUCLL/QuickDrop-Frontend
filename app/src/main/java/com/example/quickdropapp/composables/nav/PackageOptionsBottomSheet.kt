@@ -66,9 +66,8 @@ fun PackageOptionsBottomSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp) // Verminderde verticale padding
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)) // Alleen horizontale en onderste insets
-            .padding(top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding()), // Voeg alleen de statusbalk padding toe aan de bovenkant
+            .padding(horizontal = 16.dp, vertical = 16.dp) // Consistente padding
+            .padding(bottom = 32.dp), // Statische padding voor de onderkant
         verticalArrangement = Arrangement.spacedBy(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -101,7 +100,7 @@ fun PackageOptionsBottomSheet(
             )
         }
 
-        // Item Type Selection (shown only after action is selected)
+        // Item Type Selection
         if (selectedAction != null) {
             Text(
                 text = when (selectedAction) {

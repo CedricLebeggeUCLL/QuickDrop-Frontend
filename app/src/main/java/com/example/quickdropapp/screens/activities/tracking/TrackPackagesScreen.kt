@@ -2,6 +2,7 @@ package com.example.quickdropapp.screens.activities.tracking
 
 import android.Manifest
 import android.os.Looper
+import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -47,7 +48,6 @@ import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import android.util.Log
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
@@ -180,9 +180,8 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                     .fillMaxWidth()
                     .background(SandBeige)
                     .padding(horizontal = 16.dp, vertical = 16.dp)
-                    .padding(bottom = 32.dp) // Extra statische padding aan de onderkant
+                    .padding(bottom = 32.dp)
             ) {
-                // Header for the bottom sheet
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -197,7 +196,6 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                     )
                 }
 
-                // Package list or empty state
                 val filteredPackages = packages.filter { it.status in listOf("assigned", "in_transit", "delivered") }
                 if (filteredPackages.isEmpty()) {
                     Box(
@@ -233,7 +231,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                 } else {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(bottom = 32.dp) // Extra padding onder de pakketten
+                        modifier = Modifier.padding(bottom = 32.dp)
                     ) {
                         items(filteredPackages) { pkg ->
                             TrackingPackageCard(pkg, isSelected = selectedPackageId == pkg.id) {
@@ -291,7 +289,6 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                     .padding(paddingValues)
                     .background(SandBeige)
             ) {
-                // Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -393,6 +390,19 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                                         title = "Pakket Locatie",
                                         snippet = "Huidige positie van pakket"
                                     )
+                                    // Route van pickup naar dropoff
+                                    if (info.pickupAddress.lat != null && info.pickupAddress.lng != null &&
+                                        info.dropoffAddress.lat != null && info.dropoffAddress.lng != null
+                                    ) {
+                                        Polyline(
+                                            points = listOf(
+                                                LatLng(info.pickupAddress.lat, info.pickupAddress.lng),
+                                                LatLng(info.dropoffAddress.lat, info.dropoffAddress.lng)
+                                            ),
+                                            color = Color.Blue,
+                                            width = 5f
+                                        )
+                                    }
                                 }
                             }
                         }

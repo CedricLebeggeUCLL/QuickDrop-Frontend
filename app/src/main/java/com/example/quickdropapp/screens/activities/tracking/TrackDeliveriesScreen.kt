@@ -1,5 +1,10 @@
 package com.example.quickdropapp.screens.activities.tracking
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -10,8 +15,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -53,6 +60,7 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
     val scaffoldState = rememberBottomSheetScaffoldState()
     val scope = rememberCoroutineScope()
     val apiService = RetrofitClient.create(LocalContext.current)
+    val context = LocalContext.current
 
     // Fetch deliveries for the user
     LaunchedEffect(userId) {
@@ -112,9 +120,8 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                     .fillMaxWidth()
                     .background(SandBeige)
                     .padding(horizontal = 16.dp, vertical = 16.dp)
-                    .padding(bottom = 32.dp) // Extra statische padding aan de onderkant
+                    .padding(bottom = 32.dp)
             ) {
-                // Header for the bottom sheet
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -129,7 +136,6 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                     )
                 }
 
-                // Delivery list or empty state
                 val filteredDeliveries = deliveries.filter { it.status in listOf("assigned", "picked_up", "delivered") }
                 if (filteredDeliveries.isEmpty()) {
                     Box(
@@ -165,7 +171,7 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                 } else {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(bottom = 32.dp) // Extra padding onder de leveringen
+                        modifier = Modifier.padding(bottom = 32.dp)
                     ) {
                         items(filteredDeliveries) { delivery ->
                             TrackingDeliveryCard(delivery, isSelected = selectedDeliveryId == delivery.id) {
@@ -232,7 +238,6 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                     .padding(paddingValues)
                     .background(SandBeige)
             ) {
-                // Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -334,6 +339,19 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                                         title = "Levering Locatie",
                                         snippet = "Huidige locatie van levering"
                                     )
+                                    // Route van pickup naar dropoff
+                                    if (info.pickupAddress.lat != null && info.pickupAddress.lng != null &&
+                                        info.dropoffAddress.lat != null && info.dropoffAddress.lng != null
+                                    ) {
+                                        Polyline(
+                                            points = listOf(
+                                                LatLng(info.pickupAddress.lat, info.pickupAddress.lng),
+                                                LatLng(info.dropoffAddress.lat, info.dropoffAddress.lng)
+                                            ),
+                                            color = Color.Blue,
+                                            width = 5f
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -382,6 +400,57 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                                         color = DarkGreen.copy(alpha = 0.8f),
                                         lineHeight = 20.sp
                                     )
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                val address = "${info.dropoffAddress.street_name} ${info.dropoffAddress.house_number}${info.dropoffAddress.extra_info?.let { ", $it" } ?: ""}, ${info.dropoffAddress.postal_code} ${info.dropoffAddress.city ?: ""}${info.dropoffAddress.country?.let { ", $it" } ?: ""}"
+                                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                                val clip = ClipData.newPlainText("Afleveradres", address)
+                                                clipboard.setPrimaryClip(clip)
+                                                Log.d("TrackDeliveries", "Adres gekopieerd: $address")
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(
+                                                Icons.Filled.ContentCopy,
+                                                contentDescription = "Kopieer adres",
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Adres kopiëren")
+                                        }
+                                        Button(
+                                            onClick = {
+                                                val address = "${info.dropoffAddress.street_name} ${info.dropoffAddress.house_number}, ${info.dropoffAddress.postal_code} ${info.dropoffAddress.city ?: ""}"
+                                                val uri = if (info.dropoffAddress.lat != null && info.dropoffAddress.lng != null) {
+                                                    Uri.parse("waze://?ll=${info.dropoffAddress.lat},${info.dropoffAddress.lng}&navigate=yes")
+                                                } else {
+                                                    Uri.parse("waze://?q=${Uri.encode(address)}&navigate=yes")
+                                                }
+                                                val intent = Intent(Intent.ACTION_VIEW, uri)
+                                                try {
+                                                    context.startActivity(intent)
+                                                    Log.d("TrackDeliveries", "Waze geopend met adres: $address")
+                                                } catch (e: Exception) {
+                                                    Log.e("TrackDeliveries", "Fout bij openen Waze: ${e.message}")
+                                                }
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(
+                                                Icons.Filled.Navigation,
+                                                contentDescription = "Open in Waze",
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text("Open in Waze")
+                                        }
+                                    }
                                 }
                             }
                         }

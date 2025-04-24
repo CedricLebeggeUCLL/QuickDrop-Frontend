@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
     private const val BASE_URL = "http://192.168.4.64:3000/api/"
 
+    // Retrofit-instantie voor beveiligde API-aanroepen (met authInterceptor)
     fun create(context: Context): ApiService {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
@@ -23,6 +24,20 @@ object RetrofitClient {
 
         val authInterceptor = Interceptor { chain ->
             val originalRequest = chain.request()
+            val urlPath = originalRequest.url.encodedPath
+
+            // Log de URL om te controleren welke aanroep wordt uitgevoerd
+            Log.d("RetrofitClient", "Processing request: $urlPath")
+
+            // Sla token refresh-logica over voor de inlog-API-aanroep
+            if (urlPath.endsWith("/auth/login")) {
+                Log.d("RetrofitClient", "Skipping token refresh for login request: $urlPath")
+                val response = chain.proceed(originalRequest)
+                Log.d("RetrofitClient", "Login request response code: ${response.code}")
+                return@Interceptor response
+            }
+
+            // Voeg het access token toe aan de request (indien beschikbaar)
             val accessToken = AuthDataStore.getAccessToken(context)
             val requestBuilder = originalRequest.newBuilder()
             if (accessToken != null) {
@@ -30,9 +45,10 @@ object RetrofitClient {
             }
 
             val response = chain.proceed(requestBuilder.build())
-            Log.d("RetrofitClient", "Response code: ${response.code}") // Gebruik code() in plaats van code
+            Log.d("RetrofitClient", "Response code: ${response.code}")
 
-            if (response.code == 401 || response.code == 400) {
+            // Pas token refresh-logica alleen toe op andere endpoints
+            if (response.code == 401) {
                 response.close()
                 Log.d("RetrofitClient", "Token expired or invalid, attempting refresh")
 
@@ -90,12 +106,30 @@ object RetrofitClient {
         return retrofit.create(ApiService::class.java)
     }
 
-    private suspend fun refreshToken(context: Context, refreshToken: String): RefreshTokenResponse? {
-        val apiService = Retrofit.Builder()
+    // Nieuwe methode voor een Retrofit-instantie zonder authInterceptor (voor inloggen)
+    fun createPublic(): ApiService {
+        val logging = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+
+        val client = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .addInterceptor(logging)
+            .build()
+
+        val retrofit = Retrofit.Builder()
             .baseUrl(BASE_URL)
+            .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(ApiService::class.java)
+
+        return retrofit.create(ApiService::class.java)
+    }
+
+    private suspend fun refreshToken(context: Context, refreshToken: String): RefreshTokenResponse? {
+        val apiService = createPublic() // Gebruik de publieke Retrofit-instantie zonder authInterceptor
 
         val call = apiService.refreshToken(RefreshTokenRequest(refreshToken))
         return try {
@@ -106,7 +140,7 @@ object RetrofitClient {
                 body
             } else {
                 val errorBody = response.errorBody()?.string()
-                Log.e("RetrofitClient", "Refresh token failed with code: ${response.code()}, body: $errorBody")
+                Log.e("RetrofitClient", "Refresh token failed with body: $errorBody")
                 null
             }
         } catch (e: Exception) {

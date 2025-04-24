@@ -22,14 +22,12 @@ import com.example.quickdropapp.data.AuthDataStore
 import com.example.quickdropapp.models.auth.LoginRequest
 import com.example.quickdropapp.models.auth.LoginResponse
 import com.example.quickdropapp.network.RetrofitClient
+import com.example.quickdropapp.network.TokenRefreshException
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -40,7 +38,8 @@ fun LoginScreen(navController: NavController) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    val apiService = RetrofitClient.create(LocalContext.current)
+    // Gebruik createPublic() voor inloggen, zodat de authInterceptor wordt overgeslagen
+    val apiService = RetrofitClient.createPublic()
 
     Column(
         modifier = Modifier
@@ -95,7 +94,7 @@ fun LoginScreen(navController: NavController) {
         )
 
         TextButton(
-            onClick = { navController.navigate("passwordRecovery") }, // Nieuwe navigatie naar wachtwoordherstel
+            onClick = { navController.navigate("passwordRecovery") },
             modifier = Modifier.align(Alignment.End)
         ) {
             Text(
@@ -120,8 +119,8 @@ fun LoginScreen(navController: NavController) {
                     val loginRequest = LoginRequest(identifier, password)
                     val call = apiService.loginUser(loginRequest)
                     println("LoginScreen: Sending login request with identifier=$identifier")
-                    call.enqueue(object : Callback<LoginResponse> {
-                        override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
+                    call.enqueue(object : retrofit2.Callback<LoginResponse> {
+                        override fun onResponse(call: retrofit2.Call<LoginResponse>, response: retrofit2.Response<LoginResponse>) {
                             println("LoginScreen: Response received, code=${response.code()}")
                             if (response.isSuccessful) {
                                 val loginResponse = response.body()
@@ -142,17 +141,7 @@ fun LoginScreen(navController: NavController) {
                                 }
                             } else {
                                 errorMessage = when (response.code()) {
-                                    401 -> {
-                                        scope.launch(Dispatchers.IO) {
-                                            AuthDataStore.clearAuthData(context)
-                                            launch(Dispatchers.Main) {
-                                                navController.navigate("login") {
-                                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                                                }
-                                            }
-                                        }
-                                        "Ongeldige gebruikersnaam/e-mail of wachtwoord"
-                                    }
+                                    401 -> "Ongeldige gebruikersnaam/e-mail of wachtwoord"
                                     500 -> "Serverfout, probeer het later opnieuw"
                                     else -> "Inloggen mislukt: ${response.message()}"
                                 }
@@ -160,8 +149,12 @@ fun LoginScreen(navController: NavController) {
                             }
                         }
 
-                        override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
-                            errorMessage = "Netwerkfout: ${t.message}"
+                        override fun onFailure(call: retrofit2.Call<LoginResponse>, t: Throwable) {
+                            errorMessage = if (t is TokenRefreshException) {
+                                "Ongeldige gebruikersnaam/e-mail of wachtwoord"
+                            } else {
+                                "Netwerkfout: ${t.message}"
+                            }
                             println("LoginScreen: Network failure - ${t.message}")
                         }
                     })

@@ -43,5 +43,10 @@
         <meta-data
             android:name="com.google.android.libraries.places.API_KEY"
             android:value="AIzaSyBhUNOle29taWD_B58yNpmsUDBihvkqq98" />
+
+        <!-- Google Routes API-sleutel -->
+        <meta-data
+            android:name="com.google.android.routes.API_KEY"
+            android:value="AIzaSyD7S5MDomqTRbvLmdGOkdgveaHUep1IteQ" />
     </application>
 </manifest>

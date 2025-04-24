@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     private const val BASE_URL = "http://192.168.4.64:3000/api/"
+    private const val GOOGLE_ROUTES_BASE_URL = "https://routes.googleapis.com/"
 
     // Retrofit-instantie voor beveiligde API-aanroepen (met authInterceptor)
     fun create(context: Context): ApiService {
@@ -121,6 +122,28 @@ object RetrofitClient {
 
         val retrofit = Retrofit.Builder()
             .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        return retrofit.create(ApiService::class.java)
+    }
+
+    // Nieuwe methode voor Google Routes API
+    fun createRoutesApi(): ApiService {
+        val logging = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY
+        }
+
+        val client = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .addInterceptor(logging)
+            .build()
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl(GOOGLE_ROUTES_BASE_URL)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

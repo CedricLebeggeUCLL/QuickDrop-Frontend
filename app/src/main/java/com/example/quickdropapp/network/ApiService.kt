@@ -21,6 +21,52 @@ data class LocationUpdate(
     val lng: Double
 )
 
+// Data classes for Routes API request/response
+data class ComputeRoutesRequest(
+    val origin: Waypoint,
+    val destination: Waypoint,
+    val travelMode: String = "DRIVE",
+    val routingPreference: String = "TRAFFIC_AWARE",
+    val computeAlternativeRoutes: Boolean = false,
+    val routeModifiers: RouteModifiers = RouteModifiers(),
+    val languageCode: String = "nl-NL",
+    val units: String = "METRIC"
+)
+
+data class Waypoint(
+    val location: Location
+)
+
+data class Location(
+    val latLng: LatLng
+)
+
+data class LatLng(
+    val latitude: Double,
+    val longitude: Double
+)
+
+data class RouteModifiers(
+    val avoidTolls: Boolean = false,
+    val avoidHighways: Boolean = false,
+    val avoidFerries: Boolean = false
+)
+
+data class ComputeRoutesResponse(
+    val routes: List<Route>,
+    val status: String
+)
+
+data class Route(
+    val polyline: Polyline,
+    val distanceMeters: Int,
+    val duration: String // Bijv. "558s"
+)
+
+data class Polyline(
+    val encodedPolyline: String
+)
+
 interface ApiService {
     // Users Endpoints
     @GET("users")
@@ -133,4 +179,12 @@ interface ApiService {
 
     @GET("deliveries/{id}/track")
     fun trackDelivery(@Path("id") id: Int): Call<DeliveryTrackingInfo>
+
+    // Routes API Endpoint
+    @POST("directions/v2:computeRoutes")
+    @Headers("X-Goog-FieldMask: routes.polyline.encodedPolyline,routes.distanceMeters,routes.duration")
+    fun computeRoutes(
+        @Body request: ComputeRoutesRequest,
+        @Header("X-Goog-Api-Key") apiKey: String
+    ): Call<ComputeRoutesResponse>
 }

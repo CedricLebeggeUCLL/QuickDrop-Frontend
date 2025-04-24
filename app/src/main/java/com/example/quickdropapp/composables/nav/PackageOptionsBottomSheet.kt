@@ -66,7 +66,9 @@ fun PackageOptionsBottomSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(16.dp)
+            .safeDrawingPadding() // Voegt padding toe voor systeem-UI zoals navigatiebalk
+            .padding(bottom = 16.dp), // Extra padding aan de onderkant
         verticalArrangement = Arrangement.spacedBy(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

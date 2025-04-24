@@ -66,9 +66,9 @@ fun PackageOptionsBottomSheet(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
-            .safeDrawingPadding() // Voegt padding toe voor systeem-UI zoals navigatiebalk
-            .padding(bottom = 16.dp), // Extra padding aan de onderkant
+            .padding(horizontal = 16.dp, vertical = 4.dp) // Verminderde verticale padding
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)) // Alleen horizontale en onderste insets
+            .padding(top = WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding()), // Voeg alleen de statusbalk padding toe aan de bovenkant
         verticalArrangement = Arrangement.spacedBy(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {

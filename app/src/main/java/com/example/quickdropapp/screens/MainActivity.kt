@@ -47,11 +47,13 @@ class MainActivity : ComponentActivity() {
 
         Places.initialize(applicationContext, "AIzaSyBhUNOle29taWD_B58yNpmsUDBihvkqq98")
 
+        // Verwerk inkomende deep link
         var deepLinkToken: String? = null
-        val uri = intent.data
-        if (uri != null && uri.scheme == "quickdrop" && uri.host == "resetPassword") {
-            deepLinkToken = uri.pathSegments.firstOrNull()
-            Log.d("DeepLink", "Token ontvangen: $deepLinkToken")
+        intent.data?.let { uri ->
+            if (uri.scheme == "quickdrop" && uri.host == "resetPassword") {
+                deepLinkToken = uri.pathSegments.firstOrNull()
+                Log.d("DeepLink", "Token ontvangen: $deepLinkToken")
+            }
         }
 
         setContent {
@@ -69,14 +71,16 @@ class MainActivity : ComponentActivity() {
                         }
                     } else if (deepLinkToken != null) {
                         Log.d("DeepLink", "Navigeren naar resetPassword met token: $deepLinkToken")
-                        navController.navigate("resetPassword/$deepLinkToken")
+                        navController.navigate("resetPassword/$deepLinkToken") {
+                            popUpTo("welcome") { inclusive = true }
+                        }
                     }
                 }
 
                 NavHost(
                     navController = navController,
                     startDestination = "welcome",
-                    modifier = androidx.compose.ui.Modifier.fillMaxSize() // Geen padding meer
+                    modifier = androidx.compose.ui.Modifier.fillMaxSize()
                 ) {
                     composable("welcome") { WelcomeScreen(navController) }
                     composable("login") { LoginScreen(navController) }

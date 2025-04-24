@@ -1,5 +1,7 @@
 package com.example.quickdropapp.screens.activities.tracking
 
+import android.util.Log
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Inbox
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,6 +34,7 @@ import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.launch
 import retrofit2.Call
@@ -48,9 +52,9 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
 
     val scaffoldState = rememberBottomSheetScaffoldState()
     val scope = rememberCoroutineScope()
-
     val apiService = RetrofitClient.create(LocalContext.current)
 
+    // Fetch deliveries for the user
     LaunchedEffect(userId) {
         apiService.getCourierDeliveries(userId).enqueue(object : Callback<List<Delivery>> {
             override fun onResponse(call: Call<List<Delivery>>, response: Response<List<Delivery>>) {
@@ -70,19 +74,30 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
         })
     }
 
+    // Poll tracking info for the selected delivery
     LaunchedEffect(selectedDeliveryId) {
         selectedDeliveryId?.let { deliveryId ->
+            Log.d("TrackDeliveries", "Start polling for deliveryId: $deliveryId")
             apiService.trackDelivery(deliveryId).enqueue(object : Callback<DeliveryTrackingInfo> {
                 override fun onResponse(call: Call<DeliveryTrackingInfo>, response: Response<DeliveryTrackingInfo>) {
                     if (response.isSuccessful) {
-                        trackingInfo = response.body()
-                        errorMessage = null
+                        val info = response.body()
+                        if (info != null) {
+                            Log.d("Tracking", "Nieuwe tracking info: lat=${info.currentLocation.lat}, lng=${info.currentLocation.lng}")
+                            trackingInfo = info
+                            errorMessage = null
+                        } else {
+                            Log.e("Tracking", "Geen tracking info ontvangen")
+                            errorMessage = "Geen tracking informatie beschikbaar"
+                        }
                     } else {
+                        Log.e("Tracking", "Fout bij ophalen tracking: ${response.code()}")
                         errorMessage = "Fout bij ophalen tracking: ${response.code()}"
                     }
                 }
 
                 override fun onFailure(call: Call<DeliveryTrackingInfo>, t: Throwable) {
+                    Log.e("Tracking", "Netwerkfout: ${t.message}")
                     errorMessage = "Netwerkfout: ${t.message}"
                 }
             })
@@ -92,15 +107,80 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetContent = {
-            LazyColumn(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .background(SandBeige)
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
+                    .padding(bottom = 32.dp) // Extra statische padding aan de onderkant
             ) {
-                items(deliveries.filter { it.status in listOf("assigned", "picked_up", "delivered") }) { delivery ->
-                    TrackingDeliveryCard(delivery, selectedDeliveryId == delivery.id) {
-                        selectedDeliveryId = delivery.id
+                // Header for the bottom sheet
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Actieve Leveringen",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = DarkGreen
+                    )
+                }
+
+                // Delivery list or empty state
+                val filteredDeliveries = deliveries.filter { it.status in listOf("assigned", "picked_up", "delivered") }
+                if (filteredDeliveries.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Filled.Inbox,
+                                contentDescription = null,
+                                tint = DarkGreen.copy(alpha = 0.6f),
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Text(
+                                text = "Geen actieve leveringen",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = DarkGreen.copy(alpha = 0.8f)
+                            )
+                            Text(
+                                text = "Er zijn nog geen actieve leveringen om te volgen.",
+                                fontSize = 14.sp,
+                                color = DarkGreen.copy(alpha = 0.6f),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(bottom = 32.dp) // Extra padding onder de leveringen
+                    ) {
+                        items(filteredDeliveries) { delivery ->
+                            TrackingDeliveryCard(delivery, isSelected = selectedDeliveryId == delivery.id) {
+                                Log.d("TrackDeliveries", "Levering geselecteerd: ${delivery.id}")
+                                selectedDeliveryId = delivery.id
+                                scope.launch {
+                                    try {
+                                        scaffoldState.bottomSheetState.hide()
+                                        Log.d("TrackDeliveries", "Bottom sheet verborgen")
+                                    } catch (e: Exception) {
+                                        Log.e("TrackDeliveries", "Fout bij verbergen bottom sheet: ${e.message}")
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -108,6 +188,7 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
         sheetPeekHeight = 0.dp,
         sheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         sheetContainerColor = SandBeige,
+        sheetShadowElevation = 8.dp,
         sheetDragHandle = {
             Box(
                 modifier = Modifier
@@ -124,16 +205,22 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                 FloatingActionButton(
                     onClick = {
                         scope.launch {
-                            if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
-                                scaffoldState.bottomSheetState.hide()
-                            } else {
-                                scaffoldState.bottomSheetState.expand()
+                            try {
+                                if (scaffoldState.bottomSheetState.currentValue != SheetValue.Expanded) {
+                                    scaffoldState.bottomSheetState.expand()
+                                    Log.d("TrackDeliveries", "Bottom sheet geopend")
+                                }
+                            } catch (e: Exception) {
+                                Log.e("TrackDeliveries", "Fout bij openen bottom sheet: ${e.message}")
                             }
                         }
                     },
                     containerColor = GreenSustainable,
                     contentColor = Color.White,
-                    modifier = Modifier.padding(16.dp)
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .shadow(6.dp, CircleShape)
                 ) {
                     Icon(Icons.Filled.Inbox, contentDescription = "Leveringenlijst")
                 }
@@ -145,7 +232,7 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                     .padding(paddingValues)
                     .background(SandBeige)
             ) {
-                // Uniforme header
+                // Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -181,32 +268,43 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                 when {
                     isLoading -> {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
+                            CircularProgressIndicator(
+                                color = GreenSustainable,
+                                strokeWidth = 4.dp
+                            )
                         }
                     }
                     errorMessage != null -> {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text(errorMessage!!, color = Color.Red, fontSize = 16.sp)
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            ) {
+                                Text(
+                                    text = errorMessage!!,
+                                    color = Color.Red,
+                                    fontSize = 16.sp,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
                         }
                     }
                     else -> {
                         val cameraPositionState = rememberCameraPositionState {
                             position = CameraPosition.fromLatLngZoom(
                                 trackingInfo?.currentLocation?.let {
-                                    com.google.android.gms.maps.model.LatLng(it.lat, it.lng)
-                                } ?: com.google.android.gms.maps.model.LatLng(52.3676, 4.9041),
+                                    LatLng(it.lat, it.lng)
+                                } ?: LatLng(52.3676, 4.9041),
                                 14f
                             )
                         }
 
                         LaunchedEffect(trackingInfo) {
-                            trackingInfo?.let {
+                            trackingInfo?.let { info ->
+                                Log.d("MapUpdate", "Kaart bijwerken naar: lat=${info.currentLocation.lat}, lng=${info.currentLocation.lng}")
                                 cameraPositionState.animate(
                                     update = CameraUpdateFactory.newLatLngZoom(
-                                        com.google.android.gms.maps.model.LatLng(
-                                            it.currentLocation.lat,
-                                            it.currentLocation.lng
-                                        ),
+                                        LatLng(info.currentLocation.lat, info.currentLocation.lng),
                                         15f
                                     ),
                                     durationMs = 1000
@@ -218,6 +316,7 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
+                                .padding(horizontal = 16.dp)
                                 .clip(RoundedCornerShape(16.dp))
                                 .shadow(8.dp, RoundedCornerShape(16.dp)),
                             colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -230,13 +329,10 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                                 trackingInfo?.let { info ->
                                     Marker(
                                         state = MarkerState(
-                                            position = com.google.android.gms.maps.model.LatLng(
-                                                info.currentLocation.lat,
-                                                info.currentLocation.lng
-                                            )
+                                            position = LatLng(info.currentLocation.lat, info.currentLocation.lng)
                                         ),
                                         title = "Levering Locatie",
-                                        snippet = "Huidige locatie van levering #${info.deliveryId}"
+                                        snippet = "Huidige locatie van levering"
                                     )
                                 }
                             }
@@ -247,38 +343,44 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                                    .clip(RoundedCornerShape(16.dp)),
-                                colors = CardDefaults.cardColors(containerColor = SandBeige),
+                                    .padding(horizontal = 16.dp, vertical = 16.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .animateContentSize(),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                             ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.LocationOn,
+                                            contentDescription = null,
+                                            tint = GreenSustainable,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Text(
+                                            text = "Status: ${info.status.replaceFirstChar { it.uppercase() }}",
+                                            fontSize = 18.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = GreenSustainable
+                                        )
+                                    }
                                     Text(
-                                        text = "Levering ID: ${info.deliveryId}",
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = GreenSustainable
-                                    )
-                                    Text(
-                                        text = "Status: ${info.status}",
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = GreenSustainable
-                                    )
-                                    Text(
-                                        text = "Geschatte aankomst: ${info.estimatedDelivery}",
+                                        text = "Afhaaladres: ${info.pickupAddress.street_name} ${info.pickupAddress.house_number}${info.pickupAddress.extra_info?.let { ", $it" } ?: ""}, ${info.pickupAddress.postal_code} ${info.pickupAddress.city ?: ""}${info.pickupAddress.country?.let { ", $it" } ?: ""}",
                                         fontSize = 14.sp,
-                                        color = DarkGreen.copy(alpha = 0.8f)
+                                        color = DarkGreen.copy(alpha = 0.8f),
+                                        lineHeight = 20.sp
                                     )
                                     Text(
-                                        text = "Afhaaladres: ${info.pickupAddress.street_name} ${info.pickupAddress.house_number}",
+                                        text = "Afleveradres: ${info.dropoffAddress.street_name} ${info.dropoffAddress.house_number}${info.dropoffAddress.extra_info?.let { ", $it" } ?: ""}, ${info.dropoffAddress.postal_code} ${info.dropoffAddress.city ?: ""}${info.dropoffAddress.country?.let { ", $it" } ?: ""}",
                                         fontSize = 14.sp,
-                                        color = DarkGreen.copy(alpha = 0.8f)
-                                    )
-                                    Text(
-                                        text = "Afleveradres: ${info.dropoffAddress.street_name} ${info.dropoffAddress.house_number}",
-                                        fontSize = 14.sp,
-                                        color = DarkGreen.copy(alpha = 0.8f)
+                                        color = DarkGreen.copy(alpha = 0.8f),
+                                        lineHeight = 20.sp
                                     )
                                 }
                             }

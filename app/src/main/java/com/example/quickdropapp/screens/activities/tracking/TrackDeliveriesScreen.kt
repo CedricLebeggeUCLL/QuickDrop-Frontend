@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.quickdropapp.R
 import com.example.quickdropapp.composables.tracking.TrackingDeliveryCard
 import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.models.tracking.DeliveryTrackingInfo
@@ -40,12 +41,14 @@ import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
 import com.example.quickdropapp.utils.ApiKeyUtils
+import com.example.quickdropapp.utils.MapUtils
 import com.example.quickdropapp.utils.PolylineDecoder
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.launch
 import retrofit2.Call
@@ -61,7 +64,7 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var routePoints by remember { mutableStateOf<List<LatLng>>(emptyList()) }
-    var courierLocation by remember { mutableStateOf<LatLng?>(null) } // Huidige locatie van de koerier
+    var courierLocation by remember { mutableStateOf<LatLng?>(null) }
 
     val scaffoldState = rememberBottomSheetScaffoldState()
     val scope = rememberCoroutineScope()
@@ -434,7 +437,7 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                                     routePoints.forEach { boundsBuilder.include(it) }
                                     val bounds = boundsBuilder.build()
                                     cameraPositionState.animate(
-                                        update = CameraUpdateFactory.newLatLngBounds(bounds, 20),
+                                        update = CameraUpdateFactory.newLatLngBounds(bounds, 50),
                                         durationMs = 1000
                                     )
                                     Log.d("MapUpdate", "Camera adjusted to fit route bounds")
@@ -448,6 +451,17 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                                         durationMs = 1000
                                     )
                                 }
+                            }
+                        }
+
+                        // Centreer op de GPS-locatie van de koerier wanneer deze beschikbaar is
+                        LaunchedEffect(courierLocation) {
+                            courierLocation?.let { location ->
+                                cameraPositionState.animate(
+                                    update = CameraUpdateFactory.newLatLngZoom(location, 17f),
+                                    durationMs = 1000
+                                )
+                                Log.d("MapUpdate", "Camera gezoomd op GPS-locatie van koerier: lat=${location.latitude}, lng=${location.longitude}")
                             }
                         }
 
@@ -476,15 +490,32 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                                 )
                             ) {
                                 trackingInfo?.let { info ->
-                                    // Toon de huidige locatie van de koerier
-                                    Marker(
-                                        state = MarkerState(
-                                            position = LatLng(info.currentLocation.lat, info.currentLocation.lng)
-                                        ),
-                                        title = "Jouw Locatie",
-                                        snippet = "Huidige locatie van koerier",
-                                        zIndex = 1f
-                                    )
+                                    // Gebruik GPS-locatie (courierLocation) voor de marker, met fallback naar info.currentLocation
+                                    val markerPosition = if (courierLocation != null) {
+                                        Log.d("CourierMarker", "Gebruik GPS-locatie voor koerier marker: lat=${courierLocation!!.latitude}, lng=${courierLocation!!.longitude}")
+                                        courierLocation!!
+                                    } else {
+                                        Log.w("CourierMarker", "GPS-locatie niet beschikbaar, gebruik API-locatie: lat=${info.currentLocation.lat}, lng=${info.currentLocation.lng}")
+                                        LatLng(info.currentLocation.lat, info.currentLocation.lng)
+                                    }
+
+                                    // Controleer of de coördinaten geldig zijn
+                                    if (markerPosition.latitude == 0.0 && markerPosition.longitude == 0.0) {
+                                        Log.w("CourierMarker", "Ongeldige coördinaten voor koerier: lat=${markerPosition.latitude}, lng=${markerPosition.longitude}")
+                                    } else {
+                                        Log.d("CourierMarker", "Plaats koerier marker op: lat=${markerPosition.latitude}, lng=${markerPosition.longitude}")
+                                        val customIcon = MapUtils.bitmapDescriptorFromVector(context, R.drawable.ic_courier)
+                                        if (customIcon == null) {
+                                            Log.w("CourierMarker", "Aangepast icoontje niet geladen, gebruik standaard marker")
+                                        }
+                                        Marker(
+                                            state = MarkerState(position = markerPosition),
+                                            title = "Jouw Locatie",
+                                            snippet = "Huidige locatie van koerier",
+                                            icon = customIcon,
+                                            zIndex = 1f
+                                        )
+                                    }
 
                                     // Toon de ophaal- en afleverlocaties als markers
                                     if (info.pickupAddress.lat != null && info.pickupAddress.lng != null) {

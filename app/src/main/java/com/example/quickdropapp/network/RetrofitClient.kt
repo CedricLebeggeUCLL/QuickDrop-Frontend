@@ -14,7 +14,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.4.64:3000/api/"
+    private const val BASE_URL = "http://192.168.1.18:3000/api/"
     private const val GOOGLE_ROUTES_BASE_URL = "https://routes.googleapis.com/"
 
     // Retrofit-instantie voor beveiligde API-aanroepen (met authInterceptor)

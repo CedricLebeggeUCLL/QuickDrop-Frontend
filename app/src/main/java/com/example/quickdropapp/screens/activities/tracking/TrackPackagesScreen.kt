@@ -1,7 +1,6 @@
 package com.example.quickdropapp.screens.activities.tracking
 
 import android.Manifest
-import android.os.Looper
 import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
@@ -27,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.quickdropapp.R
 import com.example.quickdropapp.composables.tracking.TrackingPackageCard
 import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.models.tracking.TrackingInfo
@@ -35,6 +35,7 @@ import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
 import com.example.quickdropapp.utils.ApiKeyUtils
+import com.example.quickdropapp.utils.MapUtils
 import com.example.quickdropapp.utils.PolylineDecoder
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
@@ -61,6 +62,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var shouldPoll by remember { mutableStateOf(false) }
     var routePoints by remember { mutableStateOf<List<LatLng>>(emptyList()) }
+    var courierLocation by remember { mutableStateOf<LatLng?>(null) }
 
     val scaffoldState = rememberBottomSheetScaffoldState()
     val scope = rememberCoroutineScope()
@@ -71,14 +73,57 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
     val locationPermissionState = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
     val apiKey = ApiKeyUtils.getRoutesApiKey(context) ?: "AIzaSyD7S5MDomqTRbvLmdGOkdgveaHUep1IteQ"
 
-    // Request location permission if not granted
+    // Vraag locatierechten aan
     LaunchedEffect(Unit) {
         if (!locationPermissionState.status.isGranted) {
             locationPermissionState.launchPermissionRequest()
         }
     }
 
-    // Fetch packages for the user
+    // Haal de huidige locatie van de koerier op
+    DisposableEffect(Unit) {
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    courierLocation = LatLng(location.latitude, location.longitude)
+                    Log.d("CourierLocation", "Huidige locatie: lat=${location.latitude}, lng=${location.longitude}")
+                    // Update koerierlocatie naar backend
+                    apiService.updateCourierLocation(userId, LocationUpdate(location.latitude, location.longitude))
+                        .enqueue(object : Callback<Void> {
+                            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                                if (response.isSuccessful) {
+                                    Log.d("LocationUpdate", "Koerierlocatie succesvol bijgewerkt")
+                                } else {
+                                    Log.e("LocationUpdate", "Fout bij bijwerken locatie: ${response.code()}")
+                                }
+                            }
+
+                            override fun onFailure(call: Call<Void>, t: Throwable) {
+                                Log.e("LocationUpdate", "Netwerkfout: ${t.message}")
+                            }
+                        })
+                }
+            }
+        }
+
+        val locationRequest = LocationRequest.Builder(5000)
+            .setMinUpdateIntervalMillis(5000)
+            .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+            .build()
+
+        try {
+            locationClient.requestLocationUpdates(locationRequest, locationCallback, android.os.Looper.getMainLooper())
+        } catch (e: SecurityException) {
+            Log.e("CourierLocation", "Geen locatierechten: ${e.message}")
+            errorMessage = "Locatierechten vereist"
+        }
+
+        onDispose {
+            locationClient.removeLocationUpdates(locationCallback)
+        }
+    }
+
+    // Haal pakketten op voor de gebruiker
     LaunchedEffect(userId) {
         apiService.getPackagesByUserId(userId).enqueue(object : Callback<List<Package>> {
             override fun onResponse(call: Call<List<Package>>, response: Response<List<Package>>) {
@@ -98,135 +143,106 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
         })
     }
 
-    // Poll tracking info for the selected package
+    // Poll trackinginformatie voor het geselecteerde pakket
     LaunchedEffect(selectedPackageId) {
         selectedPackageId?.let { packageId ->
-            Log.d("TrackPackages", "Start polling for packageId: $packageId")
             shouldPoll = true
             while (shouldPoll) {
                 apiService.trackPackage(packageId).enqueue(object : Callback<TrackingInfo> {
                     override fun onResponse(call: Call<TrackingInfo>, response: Response<TrackingInfo>) {
                         if (response.isSuccessful) {
-                            val info = response.body()
-                            if (info != null) {
-                                Log.d("Tracking", "Nieuwe tracking info: lat=${info.currentLocation.lat}, lng=${info.currentLocation.lng}")
-                                trackingInfo = info
+                            trackingInfo = response.body()
+                            trackingInfo?.let { info ->
                                 shouldPoll = info.status in listOf("assigned", "in_transit")
-                                // Fetch route if coordinates are available
-                                if (info.pickupAddress.lat != null && info.pickupAddress.lng != null &&
+                                // Haal route op op basis van status
+                                if (courierLocation != null &&
+                                    info.pickupAddress.lat != null && info.pickupAddress.lng != null &&
                                     info.dropoffAddress.lat != null && info.dropoffAddress.lng != null
                                 ) {
-                                    val request = ComputeRoutesRequest(
-                                        origin = Waypoint(
+                                    val origin = Waypoint(
+                                        location = Location(
+                                            latLng = LatLng(
+                                                latitude = courierLocation!!.latitude,
+                                                longitude = courierLocation!!.longitude
+                                            )
+                                        )
+                                    )
+                                    val destination = when (info.status) {
+                                        "assigned" -> Waypoint(
                                             location = Location(
                                                 latLng = LatLng(
                                                     latitude = info.pickupAddress.lat,
                                                     longitude = info.pickupAddress.lng
                                                 )
                                             )
-                                        ),
-                                        destination = Waypoint(
+                                        )
+                                        "in_transit" -> Waypoint(
                                             location = Location(
                                                 latLng = LatLng(
                                                     latitude = info.dropoffAddress.lat,
                                                     longitude = info.dropoffAddress.lng
                                                 )
                                             )
-                                        ),
-                                        routingPreference = "TRAFFIC_AWARE_OPTIMAL" // Hogere precisie
-                                    )
-                                    routesApiService.computeRoutes(request, apiKey)
-                                        .enqueue(object : Callback<ComputeRoutesResponse> {
-                                            override fun onResponse(
-                                                call: Call<ComputeRoutesResponse>,
-                                                response: Response<ComputeRoutesResponse>
-                                            ) {
-                                                if (response.isSuccessful) {
-                                                    val routesResponse = response.body()
-                                                    if (routesResponse != null && routesResponse.routes.isNotEmpty()) {
-                                                        val encodedPolyline = routesResponse.routes[0].polyline.encodedPolyline
-                                                        Log.d("TrackPackages", "Encoded polyline: $encodedPolyline")
-                                                        routePoints = PolylineDecoder.decode(encodedPolyline)
-                                                        Log.d("TrackPackages", "Route opgehaald: ${routePoints.size} punten")
-                                                        // Log eerste en laatste punt voor validatie
-                                                        if (routePoints.isNotEmpty()) {
-                                                            Log.d("TrackPackages", "Eerste punt: lat=${routePoints.first().latitude}, lng=${routePoints.first().longitude}")
-                                                            Log.d("TrackPackages", "Laatste punt: lat=${routePoints.last().latitude}, lng=${routePoints.last().longitude}")
+                                        )
+                                        else -> null
+                                    }
+
+                                    if (destination != null) {
+                                        val request = ComputeRoutesRequest(
+                                            origin = origin,
+                                            destination = destination,
+                                            routingPreference = "TRAFFIC_AWARE_OPTIMAL"
+                                        )
+                                        routesApiService.computeRoutes(request, apiKey)
+                                            .enqueue(object : Callback<ComputeRoutesResponse> {
+                                                override fun onResponse(
+                                                    call: Call<ComputeRoutesResponse>,
+                                                    response: Response<ComputeRoutesResponse>
+                                                ) {
+                                                    if (response.isSuccessful) {
+                                                        val routesResponse = response.body()
+                                                        if (routesResponse != null && routesResponse.routes.isNotEmpty()) {
+                                                            val encodedPolyline = routesResponse.routes[0].polyline.encodedPolyline
+                                                            routePoints = PolylineDecoder.decode(encodedPolyline)
+                                                            Log.d("TrackPackages", "Route opgehaald: ${routePoints.size} punten")
+                                                        } else {
+                                                            Log.w("TrackPackages", "Geen route beschikbaar")
+                                                            routePoints = emptyList()
                                                         }
                                                     } else {
-                                                        Log.w("TrackPackages", "Geen route beschikbaar")
+                                                        Log.e("TrackPackages", "Fout bij ophalen route: ${response.code()}")
+                                                        routePoints = emptyList()
                                                     }
-                                                } else {
-                                                    Log.e("TrackPackages", "Fout bij ophalen route: ${response.code()}, body: ${response.errorBody()?.string()}")
                                                 }
-                                            }
 
-                                            override fun onFailure(call: Call<ComputeRoutesResponse>, t: Throwable) {
-                                                Log.e("TrackPackages", "Netwerkfout bij route: ${t.message}")
-                                            }
-                                        })
+                                                override fun onFailure(call: Call<ComputeRoutesResponse>, t: Throwable) {
+                                                    Log.e("TrackPackages", "Netwerkfout bij route: ${t.message}")
+                                                    routePoints = emptyList()
+                                                }
+                                            })
+                                    } else {
+                                        routePoints = emptyList()
+                                    }
+                                } else {
+                                    routePoints = emptyList()
                                 }
-                            } else {
-                                Log.e("Tracking", "Geen tracking info ontvangen")
+                            } ?: run {
                                 errorMessage = "Geen tracking informatie beschikbaar"
                                 shouldPoll = false
                             }
                         } else {
-                            Log.e("Tracking", "Fout bij ophalen tracking: ${response.code()}")
                             errorMessage = "Fout bij ophalen tracking: ${response.code()}"
                             shouldPoll = false
                         }
                     }
 
                     override fun onFailure(call: Call<TrackingInfo>, t: Throwable) {
-                        Log.e("Tracking", "Netwerkfout: ${t.message}")
                         errorMessage = "Netwerkfout: ${t.message}"
                         shouldPoll = false
                     }
                 })
                 if (shouldPoll) delay(5000)
             }
-        }
-    }
-
-    // Update courier location periodically
-    DisposableEffect(selectedPackageId) {
-        val callback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                val location = locationResult.lastLocation
-                if (location != null && locationPermissionState.status.isGranted) {
-                    val latLng = LatLng(location.latitude, location.longitude)
-                    apiService.updateCourierLocation(2, LocationUpdate(latLng.latitude, latLng.longitude))
-                        .enqueue(object : Callback<Void> {
-                            override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                                if (response.isSuccessful) {
-                                    Log.d("LocationUpdate", "Location updated successfully")
-                                } else {
-                                    Log.e("LocationUpdate", "Error updating location: ${response.code()}")
-                                }
-                            }
-
-                            override fun onFailure(call: Call<Void>, t: Throwable) {
-                                Log.e("LocationUpdate", "Network error: ${t.message}")
-                            }
-                        })
-                }
-            }
-        }
-
-        if (selectedPackageId != null &&
-            packages.find { it.id == selectedPackageId }?.status in listOf("assigned", "in_transit") &&
-            locationPermissionState.status.isGranted
-        ) {
-            val locationRequest = LocationRequest.Builder(5000)
-                .setMinUpdateIntervalMillis(5000)
-                .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
-                .build()
-            locationClient.requestLocationUpdates(locationRequest, callback, Looper.getMainLooper())
-        }
-
-        onDispose {
-            locationClient.removeLocationUpdates(callback)
         }
     }
 
@@ -293,14 +309,14 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                     ) {
                         items(filteredPackages) { pkg ->
                             TrackingPackageCard(pkg, isSelected = selectedPackageId == pkg.id) {
-                                Log.d("TrackPackages", "Pakket geselecteerd: ${pkg.id}")
                                 selectedPackageId = pkg.id
                                 scope.launch {
                                     try {
-                                        scaffoldState.bottomSheetState.hide()
-                                        Log.d("TrackPackages", "Bottom sheet verborgen")
+                                        if (scaffoldState.bottomSheetState.currentValue == SheetValue.Expanded) {
+                                            scaffoldState.bottomSheetState.hide()
+                                        }
                                     } catch (e: Exception) {
-                                        Log.e("TrackPackages", "Fout bij verbergen bottom sheet: ${e.message}")
+                                        Log.e("TrackPackages", "Fout bij sluiten bottom sheet: ${e.message}")
                                     }
                                 }
                             }
@@ -323,7 +339,6 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                             try {
                                 if (scaffoldState.bottomSheetState.currentValue != SheetValue.Expanded) {
                                     scaffoldState.bottomSheetState.expand()
-                                    Log.d("TrackPackages", "Bottom sheet geopend")
                                 }
                             } catch (e: Exception) {
                                 Log.e("TrackPackages", "Fout bij openen bottom sheet: ${e.message}")
@@ -406,34 +421,40 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                     else -> {
                         val cameraPositionState = rememberCameraPositionState {
                             position = CameraPosition.fromLatLngZoom(
-                                trackingInfo?.currentLocation?.let {
-                                    LatLng(it.lat, it.lng)
-                                } ?: LatLng(52.3676, 4.9041),
+                                courierLocation ?: LatLng(50.8503, 4.3517), // Default Brussel
                                 14f
                             )
                         }
 
-                        // Adjust camera to fit the entire route when routePoints change
-                        LaunchedEffect(routePoints) {
-                            if (routePoints.isNotEmpty()) {
-                                val boundsBuilder = LatLngBounds.Builder()
-                                routePoints.forEach { boundsBuilder.include(it) }
-                                val bounds = boundsBuilder.build()
-                                cameraPositionState.animate(
-                                    update = CameraUpdateFactory.newLatLngBounds(bounds, 50), // Reduced padding
-                                    durationMs = 1000
-                                )
-                                Log.d("MapUpdate", "Camera adjusted to fit route bounds")
-                            }
-                        }
-
-                        LaunchedEffect(trackingInfo) {
+                        // Pas camera aan op basis van status
+                        LaunchedEffect(trackingInfo, routePoints, courierLocation) {
                             trackingInfo?.let { info ->
-                                Log.d("MapUpdate", "Kaart bijwerken naar: lat=${info.currentLocation.lat}, lng=${info.currentLocation.lng}")
-                                if (routePoints.isEmpty()) {
+                                if (info.status == "delivered" && info.dropoffAddress.lat != null && info.dropoffAddress.lng != null) {
                                     cameraPositionState.animate(
-                                        update = CameraUpdateFactory.newLatLngZoom(
-                                            LatLng(info.currentLocation.lat, info.currentLocation.lng),
+                                        CameraUpdateFactory.newLatLngZoom(
+                                            LatLng(info.dropoffAddress.lat, info.dropoffAddress.lng),
+                                            15f
+                                        ),
+                                        durationMs = 1000
+                                    )
+                                } else if (courierLocation != null && routePoints.isNotEmpty()) {
+                                    val boundsBuilder = LatLngBounds.Builder()
+                                    routePoints.forEach { boundsBuilder.include(it) }
+                                    boundsBuilder.include(courierLocation!!)
+                                    if (info.status == "assigned" && info.pickupAddress.lat != null && info.pickupAddress.lng != null) {
+                                        boundsBuilder.include(LatLng(info.pickupAddress.lat, info.pickupAddress.lng))
+                                    } else if (info.status == "in_transit" && info.dropoffAddress.lat != null && info.dropoffAddress.lng != null) {
+                                        boundsBuilder.include(LatLng(info.dropoffAddress.lat, info.dropoffAddress.lng))
+                                    }
+                                    val bounds = boundsBuilder.build()
+                                    cameraPositionState.animate(
+                                        CameraUpdateFactory.newLatLngBounds(bounds, 50),
+                                        durationMs = 1000
+                                    )
+                                } else if (courierLocation != null) {
+                                    cameraPositionState.animate(
+                                        CameraUpdateFactory.newLatLngZoom(
+                                            courierLocation!!,
                                             15f
                                         ),
                                         durationMs = 1000
@@ -446,7 +467,7 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f)
-                                .padding(horizontal = 0.dp) // Removed horizontal padding
+                                .padding(horizontal = 0.dp)
                                 .clip(RoundedCornerShape(16.dp))
                                 .shadow(8.dp, RoundedCornerShape(16.dp)),
                             colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -455,9 +476,9 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                                 modifier = Modifier.fillMaxSize(),
                                 cameraPositionState = cameraPositionState,
                                 properties = MapProperties(
-                                    isMyLocationEnabled = false,
+                                    isMyLocationEnabled = locationPermissionState.status.isGranted,
                                     mapType = MapType.NORMAL,
-                                    maxZoomPreference = 18f, // Limit zoom to reduce projection issues
+                                    maxZoomPreference = 18f,
                                     minZoomPreference = 10f
                                 ),
                                 uiSettings = MapUiSettings(
@@ -467,39 +488,48 @@ fun TrackPackagesScreen(navController: NavController, userId: Int) {
                                 )
                             ) {
                                 trackingInfo?.let { info ->
-                                    Marker(
-                                        state = MarkerState(
-                                            position = LatLng(info.currentLocation.lat, info.currentLocation.lng)
-                                        ),
-                                        title = "Koerier Locatie",
-                                        snippet = "Huidige positie van koerier",
-                                        zIndex = 1f
-                                    )
-                                    // Route van pickup naar dropoff
-                                    if (routePoints.isNotEmpty()) {
+                                    // Toon koerierlocatie (alleen bij assigned of in_transit)
+                                    if (courierLocation != null && info.status != "delivered") {
+                                        Marker(
+                                            state = MarkerState(position = courierLocation!!),
+                                            title = "Koerier Locatie",
+                                            snippet = "Huidige positie van koerier",
+                                            icon = MapUtils.bitmapDescriptorFromVector(context, R.drawable.ic_courier),
+                                            zIndex = 1f
+                                        )
+                                    }
+
+                                    // Toon ophaal- en afleveradressen
+                                    if (info.pickupAddress.lat != null && info.pickupAddress.lng != null) {
+                                        Marker(
+                                            state = MarkerState(
+                                                position = LatLng(info.pickupAddress.lat, info.pickupAddress.lng)
+                                            ),
+                                            title = "Ophaaladres",
+                                            snippet = "Ophaallocatie",
+                                            zIndex = 0f
+                                        )
+                                    }
+                                    if (info.dropoffAddress.lat != null && info.dropoffAddress.lng != null) {
+                                        Marker(
+                                            state = MarkerState(
+                                                position = LatLng(info.dropoffAddress.lat, info.dropoffAddress.lng)
+                                            ),
+                                            title = "Afleveradres",
+                                            snippet = "Afleverlocatie",
+                                            zIndex = 0f
+                                        )
+                                    }
+
+                                    // Toon route (alleen bij assigned of in_transit)
+                                    if (info.status != "delivered" && routePoints.isNotEmpty()) {
                                         Polyline(
                                             points = routePoints,
                                             color = Color.Blue,
                                             width = 8f,
                                             zIndex = 0f,
-                                            geodesic = true // Follow Earth's curvature
+                                            geodesic = true
                                         )
-                                    } else {
-                                        // Fallback voor als Routes API niet werkt
-                                        if (info.pickupAddress.lat != null && info.pickupAddress.lng != null &&
-                                            info.dropoffAddress.lat != null && info.dropoffAddress.lng != null
-                                        ) {
-                                            Polyline(
-                                                points = listOf(
-                                                    LatLng(info.pickupAddress.lat, info.pickupAddress.lng),
-                                                    LatLng(info.dropoffAddress.lat, info.dropoffAddress.lng)
-                                                ),
-                                                color = Color.Blue,
-                                                width = 8f,
-                                                zIndex = 0f,
-                                                geodesic = true
-                                            )
-                                        }
                                     }
                                 }
                             }

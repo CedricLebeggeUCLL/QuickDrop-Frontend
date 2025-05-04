@@ -40,19 +40,19 @@ fun PackageStatusChart(statusCounts: List<StatusCount>?, navController: NavContr
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 StatusItem(
-                    label = "Pending",
+                    label = "Klaar voor Ophalen",
                     value = pending.toString(),
                     color = Color(0xFF42A5F5),
                     onClick = { navController.navigate("viewPackages/$userId") }
                 )
                 StatusItem(
-                    label = "Active",
+                    label = "In Werking",
                     value = active.toString(),
                     color = Color(0xFFFFA726),
                     onClick = { navController.navigate("viewPackages/$userId") }
                 )
                 StatusItem(
-                    label = "Delivered",
+                    label = "Bezorgd",
                     value = delivered.toString(),
                     color = Color(0xFF66BB6A),
                     onClick = { navController.navigate("history/$userId") }

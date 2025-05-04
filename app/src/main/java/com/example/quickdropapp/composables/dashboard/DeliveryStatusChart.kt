@@ -40,13 +40,13 @@ fun DeliveryStatusChart(statusCounts: List<StatusCount>?, navController: NavCont
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 StatusItem(
-                    label = "Toegewezen",
+                    label = "Wachtrij",
                     value = assigned.toString(),
                     color = Color(0xFF42A5F5),
                     onClick = { navController.navigate("viewDeliveries/$userId") }
                 )
                 StatusItem(
-                    label = "Onderweg",
+                    label = "In Werking",
                     value = active.toString(),
                     color = Color(0xFFFFA726),
                     onClick = { navController.navigate("viewDeliveries/$userId") }

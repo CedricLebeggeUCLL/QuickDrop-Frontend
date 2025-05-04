@@ -2,187 +2,168 @@ package com.example.quickdropapp.screens.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.BikeScooter
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.example.quickdropapp.composables.forms.CourierRegistrationForm
-import com.example.quickdropapp.models.Courier
-import com.example.quickdropapp.models.CourierRequest
-import com.example.quickdropapp.network.RetrofitClient
-import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BecomeCourierScreen(navController: NavController, userId: Int) {
-    var itsmeCode by remember { mutableStateOf("") }
-    var licenseNumber by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var successMessage by remember { mutableStateOf<String?>(null) }
+fun BecomeCourierScreen(
+    navController: NavHostController,
+    userId: Int
+) {
+    var firstName by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
+    var birthDate by remember { mutableStateOf("") }
+    var mobileNumber by remember { mutableStateOf("") }
+    var address by remember { mutableStateOf("") }
+    var city by remember { mutableStateOf("") }
+    var postalCode by remember { mutableStateOf("") }
+    var country by remember { mutableStateOf("België") }
+    var phoneCountry by remember { mutableStateOf("België") } // Nieuwe state voor telefoonnummer land
+    var documentType by remember { mutableStateOf("Belgische identiteitskaart") }
+    var nationalNumber by remember { mutableStateOf("") }
+    var nationality by remember { mutableStateOf("België") }
+    var termsAccepted by remember { mutableStateOf(false) }
 
-    val apiService = RetrofitClient.create(LocalContext.current)
+    // Controleer of alle velden zijn ingevuld en de checkbox is aangevinkt
+    val allFieldsFilled = firstName.isNotBlank() &&
+            lastName.isNotBlank() &&
+            birthDate.isNotBlank() &&
+            mobileNumber.isNotBlank() &&
+            address.isNotBlank() &&
+            city.isNotBlank() &&
+            postalCode.isNotBlank() &&
+            country.isNotBlank() &&
+            phoneCountry.isNotBlank() &&
+            documentType.isNotBlank() &&
+            nationalNumber.isNotBlank() &&
+            nationality.isNotBlank() &&
+            termsAccepted
 
-    Scaffold(containerColor = SandBeige) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .background(SandBeige)
-        ) {
-            Row(
+    Scaffold(
+        containerColor = SandBeige,
+        topBar = {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(SandBeige)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBackIosNew,
-                        contentDescription = "Terug",
-                        tint = GreenSustainable,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(SandBeige.copy(alpha = 0.2f), CircleShape)
-                            .padding(6.dp)
+                Spacer(modifier = Modifier.height(24.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBackIosNew,
+                            contentDescription = "Terug",
+                            tint = GreenSustainable,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(SandBeige.copy(alpha = 0.2f), CircleShape)
+                                .padding(6.dp)
+                        )
+                    }
+                    Text(
+                        text = "Word Koerier",
+                        color = GreenSustainable,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp
                     )
+                    Spacer(modifier = Modifier.width(48.dp))
                 }
-                Text(
-                    text = "Word Koerier",
-                    color = GreenSustainable,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp
-                )
-                Spacer(modifier = Modifier.width(48.dp))
             }
-
+        },
+        content = { paddingValues ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
-                Text(
-                    text = "Registreer je als koerier met verificatie",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
+                Spacer(modifier = Modifier.height(16.dp))
 
-                Spacer(modifier = Modifier.height(24.dp))
-
+                // Roep CourierRegistrationForm aan voor de inhoud
                 CourierRegistrationForm(
-                    itsmeCode = itsmeCode,
-                    onItsmeCodeChange = { itsmeCode = it },
-                    licenseNumber = licenseNumber,
-                    onLicenseNumberChange = { licenseNumber = it }
+                    onItsmeClick = {
+                        // Handel itsme-verificatie af (backend-logica komt later)
+                    },
+                    firstName = firstName,
+                    onFirstNameChange = { firstName = it },
+                    lastName = lastName,
+                    onLastNameChange = { lastName = it },
+                    birthDate = birthDate,
+                    onBirthDateChange = { birthDate = it },
+                    mobileNumber = mobileNumber,
+                    onMobileNumberChange = { mobileNumber = it },
+                    address = address,
+                    onAddressChange = { address = it },
+                    city = city,
+                    onCityChange = { city = it },
+                    postalCode = postalCode,
+                    onPostalCodeChange = { postalCode = it },
+                    country = country,
+                    onCountryChange = { country = it },
+                    phoneCountry = phoneCountry, // Nieuwe parameter
+                    onPhoneCountryChange = { phoneCountry = it }, // Nieuwe callback
+                    nationalNumber = nationalNumber,
+                    onNationalNumberChange = { nationalNumber = it },
+                    nationality = nationality,
+                    onNationalityChange = { nationality = it },
+                    termsAccepted = termsAccepted,
+                    onTermsAcceptedChange = { termsAccepted = it }
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                successMessage?.let {
-                    Text(
-                        text = it,
-                        color = GreenSustainable,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        maxLines = 5
-                    )
-                }
-                errorMessage?.let {
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        maxLines = 5
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
+                // "Word Koerier"-knop
                 Button(
                     onClick = {
-                        if (itsmeCode.isBlank()) {
-                            errorMessage = "Itsme verificatiecode is verplicht"
-                            return@Button
-                        }
-
-                        val courierRequest = CourierRequest(
-                            user_id = userId,
-                            itsme_code = itsmeCode,
-                            license_number = if (licenseNumber.isBlank()) null else licenseNumber
-                        )
-
-                        println("Sending courier request: $courierRequest")
-
-                        val call = apiService.becomeCourier(courierRequest)
-                        call.enqueue(object : Callback<Courier> {
-                            override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
-                                if (response.isSuccessful) {
-                                    successMessage = "Je bent nu een koerier!"
-                                    errorMessage = null
-                                    navController.popBackStack()
-                                } else {
-                                    val errorBody = response.errorBody()?.string() ?: "Geen details"
-                                    errorMessage = "Fout bij registratie: ${response.code()} - $errorBody"
-                                    successMessage = null
-                                    println("Error response: ${response.code()} - $errorBody")
-                                }
-                            }
-
-                            override fun onFailure(call: Call<Courier>, t: Throwable) {
-                                errorMessage = "Netwerkfout: ${t.message}"
-                                successMessage = null
-                                println("Network failure: ${t.message}")
-                            }
-                        })
+                        // Actie wanneer de knop wordt geklikt (backend-logica komt later)
+                        println("Word Koerier geklikt!")
                     },
+                    enabled = allFieldsFilled,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable),
-                    shape = RoundedCornerShape(16.dp),
-                    enabled = itsmeCode.isNotBlank()
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .alpha(if (allFieldsFilled) 1f else 0.5f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = GreenSustainable,
+                        disabledContainerColor = GreenSustainable
+                    )
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Filled.BikeScooter,
-                            contentDescription = "Registreer",
-                            tint = SandBeige,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "Registreer als Koerier",
-                            color = SandBeige,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                    Text(
+                        text = "Word Koerier",
+                        color = SandBeige,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
-    }
+    )
 }

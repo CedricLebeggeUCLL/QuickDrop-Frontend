@@ -1,27 +1,28 @@
 [versions]
 agp = "8.8.0"
-kotlin = "2.0.20" # Updated
-coreKtx = "1.13.1" # Updated
+kotlin = "2.0.20"
+coreKtx = "1.13.1"
 junit = "4.13.2"
-junitVersion = "1.2.1" # Updated
-espressoCore = "3.6.1" # Updated
-lifecycleRuntimeKtx = "2.8.6" # Updated
-activityCompose = "1.9.3" # Updated
-composeBom = "2024.10.00" # Updated
+junitVersion = "1.2.1"
+espressoCore = "3.6.1"
+lifecycleRuntimeKtx = "2.8.6"
+activityCompose = "1.9.3"
+composeBom = "2024.10.00"
 retrofit = "2.11.0"
 gson = "2.11.0"
-navigation-compose = "2.8.3" # Updated
-material-icons-extended = "1.7.4" # Updated
-animation = "1.7.4" # Updated
-ui-text = "1.7.4" # Updated
-maps-compose = "6.2.0" # Updated
-play-services-maps = "19.2.0" # Updated
-datastore = "1.1.1" # Updated
-play-services-location = "21.3.0" # Updated
-accompanist = "0.36.0" # Updated
-okhttp = "4.12.0" # Updated
-places = "3.5.0" # Updated
-android-maps-utils = "3.0.0" # Added
+navigation-compose = "2.8.3"
+material-icons-extended = "1.7.4"
+animation = "1.7.4"
+ui-text = "1.7.4"
+maps-compose = "6.2.0"
+play-services-maps = "19.2.0"
+datastore = "1.1.1"
+play-services-location = "21.3.0"
+accompanist = "0.36.0"
+okhttp = "4.12.0"
+places = "3.5.0"
+android-maps-utils = "3.0.0"
+ktor = "2.3.7" # Added for Ktor client
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -47,13 +48,17 @@ androidx-material-icons-extended = { group = "androidx.compose.material", name =
 androidx-animation = { group = "androidx.compose.animation", name = "animation", version.ref = "animation" }
 maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "maps-compose" }
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "play-services-maps" }
-android-maps-utils = { module = "com.google.maps.android:android-maps-utils", version.ref = "android-maps-utils" } # Added
+android-maps-utils = { module = "com.google.maps.android:android-maps-utils", version.ref = "android-maps-utils" }
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "play-services-location" }
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 places = { module = "com.google.android.libraries.places:places", version.ref = "places" }
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" } # Added
+ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" } # Added
+ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" } # Added
+ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" } # Added
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

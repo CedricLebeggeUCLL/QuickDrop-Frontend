@@ -26,11 +26,24 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- itsme OAuth redirect URI -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="quickdrop" android:host="resetpassword" />
+                <data
+                    android:scheme="com.example.quickdropapp"
+                    android:host="oauth"
+                    android:pathPrefix="/callback" />
+            </intent-filter>
+            <!-- Bestaande resetpassword URI -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="quickdrop"
+                    android:host="resetpassword" />
             </intent-filter>
         </activity>
 

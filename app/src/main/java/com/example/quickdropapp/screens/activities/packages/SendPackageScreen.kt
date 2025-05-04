@@ -364,7 +364,7 @@ fun SendPackageScreen(
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .menuAnchor()
+                                    .menuAnchor(MenuAnchorType.PrimaryEditable, enabled = true)
                             )
                             ExposedDropdownMenu(
                                 expanded = sizeExpanded,

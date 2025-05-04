@@ -135,7 +135,7 @@ interface ApiService {
     fun getCourierByUserId(@Path("userId") userId: Int): Call<Courier>
 
     @POST("couriers/become")
-    fun becomeCourier(@Body courier: CourierRequest): Call<Courier>
+    fun becomeCourier(@Body courier: CourierRegistrationRequest): Call<Courier>
 
     @PUT("couriers/{id}")
     fun updateCourier(@Path("id") id: Int, @Body courierData: CourierUpdateRequest): Call<Courier>

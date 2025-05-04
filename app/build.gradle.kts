@@ -84,7 +84,7 @@ dependencies {
     // Google Maps dependencies
     implementation(libs.maps.compose)
     implementation(libs.play.services.maps)
-    implementation(libs.android.maps.utils) // Added for official polyline decoding
+    implementation(libs.android.maps.utils)
 
     // DataStore for persisting auth data (e.g., JWT token)
     implementation(libs.datastore.preferences)
@@ -95,4 +95,10 @@ dependencies {
 
     // Places SDK dependency
     implementation(libs.places)
+
+    // Ktor dependencies for API calls
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
 }

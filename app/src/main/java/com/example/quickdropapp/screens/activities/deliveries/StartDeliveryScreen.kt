@@ -348,19 +348,17 @@ fun StartDeliveryScreen(navController: NavController, userId: Int) {
                             } else {
                                 // Proceed with API calls
                                 val updateData = CourierUpdateRequest(
-                                    start_address = startAddress,
-                                    destination_address = destinationAddress,
-                                    pickup_radius = pickupRad!!.toFloat(),
-                                    dropoff_radius = dropoffRad!!.toFloat(),
+                                    startAddress = startAddress,
+                                    destinationAddress = destinationAddress,
+                                    pickupRadius = pickupRad!!.toFloat(),
+                                    dropoffRadius = dropoffRad!!.toFloat(),
                                     availability = true
                                 )
 
                                 val currentEntry = navController.currentBackStackEntry
                                 apiService.updateCourier(courierId!!, updateData).enqueue(object : Callback<Courier> {
                                     override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
-                                        if
-
-                                                (response.isSuccessful) {
+                                        if (response.isSuccessful) {
                                             successMessage = "Locatie en radius succesvol ingesteld!"
                                             errorMessage = null
                                             scope.launch {

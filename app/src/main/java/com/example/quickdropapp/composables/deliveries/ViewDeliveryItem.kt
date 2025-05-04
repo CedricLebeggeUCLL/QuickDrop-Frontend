@@ -29,9 +29,9 @@ import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
 
 fun getStatusAlias(status: String?): Pair<String, Color> = when (status?.uppercase()) {
-    "ASSIGNED" -> "Toegewezen" to Color(0xFF2196F3)
+    "ASSIGNED" -> "Klaar voor Ophalen" to Color(0xFF2196F3)
     "PICKED_UP" -> "Opgehaald" to Color(0xFFFF9800)
-    "DELIVERED" -> "Afgeleverd" to Color(0xFF4CAF50)
+    "DELIVERED" -> "Bezorgd" to Color(0xFF4CAF50)
     else -> "Onbekend" to Color.Gray
 }
 
@@ -96,7 +96,7 @@ fun DeliveryItem(delivery: Delivery, navController: NavController, userId: Int) 
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Status: $statusAlias",
+                            text = statusAlias,
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Medium,
                             color = statusColor,

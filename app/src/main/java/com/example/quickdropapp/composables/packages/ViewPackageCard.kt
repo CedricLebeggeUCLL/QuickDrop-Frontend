@@ -36,10 +36,10 @@ fun PackageItem(
 
     // Status aliassen en kleuren
     val (statusAlias, statusColor) = when (packageItem.status) {
-        "pending" -> "In afwachting" to Color(0xFFFFC107) // Geel
-        "assigned" -> "Toegewezen" to Color(0xFF2196F3) // Blauw
+        "pending" -> "In Wachtrij" to Color(0xFF2196F3) // Blauw
+        "assigned" -> "Koerier Aangewezen" to Color(0xFFFFC107) // Geel
         "in_transit" -> "Onderweg" to Color(0xFFFF9800) // Oranje
-        "delivered" -> "Afgeleverd" to Color(0xFF4CAF50) // Groen
+        "delivered" -> "Bezorgd" to Color(0xFF4CAF50) // Groen
         else -> "Onbekend" to Color.Gray
     }
 
@@ -188,7 +188,7 @@ fun PackageItem(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = "Status: $statusAlias",
+                        text = statusAlias,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = statusColor,

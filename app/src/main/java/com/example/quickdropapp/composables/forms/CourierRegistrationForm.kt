@@ -1,5 +1,9 @@
 package com.example.quickdropapp.composables.forms
 
+import android.annotation.SuppressLint
+import android.app.DatePickerDialog
+import android.util.Log
+import android.widget.DatePicker
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -11,7 +15,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
@@ -20,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
+import java.util.Calendar
 
 data class Country(val name: String, val flagEmoji: String, val phonePrefix: String)
 
@@ -40,7 +47,7 @@ class PrefixVisualTransformation(private val prefix: String) : VisualTransformat
             }
 
             override fun transformedToOriginal(offset: Int): Int {
-                return if (offset <= prefix.length) 0 else offset - prefix.length
+                return maxOf(0, offset - prefix.length)
             }
         }
         return androidx.compose.ui.text.input.TransformedText(
@@ -50,45 +57,42 @@ class PrefixVisualTransformation(private val prefix: String) : VisualTransformat
     }
 }
 
-class DateVisualTransformation : VisualTransformation {
-    override fun filter(text: androidx.compose.ui.text.AnnotatedString): androidx.compose.ui.text.input.TransformedText {
-        val trimmed = text.text.take(10)
-        val formatted = buildString {
-            trimmed.forEachIndexed { index, char ->
-                append(char)
-                if (index == 1 || index == 3) {
-                    if (trimmed.length > index + 1) {
-                        append('/')
-                    }
+// Validation functions (moved outside composable to avoid @Composable invocation issues)
+private fun isValidBirthDate(date: String): Boolean {
+    return if (date.length == 10) { // Only validate when full length
+        date.matches(Regex("^\\d{2}/\\d{2}/\\d{4}$")) &&
+                try {
+                    val parts = date.split("/")
+                    val day = parts[0].toInt()
+                    val month = parts[1].toInt()
+                    val year = parts[2].toInt()
+                    val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+                    day in 1..31 && month in 1..12 && year in 1900..currentYear
+                } catch (e: Exception) {
+                    false
                 }
-            }
-        }
-        val offsetMapping = object : androidx.compose.ui.text.input.OffsetMapping {
-            override fun originalToTransformed(offset: Int): Int {
-                return when {
-                    offset <= 0 -> offset
-                    offset <= 2 -> offset
-                    offset <= 4 -> offset + 1
-                    else -> offset + 2
-                }
-            }
-
-            override fun transformedToOriginal(offset: Int): Int {
-                return when {
-                    offset <= 0 -> offset
-                    offset <= 2 -> offset
-                    offset <= 5 -> offset - 1
-                    else -> offset - 2
-                }
-            }
-        }
-        return androidx.compose.ui.text.input.TransformedText(
-            text = androidx.compose.ui.text.AnnotatedString(formatted),
-            offsetMapping = offsetMapping
-        )
+    } else {
+        false // Require exactly 10 characters to be valid
     }
 }
 
+private fun isValidPhoneNumber(digits: String): Boolean {
+    return if (digits.length >= 9) { // At least 9 digits (after the prefix)
+        digits.matches(Regex("^\\d{9,15}$"))
+    } else {
+        false // Require at least 9 digits to be valid
+    }
+}
+
+private fun isValidNationalNumber(number: String): Boolean {
+    return if (number.length == 11) {
+        number.matches(Regex("^\\d{11}$"))
+    } else {
+        false // Require exactly 11 digits to be valid
+    }
+}
+
+@SuppressLint("DefaultLocale")
 @Composable
 fun CourierRegistrationForm(
     onItsmeClick: () -> Unit,
@@ -98,7 +102,7 @@ fun CourierRegistrationForm(
     onLastNameChange: (String) -> Unit,
     birthDate: String,
     onBirthDateChange: (String) -> Unit,
-    mobileNumber: String,
+    mobileNumber: String, // Stores only the digits after the prefix
     onMobileNumberChange: (String) -> Unit,
     address: String,
     onAddressChange: (String) -> Unit,
@@ -121,10 +125,85 @@ fun CourierRegistrationForm(
     val selectedCountry = COUNTRIES.find { it.name == country } ?: COUNTRIES[0]
     val selectedPhoneCountry = COUNTRIES.find { it.name == phoneCountry } ?: COUNTRIES[0]
 
-    // Validation states
-    val isPhoneValid = mobileNumber.matches(Regex("^\\+\\d{10,15}\$"))
-    val isBirthDateValid = birthDate.matches(Regex("^\\d{2}/\\d{2}/\\d{4}\$"))
-    val isNationalNumberValid = nationalNumber.matches(Regex("^\\d{11}\$"))
+    // State to track focus for validation
+    var birthDateFocused by remember { mutableStateOf(false) }
+    var phoneFocused by remember { mutableStateOf(false) }
+
+    // Apply validations
+    val isBirthDateValid = isValidBirthDate(birthDate)
+    val isPhoneValid = isValidPhoneNumber(mobileNumber)
+    val isNationalNumberValid = isValidNationalNumber(nationalNumber)
+
+    // Compute the full phone number for display and submission
+    val fullPhoneNumber = "${selectedPhoneCountry.phonePrefix}$mobileNumber"
+
+    // Debug logging for form values
+    LaunchedEffect(firstName, lastName, birthDate, mobileNumber, address, city, postalCode, country, phoneCountry, nationalNumber, nationality, termsAccepted) {
+        Log.d("CourierRegistrationForm", "firstName: $firstName")
+        Log.d("CourierRegistrationForm", "lastName: $lastName")
+        Log.d("CourierRegistrationForm", "birthDate: $birthDate, isValid: $isBirthDateValid")
+        Log.d("CourierRegistrationForm", "mobileNumber: $mobileNumber, fullPhoneNumber: $fullPhoneNumber, isValid: $isPhoneValid")
+        Log.d("CourierRegistrationForm", "address: $address")
+        Log.d("CourierRegistrationForm", "city: $city")
+        Log.d("CourierRegistrationForm", "postalCode: $postalCode")
+        Log.d("CourierRegistrationForm", "country: $country")
+        Log.d("CourierRegistrationForm", "phoneCountry: $phoneCountry")
+        Log.d("CourierRegistrationForm", "nationalNumber: $nationalNumber, isValid: $isNationalNumberValid")
+        Log.d("CourierRegistrationForm", "nationality: $nationality")
+        Log.d("CourierRegistrationForm", "termsAccepted: $termsAccepted")
+    }
+
+    // Date picker setup
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+    val year = calendar.get(Calendar.YEAR)
+    val month = calendar.get(Calendar.MONTH)
+    val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+    // Parse the current birthDate (if any) to set the initial date in the picker
+    val initialYear = if (birthDate.isNotEmpty() && birthDate.length == 10) {
+        try {
+            birthDate.split("/")[2].toInt()
+        } catch (e: Exception) {
+            year - 18 // Default to 18 years ago if parsing fails
+        }
+    } else {
+        year - 18 // Default to 18 years ago
+    }
+    val initialMonth = if (birthDate.isNotEmpty() && birthDate.length == 10) {
+        try {
+            birthDate.split("/")[1].toInt() - 1 // Month is 0-based in DatePickerDialog
+        } catch (e: Exception) {
+            month
+        }
+    } else {
+        month
+    }
+    val initialDay = if (birthDate.isNotEmpty() && birthDate.length == 10) {
+        try {
+            birthDate.split("/")[0].toInt()
+        } catch (e: Exception) {
+            day
+        }
+    } else {
+        day
+    }
+
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _: DatePicker, selectedYear: Int, selectedMonth: Int, selectedDay: Int ->
+            val formattedDate = String.format("%02d/%02d/%04d", selectedDay, selectedMonth + 1, selectedYear)
+            onBirthDateChange(formattedDate)
+        },
+        initialYear,
+        initialMonth,
+        initialDay
+    ).apply {
+        datePicker.minDate = Calendar.getInstance().apply {
+            set(1900, 0, 1)
+        }.timeInMillis
+        datePicker.maxDate = Calendar.getInstance().timeInMillis
+    }
 
     Card(
         modifier = Modifier
@@ -250,15 +329,27 @@ fun CourierRegistrationForm(
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = birthDate,
-                onValueChange = { if (it.length <= 10) onBirthDateChange(it) },
+                onValueChange = {}, // Read-only field
                 label = { Text("Geboortedatum (dd/mm/yyyy)") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                visualTransformation = DateVisualTransformation(),
-                isError = birthDate.isNotEmpty() && !isBirthDateValid,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { focusState -> birthDateFocused = focusState.isFocused },
+                readOnly = true,
+                trailingIcon = {
+                    IconButton(onClick = { datePickerDialog.show() }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Selecteer geboortedatum"
+                        )
+                    }
+                },
+                isError = birthDate.isNotEmpty() && !birthDateFocused && !isBirthDateValid,
                 supportingText = {
-                    if (birthDate.isNotEmpty() && !isBirthDateValid) {
-                        Text("Gebruik formaat dd/mm/yyyy", color = MaterialTheme.colorScheme.error)
+                    if (birthDate.isNotEmpty() && !birthDateFocused && !isBirthDateValid) {
+                        Text(
+                            text = "Gebruik formaat dd/mm/yyyy, dag 1-31, maand 1-12, jaar 1900-${Calendar.getInstance().get(Calendar.YEAR)}",
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(
@@ -323,9 +414,8 @@ fun CourierRegistrationForm(
                                 },
                                 onClick = {
                                     onPhoneCountryChange(countryOption.name)
-                                    // Update mobile number with new prefix
-                                    val newNumber = countryOption.phonePrefix + mobileNumber.replace(Regex("^\\+\\d+"), "")
-                                    onMobileNumberChange(newNumber)
+                                    // Reset mobile number digits to empty
+                                    onMobileNumberChange("")
                                     expandedPhoneCountry = false
                                 }
                             )
@@ -334,21 +424,24 @@ fun CourierRegistrationForm(
                 }
                 OutlinedTextField(
                     value = mobileNumber,
-                    onValueChange = {
-                        if (it.startsWith(selectedPhoneCountry.phonePrefix)) {
-                            onMobileNumberChange(it)
-                        } else {
-                            onMobileNumberChange(selectedPhoneCountry.phonePrefix + it.replace(Regex("^\\+\\d*"), ""))
-                        }
+                    onValueChange = { newValue ->
+                        // Only accept digits and update the mobile number (without prefix)
+                        val digitsOnly = newValue.filter { it.isDigit() }.take(15)
+                        onMobileNumberChange(digitsOnly)
                     },
-                    label = { Text("Mobiele telefoon (e.g. +32123456789)") },
-                    modifier = Modifier.weight(1f),
+                    label = { Text("Mobiele telefoon (e.g. ${selectedPhoneCountry.phonePrefix}123456789)") },
+                    modifier = Modifier
+                        .weight(1f)
+                        .onFocusChanged { focusState -> phoneFocused = focusState.isFocused },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     visualTransformation = PrefixVisualTransformation(selectedPhoneCountry.phonePrefix),
-                    isError = mobileNumber.isNotEmpty() && !isPhoneValid,
+                    isError = mobileNumber.isNotEmpty() && !phoneFocused && !isPhoneValid,
                     supportingText = {
-                        if (mobileNumber.isNotEmpty() && !isPhoneValid) {
-                            Text("Gebruik formaat +32xxxxxxxxx", color = MaterialTheme.colorScheme.error)
+                        if (mobileNumber.isNotEmpty() && !phoneFocused && !isPhoneValid) {
+                            Text(
+                                text = "Gebruik formaat ${selectedPhoneCountry.phonePrefix}xxxxxxxxx (9-15 cijfers)",
+                                color = MaterialTheme.colorScheme.error
+                            )
                         }
                     },
                     colors = OutlinedTextFieldDefaults.colors(
@@ -497,7 +590,10 @@ fun CourierRegistrationForm(
                 isError = nationalNumber.isNotEmpty() && !isNationalNumberValid,
                 supportingText = {
                     if (nationalNumber.isNotEmpty() && !isNationalNumberValid) {
-                        Text("Moet 11 cijfers zijn", color = MaterialTheme.colorScheme.error)
+                        Text(
+                            text = "Moet 11 cijfers zijn",
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(

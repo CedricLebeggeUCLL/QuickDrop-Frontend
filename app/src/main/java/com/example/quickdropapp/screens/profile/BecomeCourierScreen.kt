@@ -19,24 +19,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.quickdropapp.composables.forms.Country
 import com.example.quickdropapp.composables.forms.CourierRegistrationForm
+import com.example.quickdropapp.models.courier.Courier
+import com.example.quickdropapp.models.courier.CourierRegistrationRequest
+import com.example.quickdropapp.network.ApiService
+import com.example.quickdropapp.network.ItsmeCallbackResponse
+import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
-import com.example.quickdropapp.models.CourierRegistrationRequest
-import kotlinx.serialization.json.Json
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,7 +49,7 @@ fun BecomeCourierScreen(
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var birthDate by remember { mutableStateOf("") }
-    var mobileNumber by remember { mutableStateOf("") }
+    var mobileNumber by remember { mutableStateOf("") } // Stores only the digits after the prefix
     var address by remember { mutableStateOf("") }
     var city by remember { mutableStateOf("") }
     var postalCode by remember { mutableStateOf("") }
@@ -62,22 +63,20 @@ fun BecomeCourierScreen(
     var successMessage by remember { mutableStateOf<String?>(null) }
     var itsmeVerified by remember { mutableStateOf(false) }
 
+    // Get the ApiService instance
+    val context = LocalContext.current
+    val apiService = remember { RetrofitClient.create(context) }
+    val scope = MainScope()
+
     // Mock itsme configuration
     val itsmeClientId = "mock_client_id_123"
     val itsmeRedirectUri = "com.example.quickdropapp://oauth/callback"
-    val itsmeAuthUrl = "http://localhost:3000/itsme/mock/authorize" +
+    val itsmeAuthUrl = "http://192.168.4.75:3000/itsme/mock/authorize" +
             "?response_type=code" +
             "&client_id=$itsmeClientId" +
             "&redirect_uri=$itsmeRedirectUri" +
             "&scope=openid%20profile" +
             "&state=quickdrop_mock_state"
-
-    // Ktor client
-    val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json(Json { ignoreUnknownKeys = true })
-        }
-    }
 
     // itsme OAuth launcher
     val itsmeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -89,25 +88,27 @@ fun BecomeCourierScreen(
                 val state = uri.getQueryParameter("state")
                 Log.d("itsme", "Received URI: $uri, Code: $code, State: $state")
                 if (code != null) {
-                    MainScope().launch {
+                    scope.launch {
                         isLoading = true
                         errorMessage = null
-                        try {
-                            val response: HttpResponse = client.post("http://localhost:3000/api/couriers/itsme-callback") {
-                                contentType(ContentType.Application.Json)
-                                setBody(mapOf("code" to code, "user_id" to userId))
+                        apiService.itsmeCallback(mapOf("code" to code, "user_id" to userId)).enqueue(object : Callback<ItsmeCallbackResponse> {
+                            override fun onResponse(call: Call<ItsmeCallbackResponse>, response: Response<ItsmeCallbackResponse>) {
+                                if (response.isSuccessful) {
+                                    successMessage = response.body()?.message ?: "Mock itsme verification successful!"
+                                    itsmeVerified = true
+                                } else {
+                                    errorMessage = "itsme callback failed: ${response.errorBody()?.string()}"
+                                    Log.e("BecomeCourier", "itsme callback failed: ${response.errorBody()?.string()}")
+                                }
+                                isLoading = false
                             }
-                            if (response.status == HttpStatusCode.OK) {
-                                successMessage = "Mock itsme verification successful!"
-                                itsmeVerified = true
-                            } else {
-                                errorMessage = response.bodyAsText()
+
+                            override fun onFailure(call: Call<ItsmeCallbackResponse>, t: Throwable) {
+                                errorMessage = "Error during itsme verification: ${t.message}"
+                                Log.e("BecomeCourier", "itsme callback exception: ${t.message}")
+                                isLoading = false
                             }
-                        } catch (e: Exception) {
-                            errorMessage = "Error during itsme verification: ${e.message}"
-                        } finally {
-                            isLoading = false
-                        }
+                        })
                     }
                 } else {
                     errorMessage = "Failed to retrieve itsme authorization code"
@@ -117,50 +118,84 @@ fun BecomeCourierScreen(
     }
 
     // Validation functions
-    fun isValidPhoneNumber(number: String): Boolean {
-        return number.matches(Regex("^\\+\\d{10,15}\$"))
+    fun isValidPhoneNumber(digits: String, prefix: String): Boolean {
+        val fullNumber = "$prefix$digits"
+        return if (fullNumber.length >= 10) { // At least 10 characters, including country code
+            fullNumber.matches(Regex("^\\+\\d{9,15}$"))
+        } else {
+            false // Require at least 10 characters to be valid
+        }
     }
 
     fun isValidBirthDate(date: String): Boolean {
-        return date.matches(Regex("^\\d{2}/\\d{2}/\\d{4}\$")) &&
-                try {
-                    val parts = date.split("/")
-                    val day = parts[0].toInt()
-                    val month = parts[1].toInt()
-                    val year = parts[2].toInt()
-                    val currentYear = Calendar.getInstance().get(Calendar.YEAR) // Use Calendar for compatibility
-                    day in 1..31 && month in 1..12 && year in 1900..currentYear
-                } catch (e: Exception) {
-                    false
-                }
+        return if (date.length == 10) { // Only validate when full length
+            date.matches(Regex("^\\d{2}/\\d{2}/\\d{4}$")) &&
+                    try {
+                        val parts = date.split("/")
+                        val day = parts[0].toInt()
+                        val month = parts[1].toInt()
+                        val year = parts[2].toInt()
+                        val currentYear = Calendar.getInstance().get(Calendar.YEAR)
+                        day in 1..31 && month in 1..12 && year in 1900..currentYear
+                    } catch (e: Exception) {
+                        false
+                    }
+        } else {
+            false // Require exactly 10 characters to be valid
+        }
     }
 
     fun isValidNationalNumber(number: String): Boolean {
-        return number.matches(Regex("^\\d{11}\$"))
+        return if (number.length == 11) {
+            number.matches(Regex("^\\d{11}$"))
+        } else {
+            false // Require exactly 11 digits to be valid
+        }
     }
+
+    // Compute the full phone number for validation and submission
+    val selectedPhoneCountry = COUNTRIES.find { it.name == phoneCountry } ?: COUNTRIES[0]
+    val fullPhoneNumber = "${selectedPhoneCountry.phonePrefix}$mobileNumber"
 
     // Check if all fields are filled and valid
     val allFieldsFilled = firstName.isNotBlank() &&
             lastName.isNotBlank() &&
-            isValidBirthDate(birthDate) &&
-            isValidPhoneNumber(mobileNumber) &&
+            birthDate.length == 10 && isValidBirthDate(birthDate) &&
+            mobileNumber.length >= 9 && isValidPhoneNumber(mobileNumber, selectedPhoneCountry.phonePrefix) &&
             address.isNotBlank() &&
             city.isNotBlank() &&
             postalCode.isNotBlank() &&
             country.isNotBlank() &&
             phoneCountry.isNotBlank() &&
-            isValidNationalNumber(nationalNumber) &&
+            nationalNumber.length == 11 && isValidNationalNumber(nationalNumber) &&
             nationality.isNotBlank() &&
             termsAccepted
 
-    // Submit courier registration
-    suspend fun submitCourierRegistration() {
+    // Debug logging to identify which condition fails
+    LaunchedEffect(firstName, lastName, birthDate, mobileNumber, address, city, postalCode, country, phoneCountry, nationalNumber, nationality, termsAccepted) {
+        Log.d("BecomeCourierScreen", "allFieldsFilled: $allFieldsFilled")
+        Log.d("BecomeCourierScreen", "firstName: $firstName, isNotBlank: ${firstName.isNotBlank()}")
+        Log.d("BecomeCourierScreen", "lastName: $lastName, isNotBlank: ${lastName.isNotBlank()}")
+        Log.d("BecomeCourierScreen", "birthDate: $birthDate, length: ${birthDate.length}, isValid: ${isValidBirthDate(birthDate)}")
+        Log.d("BecomeCourierScreen", "mobileNumber: $mobileNumber, fullPhoneNumber: $fullPhoneNumber, length: ${mobileNumber.length}, isValid: ${isValidPhoneNumber(mobileNumber, selectedPhoneCountry.phonePrefix)}")
+        Log.d("BecomeCourierScreen", "address: $address, isNotBlank: ${address.isNotBlank()}")
+        Log.d("BecomeCourierScreen", "city: $city, isNotBlank: ${city.isNotBlank()}")
+        Log.d("BecomeCourierScreen", "postalCode: $postalCode, isNotBlank: ${postalCode.isNotBlank()}")
+        Log.d("BecomeCourierScreen", "country: $country, isNotBlank: ${country.isNotBlank()}")
+        Log.d("BecomeCourierScreen", "phoneCountry: $phoneCountry, isNotBlank: ${phoneCountry.isNotBlank()}")
+        Log.d("BecomeCourierScreen", "nationalNumber: $nationalNumber, length: ${nationalNumber.length}, isValid: ${isValidNationalNumber(nationalNumber)}")
+        Log.d("BecomeCourierScreen", "nationality: $nationality, isNotBlank: ${nationality.isNotBlank()}")
+        Log.d("BecomeCourierScreen", "termsAccepted: $termsAccepted")
+    }
+
+    // Submit courier registration using ApiService
+    fun submitCourierRegistration() {
         isLoading = true
         errorMessage = null
         successMessage = null
 
-        // Format phone number (remove any spaces)
-        val formattedPhoneNumber = mobileNumber.replace("\\s+".toRegex(), "")
+        // Use the full phone number for submission
+        val formattedPhoneNumber = fullPhoneNumber.replace("\\s+".toRegex(), "")
 
         val request = CourierRegistrationRequest(
             userId = userId,
@@ -176,25 +211,27 @@ fun BecomeCourierScreen(
             nationality = nationality
         )
 
-        try {
-            val response: HttpResponse = client.post("http://localhost:3000/api/couriers/become") {
-                contentType(ContentType.Application.Json)
-                setBody(request)
+        // Log the request data for debugging
+        Log.d("BecomeCourierScreen", "Submitting request: $request")
+
+        apiService.becomeCourier(request).enqueue(object : Callback<Courier> {
+            override fun onResponse(call: Call<Courier>, response: Response<Courier>) {
+                if (response.isSuccessful) {
+                    successMessage = "Successfully registered as a courier!"
+                    navController.popBackStack()
+                } else {
+                    errorMessage = "Registration failed: ${response.errorBody()?.string()}"
+                    Log.e("BecomeCourier", "Error response: ${response.errorBody()?.string()}")
+                }
+                isLoading = false
             }
 
-            if (response.status == HttpStatusCode.Created) {
-                successMessage = "Successfully registered as a courier!"
-                navController.popBackStack()
-            } else {
-                errorMessage = "Registration failed: ${response.bodyAsText()}"
-                Log.e("BecomeCourier", "Error response: ${response.bodyAsText()}")
+            override fun onFailure(call: Call<Courier>, t: Throwable) {
+                errorMessage = "Error: ${t.message}"
+                Log.e("BecomeCourier", "Exception: ${t.message}")
+                isLoading = false
             }
-        } catch (e: Exception) {
-            errorMessage = "Error: ${e.message}"
-            Log.e("BecomeCourier", "Exception: ${e.stackTraceToString()}")
-        } finally {
-            isLoading = false
-        }
+        })
     }
 
     Scaffold(
@@ -296,15 +333,11 @@ fun BecomeCourierScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // "Word Koerier" button
+                // "Word Koerier" button - Only clickable when form is fully filled
                 Button(
                     onClick = {
-                        if (allFieldsFilled) {
-                            MainScope().launch {
-                                submitCourierRegistration()
-                            }
-                        } else {
-                            errorMessage = "Vul alle velden correct in."
+                        scope.launch {
+                            submitCourierRegistration()
                         }
                     },
                     enabled = allFieldsFilled && !isLoading,
@@ -338,3 +371,10 @@ fun BecomeCourierScreen(
         }
     )
 }
+
+// Define the COUNTRIES list here as well, since it's used in BecomeCourierScreen.kt
+private val COUNTRIES = listOf(
+    Country("België", "\uD83C\uDDE7\uD83C\uDDEA", "+32"),
+    Country("Nederland", "\uD83C\uDDF3\uD83C\uDDF1", "+31"),
+    Country("Frankrijk", "\uD83C\uDDEB\uD83C\uDDF7", "+33")
+)

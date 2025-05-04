@@ -6,6 +6,9 @@ import com.example.quickdropapp.models.auth.LoginResponse
 import com.example.quickdropapp.models.auth.RefreshTokenRequest
 import com.example.quickdropapp.models.auth.RefreshTokenResponse
 import com.example.quickdropapp.models.auth.User
+import com.example.quickdropapp.models.courier.Courier
+import com.example.quickdropapp.models.courier.CourierRegistrationRequest
+import com.example.quickdropapp.models.courier.CourierUpdateRequest
 import com.example.quickdropapp.models.packages.Package
 import com.example.quickdropapp.models.packages.PackageRequest
 import com.example.quickdropapp.models.packages.SearchRequest
@@ -65,6 +68,11 @@ data class Route(
 
 data class Polyline(
     val encodedPolyline: String
+)
+
+// Data class for itsme callback response
+data class ItsmeCallbackResponse(
+    val message: String
 )
 
 interface ApiService {
@@ -148,6 +156,10 @@ interface ApiService {
         @Path("id") courierId: Int,
         @Body location: LocationUpdate
     ): Call<Void>
+
+    // itsme Callback Endpoint
+    @POST("couriers/itsme-callback")
+    fun itsmeCallback(@Body request: Map<String, Any>): Call<ItsmeCallbackResponse>
 
     // Deliveries Endpoints
     @GET("deliveries")

@@ -23,7 +23,7 @@ import com.example.quickdropapp.composables.dashboard.PackageBarChartCard
 import com.example.quickdropapp.composables.dashboard.PackageStatusChart
 import com.example.quickdropapp.composables.nav.FlyoutMenu
 import com.example.quickdropapp.composables.nav.ModernBottomNavigation
-import com.example.quickdropapp.models.Courier
+import com.example.quickdropapp.models.courier.Courier
 import com.example.quickdropapp.models.DeliveryStats
 import com.example.quickdropapp.models.PackageStats
 import com.example.quickdropapp.network.RetrofitClient

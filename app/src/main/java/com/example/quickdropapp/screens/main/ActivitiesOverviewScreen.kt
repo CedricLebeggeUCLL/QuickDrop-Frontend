@@ -23,7 +23,7 @@ import com.example.quickdropapp.composables.nav.FlyoutMenu
 import com.example.quickdropapp.composables.nav.ModernActionCard
 import com.example.quickdropapp.composables.nav.ModernBottomNavigation
 import com.example.quickdropapp.composables.nav.PackageOptionsBottomSheet
-import com.example.quickdropapp.models.Courier
+import com.example.quickdropapp.models.courier.Courier
 import com.example.quickdropapp.network.RetrofitClient
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable

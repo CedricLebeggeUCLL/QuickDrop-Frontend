@@ -1,5 +1,6 @@
-package com.example.quickdropapp.models
+package com.example.quickdropapp.models.courier
 
+import com.example.quickdropapp.models.Address
 import com.google.gson.annotations.SerializedName
 
 data class Courier(
@@ -23,20 +24,6 @@ data class CourierDetails(
     @SerializedName("national_number") val nationalNumber: String,
     @SerializedName("nationality") val nationality: String,
     @SerializedName("itsme_verified") val itsmeVerified: Boolean = false
-)
-
-data class CourierRegistrationRequest(
-    @SerializedName("user_id") val userId: Int,
-    @SerializedName("first_name") val firstName: String,
-    @SerializedName("last_name") val lastName: String,
-    @SerializedName("birth_date") val birthDate: String, // Format: "dd/mm/yyyy"
-    @SerializedName("phone_number") val phoneNumber: String,
-    @SerializedName("address") val address: String,
-    @SerializedName("city") val city: String,
-    @SerializedName("postal_code") val postalCode: String,
-    @SerializedName("country") val country: String,
-    @SerializedName("national_number") val nationalNumber: String,
-    @SerializedName("nationality") val nationality: String
 )
 
 // Toegevoegd: Data class voor het bijwerken van een koerier (PUT /couriers/{id})

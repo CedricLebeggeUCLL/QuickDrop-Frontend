@@ -35,6 +35,7 @@ import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -220,8 +221,30 @@ fun BecomeCourierScreen(
                     successMessage = "Successfully registered as a courier!"
                     navController.popBackStack()
                 } else {
-                    errorMessage = "Registration failed: ${response.errorBody()?.string()}"
-                    Log.e("BecomeCourier", "Error response: ${response.errorBody()?.string()}")
+                    val errorBody = response.errorBody()?.string()
+                    errorMessage = when {
+                        errorBody?.contains("User is already a courier") == true -> {
+                            "You are already registered as a courier."
+                        }
+                        errorBody?.contains("User with ID") == true && errorBody.contains("does not exist") == true -> {
+                            "User account not found. Please log in again."
+                        }
+                        errorBody?.contains("Authorization token missing") == true -> {
+                            "Please log in to continue."
+                        }
+                        errorBody?.contains("Invalid token") == true -> {
+                            "Your session has expired. Please log in again."
+                        }
+                        else -> {
+                            try {
+                                val json = JSONObject(errorBody ?: "{}")
+                                json.getString("error") ?: "Registration failed"
+                            } catch (e: Exception) {
+                                "Registration failed: $errorBody"
+                            }
+                        }
+                    }
+                    Log.e("BecomeCourier", "Error response: $errorBody")
                 }
                 isLoading = false
             }

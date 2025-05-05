@@ -1,18 +1,17 @@
 package com.example.quickdropapp.models.courier
 
-import kotlinx.serialization.Serializable
+import com.google.gson.annotations.SerializedName
 
-@Serializable
 data class CourierRegistrationRequest(
-    val userId: Int,
-    val firstName: String,
-    val lastName: String,
-    val birthDate: String,
-    val phoneNumber: String,
+    @SerializedName("user_id") val userId: Int,
+    @SerializedName("first_name") val firstName: String,
+    @SerializedName("last_name") val lastName: String,
+    @SerializedName("birth_date") val birthDate: String,
+    @SerializedName("phone_number") val phoneNumber: String,
     val address: String,
     val city: String,
-    val postalCode: String,
+    @SerializedName("postal_code") val postalCode: String,
     val country: String,
-    val nationalNumber: String,
+    @SerializedName("national_number") val nationalNumber: String,
     val nationality: String
 )

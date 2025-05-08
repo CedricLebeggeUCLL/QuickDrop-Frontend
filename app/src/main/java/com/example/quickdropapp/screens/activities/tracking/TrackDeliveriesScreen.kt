@@ -41,7 +41,6 @@ import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
 import com.example.quickdropapp.utils.ApiKeyUtils
-import com.example.quickdropapp.utils.MapUtils
 import com.example.quickdropapp.utils.PolylineDecoder
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -467,7 +466,7 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                                 modifier = Modifier.fillMaxSize(),
                                 cameraPositionState = cameraPositionState,
                                 properties = MapProperties(
-                                    isMyLocationEnabled = false,
+                                    isMyLocationEnabled = true,  // Blauwe stip inschakelen
                                     mapType = MapType.NORMAL,
                                     maxZoomPreference = 18f,
                                     minZoomPreference = 10f
@@ -479,17 +478,6 @@ fun TrackingDeliveriesScreen(navController: NavController, userId: Int) {
                                 )
                             ) {
                                 trackingInfo?.let { info ->
-                                    // Toon koerierlocatie (alleen bij assigned of picked_up)
-                                    if (courierLocation != null && info.status != "delivered") {
-                                        Marker(
-                                            state = MarkerState(position = courierLocation!!),
-                                            title = "Jouw Locatie",
-                                            snippet = "Huidige locatie van koerier",
-                                            icon = MapUtils.bitmapDescriptorFromVector(context, R.drawable.ic_courier),
-                                            zIndex = 1f
-                                        )
-                                    }
-
                                     // Toon ophaal- en afleveradressen
                                     if (info.pickupAddress.lat != null && info.pickupAddress.lng != null) {
                                         Marker(

@@ -28,6 +28,10 @@ import com.example.quickdropapp.ui.theme.GreenSustainable
 import com.example.quickdropapp.ui.theme.SandBeige
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import org.json.JSONObject
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -38,7 +42,6 @@ fun LoginScreen(navController: NavController) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // Gebruik createPublic() voor inloggen, zodat de authInterceptor wordt overgeslagen
     val apiService = RetrofitClient.createPublic()
 
     Column(
@@ -115,21 +118,19 @@ fun LoginScreen(navController: NavController) {
 
         Button(
             onClick = {
-                if (identifier.isNotEmpty() && password.isNotEmpty()) {
+                if (identifier.isBlank() || password.isBlank()) {
+                    errorMessage = "Vul gebruikersnaam/e-mail en wachtwoord in"
+                } else {
                     val loginRequest = LoginRequest(identifier, password)
                     val call = apiService.loginUser(loginRequest)
-                    println("LoginScreen: Sending login request with identifier=$identifier")
-                    call.enqueue(object : retrofit2.Callback<LoginResponse> {
-                        override fun onResponse(call: retrofit2.Call<LoginResponse>, response: retrofit2.Response<LoginResponse>) {
-                            println("LoginScreen: Response received, code=${response.code()}")
+                    call.enqueue(object : Callback<LoginResponse> {
+                        override fun onResponse(call: Call<LoginResponse>, response: Response<LoginResponse>) {
                             if (response.isSuccessful) {
                                 val loginResponse = response.body()
                                 loginResponse?.let {
-                                    println("LoginScreen: Successful login - userId=${it.userId}, accessToken=${it.accessToken}, refreshToken=${it.refreshToken}")
                                     scope.launch(Dispatchers.IO) {
                                         AuthDataStore.saveAuthData(context, it.userId, it.accessToken, it.refreshToken)
                                         launch(Dispatchers.Main) {
-                                            println("LoginScreen: Navigating to home/${it.userId}")
                                             navController.navigate("home/${it.userId}") {
                                                 popUpTo("welcome") { inclusive = true }
                                             }
@@ -137,30 +138,26 @@ fun LoginScreen(navController: NavController) {
                                     }
                                 } ?: run {
                                     errorMessage = "Geen geldige respons ontvangen"
-                                    println("LoginScreen: Error - No valid response")
                                 }
                             } else {
-                                errorMessage = when (response.code()) {
+                                val errorBody = response.errorBody()?.string()
+                                val errorJson = errorBody?.let { JSONObject(it) }
+                                errorMessage = errorJson?.getString("error") ?: when (response.code()) {
                                     401 -> "Ongeldige gebruikersnaam/e-mail of wachtwoord"
                                     500 -> "Serverfout, probeer het later opnieuw"
                                     else -> "Inloggen mislukt: ${response.message()}"
                                 }
-                                println("LoginScreen: Error - $errorMessage")
                             }
                         }
 
-                        override fun onFailure(call: retrofit2.Call<LoginResponse>, t: Throwable) {
+                        override fun onFailure(call: Call<LoginResponse>, t: Throwable) {
                             errorMessage = if (t is TokenRefreshException) {
                                 "Ongeldige gebruikersnaam/e-mail of wachtwoord"
                             } else {
                                 "Netwerkfout: ${t.message}"
                             }
-                            println("LoginScreen: Network failure - ${t.message}")
                         }
                     })
-                } else {
-                    errorMessage = "Vul gebruikersnaam/e-mail en wachtwoord in"
-                    println("LoginScreen: Error - Identifier or password empty")
                 }
             },
             colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable),

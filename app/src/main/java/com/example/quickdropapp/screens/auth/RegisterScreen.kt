@@ -26,6 +26,7 @@ import com.example.quickdropapp.ui.theme.SandBeige
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import org.json.JSONObject
 
 @Composable
 fun RegisterScreen(navController: NavController) {
@@ -33,7 +34,7 @@ fun RegisterScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var passwordVisible by remember { mutableStateOf(false) } // Staat om wachtwoord zichtbaarheid te toggelen
+    var passwordVisible by remember { mutableStateOf(false) }
 
     val apiService = RetrofitClient.create(LocalContext.current)
 
@@ -85,7 +86,7 @@ fun RegisterScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(), // Wachtwoord tonen/verbergen
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -113,7 +114,11 @@ fun RegisterScreen(navController: NavController) {
 
         Button(
             onClick = {
-                if (username.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()) {
+                if (username.isBlank() || email.isBlank() || password.isBlank()) {
+                    errorMessage = "Vul alle velden in"
+                } else if (password.length < 8) {
+                    errorMessage = "Wachtwoord moet minimaal 8 tekens lang zijn"
+                } else {
                     val user = User(username = username, email = email, password = password, role = "user")
                     val call = apiService.registerUser(user)
                     call.enqueue(object : Callback<User> {
@@ -121,16 +126,20 @@ fun RegisterScreen(navController: NavController) {
                             if (response.isSuccessful) {
                                 navController.navigate("login")
                             } else {
-                                errorMessage = "Registratie mislukt: ${response.message()}"
+                                val errorBody = response.errorBody()?.string()
+                                val errorJson = errorBody?.let { JSONObject(it) }
+                                errorMessage = errorJson?.getString("error") ?: when (response.code()) {
+                                    409 -> "Gebruikersnaam of e-mail bestaat al"
+                                    500 -> "Serverfout, probeer het later opnieuw"
+                                    else -> "Registratie mislukt: ${response.message()}"
+                                }
                             }
                         }
 
                         override fun onFailure(call: Call<User>, t: Throwable) {
-                            errorMessage = "Fout: ${t.message}"
+                            errorMessage = "Netwerkfout: ${t.message}"
                         }
                     })
-                } else {
-                    errorMessage = "Vul alle velden in"
                 }
             },
             colors = ButtonDefaults.buttonColors(containerColor = GreenSustainable),

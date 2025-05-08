@@ -2,6 +2,8 @@ package com.example.quickdropapp.screens.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -31,6 +33,7 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                 .padding(paddingValues)
                 .background(SandBeige)
         ) {
+            // Header met terug-knop en titel
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -42,7 +45,7 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                 IconButton(onClick = { navController.popBackStack() }) {
                     Icon(
                         imageVector = Icons.Filled.ArrowBackIosNew,
-                        contentDescription = "Terug",
+                        contentDescription = "Terug", // Dutch for "Back"
                         tint = GreenSustainable,
                         modifier = Modifier
                             .size(32.dp)
@@ -51,7 +54,7 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                     )
                 }
                 Text(
-                    text = "Help & Support",
+                    text = "Help & Ondersteuning", // Dutch for "Help & Support"
                     color = GreenSustainable,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
@@ -59,38 +62,60 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                 Spacer(modifier = Modifier.width(48.dp))
             }
 
+            // Hoofdinhoud
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "Beheer je ondersteuning",
+                    text = "FAQ's en Ondersteuning", // Dutch for "FAQ's and Support Contact"
                     style = MaterialTheme.typography.titleLarge,
                     color = DarkGreen,
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
+                // FAQ-sectie
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .weight(1f) // Ensures the card takes available space and allows scrolling
                         .clip(RoundedCornerShape(16.dp))
                         .shadow(6.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = "Veelgestelde Vragen",
+                            text = "Veelgestelde Vragen", // Dutch for "Frequently Asked Questions"
                             style = MaterialTheme.typography.titleLarge,
                             color = DarkGreen
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        FAQItem("Hoe volg ik mijn pakket?", "Gebruik de 'Track'-functie op de homepage.")
-                        FAQItem("Kan ik mijn adres wijzigen?", "Ja, ga naar Instellingen om je adres te updaten.")
-                        FAQItem("Wat als mijn pakket vertraagd is?", "Neem contact op met support.")
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxHeight() // Ensures LazyColumn uses available height
+                        ) {
+                            items(
+                                listOf(
+                                    Pair("Hoe kan ik mijn pakket volgen?", "Gebruik de 'Track'-functie op de activeiten pagina."),
+                                    Pair("Kan ik mijn profiel gegevens wijzigen?", "Ja, ga naar Instellingen om je gegevens bij te werken."),
+                                    Pair("Wat als mijn pakket gestolen of beschadigd is?", "Neem contact op met ondersteuning voor hulp."),
+                                    Pair("Welk voertuig is nodig voor een klein pakket?", "Een fiets of scooter is geschikt voor kleine pakketten."),
+                                    Pair("Welk voertuig is nodig voor een middelgroot pakket?", "Middelgrote pakketten vereisen een auto of kleine bestelwagen."),
+                                    Pair("Welk voertuig is nodig voor een groot pakket?", "Grote pakketten vereisen een bestelwagen of vrachtwagen."),
+                                    Pair("Wat zijn de voorwaarden voor het verzenden van eten?", "Eten moet veilig verpakt zijn in lekvrije containers en binnen 2 uur bezorgd worden."),
+                                    Pair("Wat zijn de voorwaarden voor het verzenden van drinken?", "Drinken moet in lekvrije flessen of containers zitten en rechtop vervoerd worden."),
+                                    Pair("Wat zijn de voorwaarden voor het verzenden van pakketten?", "Pakketten moeten stevig verpakt zijn en mogen geen verboden items bevatten (bijv. gevaarlijke stoffen).")
+                                )
+                            ) { (question, answer) ->
+                                FAQItem(question = question, answer = answer)
+                            }
+                        }
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
+
+                // Contactinformatie-sectie
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -100,18 +125,18 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = "Contactinformatie",
+                            text = "Contactinformatie", // Dutch for "Contact Information"
                             style = MaterialTheme.typography.titleLarge,
                             color = DarkGreen
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "E-mail: support@quickdropapp.com",
+                            text = "E-mail: support@quickdropapp.com", // Email remains in English
                             style = MaterialTheme.typography.bodyLarge,
                             color = DarkGreen.copy(alpha = 0.8f)
                         )
                         Text(
-                            text = "Telefoon: +32 123 456 789",
+                            text = "Telefoon: +32 123 456 789", // Dutch for "Phone"
                             style = MaterialTheme.typography.bodyLarge,
                             color = DarkGreen.copy(alpha = 0.8f)
                         )

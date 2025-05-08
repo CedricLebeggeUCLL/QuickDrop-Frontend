@@ -42,19 +42,19 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val TAG = "DeepLink"
-    private var pendingDeepLink: String? = null // Bewaar de deep link tijdelijk
+    private var pendingDeepLink: String? = null // Store the deep link temporarily
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d(TAG, "onCreate aangeroepen")
+        Log.d(TAG, "onCreate called")
         enableEdgeToEdge()
 
         Places.initialize(applicationContext, "AIzaSyBhUNOle29taWD_B58yNpmsUDBihvkqq98")
 
-        // Controleer of er een deep link is bij het starten
+        // Check for a deep link on start
         intent?.data?.let { uri ->
-            Log.d(TAG, "Inkomende URI in onCreate: $uri")
+            Log.d(TAG, "Incoming URI in onCreate: $uri")
             if (uri.scheme == "quickdrop" && uri.host == "resetPassword" && uri.pathSegments.isNotEmpty()) {
                 pendingDeepLink = uri.pathSegments.firstOrNull()
                 Log.d(TAG, "Pending deep link token: $pendingDeepLink")
@@ -69,21 +69,21 @@ class MainActivity : ComponentActivity() {
                 val isLoggedIn = AuthDataStore.isLoggedIn(this)
                 val initialUserId = if (isLoggedIn) AuthDataStore.getUserId(this) ?: -1 else -1
 
-                // Verwerk de deep link zodra navController beschikbaar is
+                // Process the deep link once navController is available
                 LaunchedEffect(Unit) {
                     if (isLoggedIn && initialUserId != -1) {
-                        Log.d(TAG, "Gebruiker is ingelogd, navigeren naar home met userId: $initialUserId")
+                        Log.d(TAG, "User is logged in, navigating to home with userId: $initialUserId")
                         navController.navigate("home/$initialUserId") {
                             popUpTo("welcome") { inclusive = true }
                         }
                     } else if (pendingDeepLink != null) {
-                        Log.d(TAG, "Navigeren naar resetPassword met token: $pendingDeepLink")
+                        Log.d(TAG, "Navigating to resetPassword with token: $pendingDeepLink")
                         navController.navigate("resetPassword/$pendingDeepLink") {
                             popUpTo("welcome") { inclusive = true }
                         }
-                        pendingDeepLink = null // Reset na navigatie
+                        pendingDeepLink = null // Reset after navigation
                     } else {
-                        Log.d(TAG, "Geen deep link of ingelogde gebruiker, start bij welcome")
+                        Log.d(TAG, "No deep link or logged-in user, starting at welcome")
                     }
                 }
 
@@ -101,7 +101,7 @@ class MainActivity : ComponentActivity() {
                         arguments = listOf(navArgument("token") { type = androidx.navigation.NavType.StringType })
                     ) { backStackEntry ->
                         val token = backStackEntry.arguments?.getString("token") ?: ""
-                        Log.d(TAG, "ResetPasswordScreen geopend met token: $token")
+                        Log.d(TAG, "ResetPasswordScreen opened with token: $token")
                         ResetPasswordScreen(navController, token)
                     }
                     composable(
@@ -178,10 +178,17 @@ class MainActivity : ComponentActivity() {
                         DeliveryInfoScreen(navController, deliveryId)
                     }
                     composable(
-                        route = "activitiesOverview/{userId}",
-                        arguments = listOf(navArgument("userId") { type = androidx.navigation.NavType.IntType })
+                        route = "activities/{userId}?openSheet={openSheet}",
+                        arguments = listOf(
+                            navArgument("userId") { type = androidx.navigation.NavType.IntType },
+                            navArgument("openSheet") {
+                                type = androidx.navigation.NavType.BoolType
+                                defaultValue = false
+                            }
+                        )
                     ) { backStackEntry ->
                         val userId = backStackEntry.arguments?.getInt("userId") ?: 0
+                        val openSheet = backStackEntry.arguments?.getBoolean("openSheet") ?: false
                         ActivitiesOverviewScreen(
                             navController = navController,
                             userId = userId,
@@ -192,7 +199,8 @@ class MainActivity : ComponentActivity() {
                                         popUpTo(0) { inclusive = true }
                                     }
                                 }
-                            }
+                            },
+                            openSheet = openSheet // Pass the openSheet parameter
                         )
                     }
                     composable(
@@ -262,13 +270,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        Log.d(TAG, "onNewIntent aangeroepen")
-        intent?.data?.let { uri ->
-            Log.d(TAG, "Inkomende URI in onNewIntent: $uri")
+        Log.d(TAG, "onNewIntent called")
+        intent.data?.let { uri ->
+            Log.d(TAG, "Incoming URI in onNewIntent: $uri")
             if (uri.scheme == "quickdrop" && uri.host == "resetPassword" && uri.pathSegments.isNotEmpty()) {
                 pendingDeepLink = uri.pathSegments.firstOrNull()
                 Log.d(TAG, "Pending deep link token in onNewIntent: $pendingDeepLink")
             }
-        } ?: Log.d(TAG, "Geen URI in intent ontvangen in onNewIntent")
+        } ?: Log.d(TAG, "No URI received in intent in onNewIntent")
     }
 }

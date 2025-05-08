@@ -35,7 +35,12 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout: () -> Unit) {
+fun ActivitiesOverviewScreen(
+    navController: NavController,
+    userId: Int,
+    onLogout: () -> Unit,
+    openSheet: Boolean = false // Nieuwe parameter om bottom sheet te openen
+) {
     var isCourier by remember { mutableStateOf<Boolean?>(null) }
     var userRole by remember { mutableStateOf<String?>(null) }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -52,7 +57,6 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
     LaunchedEffect(shouldHideBottomSheet) {
         if (shouldHideBottomSheet) {
             try {
-                // Gebruik expand() en vervolgens collapse() om animatieproblemen te vermijden
                 scaffoldState.bottomSheetState.expand()
                 scaffoldState.bottomSheetState.hide()
                 Log.d("BottomSheet", "Bottom sheet succesvol verborgen")
@@ -63,7 +67,7 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
         }
     }
 
-    // Navigatie uitvoeren wanneer navigationTrigger verandert
+    // Navigatie uitvoeren wanneer triggers veranderen
     LaunchedEffect(navigationTrigger, actionTrigger, categoryTrigger) {
         if (navigationTrigger != null && actionTrigger != null && categoryTrigger != null) {
             when (navigationTrigger) {
@@ -82,8 +86,23 @@ fun ActivitiesOverviewScreen(navController: NavController, userId: Int, onLogout
         }
     }
 
+    // Bottom sheet automatisch openen als openSheet true is
+    LaunchedEffect(openSheet) {
+        if (openSheet) {
+            scope.launch {
+                try {
+                    scaffoldState.bottomSheetState.expand()
+                    Log.d("BottomSheet", "Bottom sheet succesvol geopend")
+                } catch (e: Exception) {
+                    Log.e("BottomSheetError", "Fout bij openen bottom sheet: ${e.message}")
+                }
+            }
+        }
+    }
+
     val apiService = RetrofitClient.create(LocalContext.current)
 
+    // Controleer gebruikersrol
     LaunchedEffect(userId) {
         apiService.getCourierByUserId(userId).enqueue(object : Callback<Courier> {
             override fun onResponse(call: Call<Courier>, response: Response<Courier>) {

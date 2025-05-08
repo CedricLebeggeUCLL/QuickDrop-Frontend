@@ -1,4 +1,3 @@
-// com.example.quickdropapp.composables/ModernBottomNavigation.kt
 package com.example.quickdropapp.composables.nav
 
 import androidx.compose.foundation.background
@@ -33,29 +32,30 @@ fun ModernBottomNavigation(navController: NavController, userId: Int) {
     ) {
         val items = listOf(
             Triple("home/$userId", Icons.Filled.Home, "Home"),
-            Triple("activitiesOverview/$userId", Icons.Filled.FormatListNumbered, "Activities"),
+            Triple("activities/$userId", Icons.Filled.FormatListNumbered, "Activities"), // Updated route
             Triple("profile/$userId", Icons.Filled.AccountCircle, "Profile")
         )
         items.forEach { (route, icon, label) ->
+            val isSelected = navController.currentDestination?.route?.startsWith(route.split("/")[0]) == true
             NavigationBarItem(
-                selected = navController.currentDestination?.route?.startsWith(route.split("/")[0]) == true,
+                selected = isSelected,
                 onClick = {
-                    // Voorkom dubbele navigatie naar dezelfde bestemming
-                    if (navController.currentDestination?.route?.startsWith(route.split("/")[0]) != true) {
+                    // Prevent navigating to the same destination
+                    if (!isSelected) {
                         navController.navigate(route)
                     }
                 },
                 icon = {
                     Icon(
                         imageVector = icon,
-                        contentDescription = route,
-                        tint = if (navController.currentDestination?.route?.startsWith(route.split("/")[0]) == true) GreenSustainable else DarkGreen.copy(alpha = 0.6f)
+                        contentDescription = label,
+                        tint = if (isSelected) GreenSustainable else DarkGreen.copy(alpha = 0.6f)
                     )
                 },
                 label = {
                     Text(
                         text = label,
-                        color = if (navController.currentDestination?.route?.startsWith(route.split("/")[0]) == true) GreenSustainable else DarkGreen.copy(alpha = 0.6f),
+                        color = if (isSelected) GreenSustainable else DarkGreen.copy(alpha = 0.6f),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Normal
                     )

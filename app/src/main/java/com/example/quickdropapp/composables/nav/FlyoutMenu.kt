@@ -60,7 +60,7 @@ fun FlyoutMenu(
             label = { Text("Pakket Versturen", color = DarkGreen) },
             selected = false,
             onClick = {
-                navController.navigate("sendPackage/$userId")
+                navController.navigate("activities/$userId?openSheet=true")
                 onClose()
             },
             icon = { Icon(Icons.Filled.DoubleArrow, contentDescription = null, tint = GreenSustainable.copy(alpha = 0.8f)) },

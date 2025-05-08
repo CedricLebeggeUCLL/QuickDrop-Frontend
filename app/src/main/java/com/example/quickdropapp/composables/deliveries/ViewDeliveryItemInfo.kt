@@ -12,6 +12,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.quickdropapp.models.Delivery
 import com.example.quickdropapp.models.DeliveryUpdate
+import com.example.quickdropapp.models.packages.Package // Voeg dit import toe
 import com.example.quickdropapp.network.ApiService
 import com.example.quickdropapp.ui.theme.DarkGreen
 import com.example.quickdropapp.ui.theme.GreenSustainable
@@ -42,30 +45,26 @@ fun DeliveryInfoCard(
     navController: NavController,
     onDeliveryUpdated: (Delivery) -> Unit
 ) {
-    // Datumformaat voor parsing van ISO 8601 (bijv. "2025-04-02T07:32:06.000Z")
+    // State voor de uitklapbare sectie
+    var expanded by remember { mutableStateOf(false) }
+    var packageDetails by remember { mutableStateOf<Package?>(null) }
+    var isLoadingPackage by remember { mutableStateOf(false) }
+
+    // Datumformaten
     val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()).apply {
-        timeZone = TimeZone.getTimeZone("UTC") // ISO 8601 is in UTC
+        timeZone = TimeZone.getTimeZone("UTC")
     }
-    // Datumformaat voor weergave (bijv. "2 apr 2025, 07:32")
     val displayFormat = SimpleDateFormat("d MMM yyyy, HH:mm", Locale("nl"))
 
     val formattedPickupTime = delivery.pickup_time?.let { pickupTime ->
         try {
             val date = isoFormat.parse(pickupTime)
-            if (date != null) {
-                displayFormat.format(date)
-            } else {
-                "Ongeldige datum"
-            }
+            date?.let { displayFormat.format(it) } ?: "Ongeldige datum"
         } catch (e: Exception) {
             try {
                 val fallbackFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 val date = fallbackFormat.parse(pickupTime)
-                if (date != null) {
-                    displayFormat.format(date)
-                } else {
-                    "Ongeldige datum"
-                }
+                date?.let { displayFormat.format(it) } ?: "Ongeldige datum"
             } catch (e: Exception) {
                 pickupTime
             }
@@ -75,20 +74,12 @@ fun DeliveryInfoCard(
     val formattedDeliveryTime = delivery.delivery_time?.let { deliveryTime ->
         try {
             val date = isoFormat.parse(deliveryTime)
-            if (date != null) {
-                displayFormat.format(date)
-            } else {
-                "Ongeldige datum"
-            }
+            date?.let { displayFormat.format(it) } ?: "Ongeldige datum"
         } catch (e: Exception) {
             try {
                 val fallbackFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 val date = fallbackFormat.parse(deliveryTime)
-                if (date != null) {
-                    displayFormat.format(date)
-                } else {
-                    "Ongeldige datum"
-                }
+                date?.let { displayFormat.format(it) } ?: "Ongeldige datum"
             } catch (e: Exception) {
                 deliveryTime
             }
@@ -105,6 +96,25 @@ fun DeliveryInfoCard(
     val (statusAlias, statusColor) = getStatusAlias(delivery.status)
     val dropoffCity = delivery.dropoffAddress?.city ?: "Onbekende stad"
     val title = "Levering naar $dropoffCity"
+
+    // Haal pakketdetails op als de sectie wordt geopend
+    LaunchedEffect(expanded) {
+        if (expanded && packageDetails == null) {
+            isLoadingPackage = true
+            apiService.getPackageById(delivery.package_id).enqueue(object : Callback<Package> {
+                override fun onResponse(call: Call<Package>, response: Response<Package>) {
+                    if (response.isSuccessful) {
+                        packageDetails = response.body()
+                    }
+                    isLoadingPackage = false
+                }
+
+                override fun onFailure(call: Call<Package>, t: Throwable) {
+                    isLoadingPackage = false
+                }
+            })
+        }
+    }
 
     Card(
         modifier = Modifier
@@ -209,6 +219,84 @@ fun DeliveryInfoCard(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // Knop om pakketdetails te tonen/verbergen
+            TextButton(
+                onClick = { expanded = !expanded },
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text(
+                    text = if (expanded) "Verberg Pakket Details" else "Toon Pakket Details",
+                    color = GreenSustainable,
+                    fontWeight = FontWeight.Medium
+                )
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            // Pakketdetails sectie
+            AnimatedVisibility(
+                visible = expanded,
+                enter = fadeIn(animationSpec = tween(durationMillis = 400)),
+                exit = fadeOut(animationSpec = tween(durationMillis = 400))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp)
+                        .background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
+                        .padding(16.dp)
+                ) {
+                    if (isLoadingPackage) {
+                        CircularProgressIndicator(
+                            color = GreenSustainable,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                    } else {
+                        packageDetails?.let { pkg ->
+                            Text(
+                                text = "Pakket Details",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = DarkGreen,
+                                fontSize = 16.sp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Beschrijving: ${pkg.description ?: "Geen beschrijving"}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = DarkGreen.copy(alpha = 0.8f),
+                                fontSize = 14.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Grootte: ${pkg.size}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = DarkGreen.copy(alpha = 0.8f),
+                                fontSize = 14.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Categorie: ${pkg.category}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = DarkGreen.copy(alpha = 0.8f),
+                                fontSize = 14.sp
+                            )
+                        } ?: Text(
+                            text = "Pakketdetails niet beschikbaar",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Red,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             // Actieknoppen
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -233,7 +321,7 @@ fun DeliveryInfoCard(
                                 }
 
                                 override fun onFailure(call: Call<Delivery>, t: Throwable) {
-                                    // Handle error (e.g., log or show a toast)
+                                    // Handle error
                                 }
                             })
                         },

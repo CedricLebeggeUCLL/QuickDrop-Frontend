@@ -26,6 +26,8 @@ import com.example.quickdropapp.ui.theme.GreenSustainable
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun HistoryDeliveryItem(
@@ -50,67 +52,125 @@ fun HistoryDeliveryItem(
         })
     }
 
+    // Verbeterde datumformattering
+    fun formatDateTime(dateTime: String?): String {
+        if (dateTime.isNullOrEmpty()) return "Niet beschikbaar"
+
+        // Lijst van mogelijke invoerformaten
+        val inputFormats = listOf(
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault()),
+            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()),
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()),
+            SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        )
+
+        // Stel UTC in voor formaten met 'Z'
+        inputFormats[0].timeZone = TimeZone.getTimeZone("UTC")
+
+        // Uitvoerformaat
+        val outputFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+
+        // Probeer elk invoerformaat
+        for (inputFormat in inputFormats) {
+            try {
+                val date = inputFormat.parse(dateTime)
+                if (date != null) {
+                    return outputFormat.format(date)
+                }
+            } catch (e: Exception) {
+                // Ga verder naar het volgende formaat
+            }
+        }
+        return "Niet beschikbaar"
+    }
+
+    // Status badge kleur
+    fun getStatusColor(status: String?): Color {
+        return when (status?.lowercase()) {
+            "delivered" -> GreenSustainable
+            "in_transit" -> Color(0xFFFFA500) // Oranje
+            "pending" -> Color(0xFF808080) // Grijs
+            else -> Color(0xFFB0BEC5) // Lichtgrijs voor onbekend
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .shadow(2.dp),
+            .padding(vertical = 8.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .shadow(4.dp, RoundedCornerShape(16.dp)),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Levering #${delivery.id}",
+                    text = packageData?.description ?: "Levering",
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DarkGreen
+                    fontWeight = FontWeight.Bold,
+                    color = DarkGreen,
+                    modifier = Modifier.weight(1f)
                 )
-                Text(
-                    text = "Pakket ID: ${delivery.package_id}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "Status: ${delivery.status?.replaceFirstChar { it.uppercase() } ?: "Onbekend"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "Opgehaald: ${delivery.pickup_time ?: "Niet opgehaald"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "Afgeleverd: ${delivery.delivery_time ?: "Niet afgeleverd"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "Afleveradres: ${packageData?.dropoffAddress?.let { "${it.street_name} ${it.house_number}, ${it.postal_code} ${it.city}" } ?: "Onbekend"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
+                IconButton(
+                    onClick = { navController.navigate("trackingDeliveries/$userId?deliveryId=${delivery.id}") },
+                    modifier = Modifier
+                        .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
+                        .size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.LocationOn,
+                        contentDescription = "Track Levering",
+                        tint = GreenSustainable
+                    )
+                }
             }
-            IconButton(
-                onClick = { navController.navigate("trackingDeliveries/$userId?deliveryId=${delivery.id}") },
+            Spacer(modifier = Modifier.height(8.dp))
+            // Status badge
+            Box(
                 modifier = Modifier
-                    .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
-                    .size(36.dp)
+                    .background(
+                        color = getStatusColor(delivery.status),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Filled.LocationOn,
-                    contentDescription = "Track Levering",
-                    tint = GreenSustainable
+                Text(
+                    text = delivery.status?.replaceFirstChar { it.uppercase() } ?: "Onbekend",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
                 )
             }
+            Spacer(modifier = Modifier.height(12.dp))
+            // Afleveradres
+            Text(
+                text = "Afleveradres: ${packageData?.dropoffAddress?.let { "${it.street_name} ${it.house_number}, ${it.postal_code} ${it.city}" } ?: "Onbekend"}",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Normal,
+                color = DarkGreen.copy(alpha = 0.8f)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            // Datum en tijd
+            Text(
+                text = "Opgehaald: ${formatDateTime(delivery.pickup_time)}",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Normal,
+                color = DarkGreen.copy(alpha = 0.8f)
+            )
+            Text(
+                text = "Afgeleverd: ${formatDateTime(delivery.delivery_time)}",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Normal,
+                color = DarkGreen.copy(alpha = 0.8f)
+            )
         }
     }
 }

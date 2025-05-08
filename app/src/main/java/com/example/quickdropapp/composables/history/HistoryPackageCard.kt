@@ -27,57 +27,79 @@ fun HistoryPackageItem(
     navController: NavController,
     userId: Int
 ) {
+    // Status badge kleur
+    fun getStatusColor(status: String?): Color {
+        return when (status?.lowercase()) {
+            "delivered" -> GreenSustainable
+            "in_transit" -> Color(0xFFFFA500) // Oranje
+            "pending" -> Color(0xFF808080) // Grijs
+            else -> Color(0xFFB0BEC5) // Lichtgrijs voor onbekend
+        }
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .shadow(2.dp),
+            .padding(vertical = 8.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .shadow(4.dp, RoundedCornerShape(16.dp)),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Pakket #${pkg.id}",
+                    text = pkg.description ?: "Pakket",
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DarkGreen
+                    fontWeight = FontWeight.Bold,
+                    color = DarkGreen,
+                    modifier = Modifier.weight(1f)
                 )
-                Text(
-                    text = "Beschrijving: ${pkg.description ?: "Geen beschrijving"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "Status: ${pkg.status?.replaceFirstChar { it.uppercase() } ?: "Onbekend"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
-                Text(
-                    text = "Afleveradres: ${pkg.dropoffAddress?.let { "${it.street_name} ${it.house_number}, ${it.postal_code} ${it.city}" } ?: "Onbekend"}",
-                    fontSize = 14.sp,
-                    color = DarkGreen.copy(alpha = 0.8f)
-                )
+                IconButton(
+                    onClick = { navController.navigate("trackPackages/$userId?packageId=${pkg.id}") },
+                    modifier = Modifier
+                        .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
+                        .size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.LocationOn,
+                        contentDescription = "Track Pakket",
+                        tint = GreenSustainable
+                    )
+                }
             }
-            IconButton(
-                onClick = { navController.navigate("trackPackages/$userId?packageId=${pkg.id}") },
+            Spacer(modifier = Modifier.height(8.dp))
+            // Status badge
+            Box(
                 modifier = Modifier
-                    .background(GreenSustainable.copy(alpha = 0.1f), CircleShape)
-                    .size(36.dp)
+                    .background(
+                        color = getStatusColor(pkg.status),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Filled.LocationOn,
-                    contentDescription = "Track Pakket",
-                    tint = GreenSustainable
+                Text(
+                    text = pkg.status?.replaceFirstChar { it.uppercase() } ?: "Onbekend",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
                 )
             }
+            Spacer(modifier = Modifier.height(12.dp))
+            // Afleveradres
+            Text(
+                text = "Afleveradres: ${pkg.dropoffAddress?.let { "${it.street_name} ${it.house_number}, ${it.postal_code} ${it.city}" } ?: "Onbekend"}",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Normal,
+                color = DarkGreen.copy(alpha = 0.8f)
+            )
         }
     }
 }

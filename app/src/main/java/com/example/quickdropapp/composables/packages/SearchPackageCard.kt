@@ -24,7 +24,7 @@ import com.example.quickdropapp.ui.theme.SandBeige
 
 @Composable
 fun PackageCard(packageItem: Package, onAccept: (Int) -> Unit) {
-    val packageId = packageItem.id ?: return
+    val packageId = packageItem.id
 
     // Status aliassen en kleuren
     val (statusAlias, statusColor) = when (packageItem.status) {
@@ -41,6 +41,17 @@ fun PackageCard(packageItem: Package, onAccept: (Int) -> Unit) {
     val packageContent = parts.getOrNull(0) ?: "Onbekende inhoud"
     val receiverPart = parts.getOrNull(1)?.split(", ")?.getOrNull(0)?.replace("Ontvanger: ", "") ?: "Onbekende ontvanger"
     val weightPart = parts.getOrNull(1)?.split(", ")?.getOrNull(1)?.replace("Gewicht: ", "") ?: "Onbekend gewicht"
+
+    // Grootte (letterlijk overnemen)
+    val size = packageItem.size.replaceFirstChar { it.uppercase() }
+
+    // Categorie (vertaald naar Nederlands)
+    val category = when (packageItem.category.lowercase()) {
+        "package" -> "Pakket"
+        "food" -> "Voedsel"
+        "drink" -> "Drank"
+        else -> "Onbekend"
+    }
 
     // Titel gebaseerd op ophaal- en afleverstad
     val pickupCity = packageItem.pickupAddress?.city ?: "Onbekend"
@@ -153,6 +164,55 @@ fun PackageCard(packageItem: Package, onAccept: (Int) -> Unit) {
                 )
                 Text(
                     text = "Gewicht: $weightPart",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DarkGreen.copy(alpha = 0.8f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Grootte
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Straighten,
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = "Grootte: $size",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = DarkGreen.copy(alpha = 0.8f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Categorie
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = when (category) {
+                        "Pakket" -> Icons.Filled.Inventory
+                        "Voedsel" -> Icons.Filled.Restaurant
+                        "Drank" -> Icons.Filled.LocalDrink
+                        else -> Icons.Filled.Info
+                    },
+                    contentDescription = null,
+                    tint = GreenSustainable,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = "Categorie: $category",
                     style = MaterialTheme.typography.bodyMedium,
                     color = DarkGreen.copy(alpha = 0.8f),
                     maxLines = 1,

@@ -3,6 +3,7 @@ package com.example.quickdropapp.screens.activities.packages
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
@@ -321,11 +322,12 @@ fun SendPackageScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Size selection
+                        // Size selection (Simplified to avoid menuAnchor error)
                         var sizeExpanded by remember { mutableStateOf(false) }
-                        ExposedDropdownMenuBox(
-                            expanded = sizeExpanded,
-                            onExpandedChange = { sizeExpanded = !sizeExpanded }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentSize(Alignment.TopStart)
                         ) {
                             OutlinedTextField(
                                 value = when (size) {
@@ -338,39 +340,41 @@ fun SendPackageScreen(
                                 readOnly = true,
                                 label = { Text("Grootte") },
                                 trailingIcon = {
-                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = sizeExpanded)
+                                    Icon(
+                                        imageVector = if (sizeExpanded) Icons.Filled.ArrowDropUp else Icons.Filled.ArrowDropDown,
+                                        contentDescription = null,
+                                        tint = DarkGreen
+                                    )
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .menuAnchor()
+                                    .clickable { sizeExpanded = !sizeExpanded }
                             )
-                            ExposedDropdownMenu(
+                            DropdownMenu(
                                 expanded = sizeExpanded,
-                                onDismissRequest = { sizeExpanded = false }
+                                onDismissRequest = { sizeExpanded = false },
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 DropdownMenuItem(
                                     text = { Text("Klein") },
                                     onClick = {
                                         size = "small"
                                         sizeExpanded = false
-                                    },
-                                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                                    }
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Medium") },
                                     onClick = {
                                         size = "medium"
                                         sizeExpanded = false
-                                    },
-                                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                                    }
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Groot") },
                                     onClick = {
                                         size = "large"
                                         sizeExpanded = false
-                                    },
-                                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                                    }
                                 )
                             }
                         }
@@ -524,9 +528,9 @@ fun SendPackageScreen(
                         } else {
                             // Compose the description
                             val fullDescription = if (actionType == "send") {
-                                "$packageDescription - Ontvanger: $receiverName, Gewicht: $packageWeight kg"
+                                "$packageDescription | Ontvanger: $receiverName | Gewicht: $packageWeight kg"
                             } else {
-                                "$packageDescription - Ophaallocatie: $pickupLocationName, Naam: $packageHolderName, Gewicht: $packageWeight kg"
+                                "$packageDescription | Ophaallocatie: $pickupLocationName | Ontvanger: $packageHolderName | Gewicht: $packageWeight kg"
                             }
 
                             // Create the package

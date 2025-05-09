@@ -31,7 +31,7 @@ fun PackageItem(
     onDelete: (Int) -> Unit,
     onUpdate: (Int) -> Unit
 ) {
-    val packageId = packageItem.id ?: return
+    val packageId = packageItem.id
     val showTrackButton = packageItem.status != "pending"
 
     // Status aliassen en kleuren
@@ -43,9 +43,14 @@ fun PackageItem(
         else -> "Onbekend" to Color.Gray
     }
 
-    // Ontvanger extraheren uit description
+    // Ontvanger of Ophaallocatie extraheren uit description gebaseerd op action_type
     val description = packageItem.description ?: ""
-    val receiverName = description.split(" - ").getOrNull(1)?.split(", ")?.getOrNull(0)?.replace("Ontvanger: ", "") ?: "Onbekende ontvanger"
+    val labelText = if (packageItem.action_type == "send") "Ontvanger" else "Ophaallocatie"
+    val detailText = if (packageItem.action_type == "send") {
+        description.split(" - ").getOrNull(1)?.split(", ")?.getOrNull(0)?.replace("Ontvanger: ", "") ?: "Onbekende ontvanger"
+    } else {
+        description.split(" - ").getOrNull(1)?.split(", ")?.getOrNull(0)?.replace("Ophaallocatie: ", "") ?: "Onbekende locatie"
+    }
 
     // Titel gebaseerd op dropoff stad
     val dropoffCity = packageItem.dropoffAddress?.city ?: "Onbekende stad"
@@ -108,7 +113,7 @@ fun PackageItem(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Ontvanger
+            // Ontvanger of Ophaallocatie (gefixeerd gebaseerd op action_type)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -120,7 +125,7 @@ fun PackageItem(
                     modifier = Modifier.size(20.dp)
                 )
                 Text(
-                    text = "Ontvanger: $receiverName",
+                    text = "$labelText: $detailText",
                     style = MaterialTheme.typography.bodyMedium,
                     color = DarkGreen.copy(alpha = 0.8f),
                     maxLines = 1,

@@ -79,7 +79,6 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f) // Ensures the card takes available space and allows scrolling
                         .clip(RoundedCornerShape(16.dp))
                         .shadow(6.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -92,8 +91,7 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxHeight() // Ensures LazyColumn uses available height
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(
                                 listOf(
@@ -139,6 +137,9 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                         )
                     }
                 }
+
+                // Add Spacer to push content up and avoid stretching
+                Spacer(modifier = Modifier.weight(1f))
             }
         }
     }

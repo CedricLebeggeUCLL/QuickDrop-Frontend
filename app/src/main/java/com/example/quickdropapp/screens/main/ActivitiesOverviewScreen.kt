@@ -184,7 +184,7 @@ fun ActivitiesOverviewScreen(
                                 ) {
                                     ModernActionCard(
                                         title = "Start een Verzending",
-                                        description = "Begin met verzenden of ontvangen",
+                                        description = "Pakket verzenden of ontvangen",
                                         icon = Icons.Filled.DoubleArrow,
                                         onClick = {
                                             scope.launch { scaffoldState.bottomSheetState.expand() }

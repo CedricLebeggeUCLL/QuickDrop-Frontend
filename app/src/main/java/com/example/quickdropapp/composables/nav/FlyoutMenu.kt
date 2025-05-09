@@ -57,7 +57,7 @@ fun FlyoutMenu(
             modifier = Modifier.padding(vertical = 8.dp)
         )
         NavigationDrawerItem(
-            label = { Text("Pakket Versturen", color = DarkGreen) },
+            label = { Text("Start Verzending", color = DarkGreen) },
             selected = false,
             onClick = {
                 navController.navigate("activities/$userId?openSheet=true")

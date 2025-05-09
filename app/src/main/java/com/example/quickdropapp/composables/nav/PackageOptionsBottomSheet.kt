@@ -61,13 +61,12 @@ fun PackageOptionsBottomSheet(
     onConfirmSelection: (actionType: String, category: String) -> Unit
 ) {
     var selectedAction by remember { mutableStateOf<String?>(null) }
-    var selectedItemType by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 16.dp) // Consistente padding
-            .padding(bottom = 32.dp), // Statische padding voor de onderkant
+            .padding(horizontal = 16.dp, vertical = 16.dp)
+            .padding(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -100,47 +99,8 @@ fun PackageOptionsBottomSheet(
             )
         }
 
-        // Item Type Selection
-        if (selectedAction != null) {
-            Text(
-                text = when (selectedAction) {
-                    "Send" -> "Wat ga je verzenden?"
-                    "Receive" -> "Wat ga je ontvangen?"
-                    else -> "Wat ga je verzenden/ontvangen?"
-                },
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = DarkGreen
-            )
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                SelectionButton(
-                    text = "Pakket",
-                    icon = Icons.Filled.LocalShipping,
-                    isSelected = selectedItemType == "Package",
-                    onClick = { selectedItemType = "Package" }
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                SelectionButton(
-                    text = "Eten",
-                    icon = Icons.Filled.Restaurant,
-                    isSelected = selectedItemType == "Food",
-                    onClick = { selectedItemType = "Food" }
-                )
-                Spacer(modifier = Modifier.width(16.dp))
-                SelectionButton(
-                    text = "Drinken",
-                    icon = Icons.Filled.LocalDrink,
-                    isSelected = selectedItemType == "Drink",
-                    onClick = { selectedItemType = "Drink" }
-                )
-            }
-        }
-
         // Next Button
-        val isEnabled = selectedAction != null && selectedItemType != null
+        val isEnabled = selectedAction != null
         Button(
             onClick = {
                 if (isEnabled) {
@@ -149,12 +109,7 @@ fun PackageOptionsBottomSheet(
                         "Receive" -> "receive"
                         else -> "send"
                     }
-                    val category = when (selectedItemType) {
-                        "Package" -> "package"
-                        "Food" -> "food"
-                        "Drink" -> "drink"
-                        else -> "package"
-                    }
+                    val category = "package" // Always package
                     onConfirmSelection(actionType, category)
                 }
             },

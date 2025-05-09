@@ -39,7 +39,7 @@ fun ActivitiesOverviewScreen(
     navController: NavController,
     userId: Int,
     onLogout: () -> Unit,
-    openSheet: Boolean = false // Nieuwe parameter om bottom sheet te openen
+    openSheet: Boolean = false
 ) {
     var isCourier by remember { mutableStateOf<Boolean?>(null) }
     var userRole by remember { mutableStateOf<String?>(null) }

@@ -47,8 +47,8 @@ import java.util.Locale
 fun SendPackageScreen(
     navController: NavController,
     userId: Int,
-    actionType: String, // "send" of "receive"
-    category: String // "package", "food", "drink"
+    actionType: String, // "send" or "receive"
+    category: String // Always "package"
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -57,52 +57,35 @@ fun SendPackageScreen(
     var size by remember { mutableStateOf("medium") }
     var packageDescription by remember { mutableStateOf("") }
     var packageWeight by remember { mutableStateOf("") }
-    var receiverName by remember { mutableStateOf("") } // Voor "Verzenden"
-    var pickupLocationName by remember { mutableStateOf("") } // Voor "Ontvangen"
-    var packageHolderName by remember { mutableStateOf("") } // Voor "Ontvangen"
+    var receiverName by remember { mutableStateOf("") } // For "send"
+    var pickupLocationName by remember { mutableStateOf("") } // For "receive"
+    var packageHolderName by remember { mutableStateOf("") } // For "receive"
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var successMessage by remember { mutableStateOf<String?>(null) }
 
-    // Foutstatussen voor elk verplicht veld
+    // Error states for required fields
     var pickupAddressError by remember { mutableStateOf(false) }
     var dropoffAddressError by remember { mutableStateOf(false) }
     var packageDescriptionError by remember { mutableStateOf(false) }
     var packageWeightError by remember { mutableStateOf(false) }
-    var receiverNameError by remember { mutableStateOf(false) } // Voor "Verzenden"
-    var pickupLocationNameError by remember { mutableStateOf(false) } // Voor "Ontvangen"
-    var packageHolderNameError by remember { mutableStateOf(false) } // Voor "Ontvangen"
+    var receiverNameError by remember { mutableStateOf(false) } // For "send"
+    var pickupLocationNameError by remember { mutableStateOf(false) } // For "receive"
+    var packageHolderNameError by remember { mutableStateOf(false) } // For "receive"
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val buttonScale by animateFloatAsState(
         targetValue = if (isPressed) 1.05f else 1f,
-        animationSpec = tween(durationMillis = 150)
+        animationSpec = tween(durationMillis = 150),
+        label = "buttonScale"
     )
 
     val apiService = RetrofitClient.create(LocalContext.current)
 
-    // Dynamische tekst gebaseerd op category
-    val itemTypeText = when (category) {
-        "package" -> "pakket"
-        "food" -> "eten"
-        "drink" -> "drinken"
-        else -> "pakket"
-    }
-
-    // Dynamische placeholder voor beschrijving
-    val descriptionPlaceholder = when (category) {
-        "package" -> "Bijv. Boeken of Kleding"
-        "food" -> "Bijv. Pizza of Sushi"
-        "drink" -> "Bijv. Koffie of Frisdrank"
-        else -> "Bijv. Boeken of Kleding"
-    }
-
-    // Dynamische placeholder voor ophaallocatie (voor "receive")
-    val pickupLocationPlaceholder = when (category) {
-        "food" -> "Restaurant Chez Paul, Brussels"
-        "drink" -> "Café Central, Brussels"
-        else -> "Postkantoor Brussel"
-    }
+    // Fixed text for packages
+    val itemTypeText = "pakket"
+    val descriptionPlaceholder = "Bijv. Boeken of Kleding"
+    val pickupLocationPlaceholder = "Postkantoor Brussel"
 
     LaunchedEffect(userId) {
         println("Received userId: $userId, actionType: $actionType, category: $category")
@@ -184,7 +167,7 @@ fun SendPackageScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Pickup-locatie
+                // Pickup location
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -230,7 +213,7 @@ fun SendPackageScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Dropoff-locatie
+                // Dropoff location
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -276,7 +259,7 @@ fun SendPackageScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Categorie en grootte
+                // Category and size
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -311,7 +294,7 @@ fun SendPackageScreen(
                         }
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Categorie (alleen weergeven, niet aanpasbaar)
+                        // Category (display only, not editable)
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Filled.Category,
@@ -329,12 +312,7 @@ fun SendPackageScreen(
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = when (category) {
-                                        "package" -> "Pakket"
-                                        "food" -> "Eten"
-                                        "drink" -> "Drinken"
-                                        else -> "Pakket"
-                                    },
+                                    text = "Pakket",
                                     fontSize = 16.sp,
                                     color = DarkGreen
                                 )
@@ -343,7 +321,7 @@ fun SendPackageScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Grootte selectie
+                        // Size selection
                         var sizeExpanded by remember { mutableStateOf(false) }
                         ExposedDropdownMenuBox(
                             expanded = sizeExpanded,
@@ -364,7 +342,7 @@ fun SendPackageScreen(
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .menuAnchor(MenuAnchorType.PrimaryEditable, enabled = true)
+                                    .menuAnchor()
                             )
                             ExposedDropdownMenu(
                                 expanded = sizeExpanded,
@@ -375,21 +353,24 @@ fun SendPackageScreen(
                                     onClick = {
                                         size = "small"
                                         sizeExpanded = false
-                                    }
+                                    },
+                                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Medium") },
                                     onClick = {
                                         size = "medium"
                                         sizeExpanded = false
-                                    }
+                                    },
+                                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Groot") },
                                     onClick = {
                                         size = "large"
                                         sizeExpanded = false
-                                    }
+                                    },
+                                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                                 )
                             }
                         }
@@ -398,7 +379,7 @@ fun SendPackageScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Pakketdetails en dynamische velden
+                // Package details and dynamic fields
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -433,7 +414,7 @@ fun SendPackageScreen(
                         }
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Dynamische velden op basis van actionType
+                        // Dynamic fields based on actionType
                         if (actionType == "send") {
                             LabeledIconTextField(
                                 value = receiverName,
@@ -492,10 +473,10 @@ fun SendPackageScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Bevestig knop
+                // Confirm button
                 Button(
                     onClick = {
-                        // Reset foutstatussen
+                        // Reset error states
                         pickupAddressError = false
                         dropoffAddressError = false
                         packageDescriptionError = false
@@ -505,7 +486,7 @@ fun SendPackageScreen(
                         packageHolderNameError = false
                         errorMessage = null
 
-                        // Validatie van alle verplichte velden
+                        // Validate required fields
                         if (pickupAddress.street_name.isBlank() || pickupAddress.house_number.isBlank() || pickupAddress.postal_code.isBlank()) {
                             pickupAddressError = true
                         }
@@ -530,7 +511,7 @@ fun SendPackageScreen(
                             }
                         }
 
-                        // Controleer of er fouten zijn
+                        // Check for errors
                         if (pickupAddressError || dropoffAddressError || packageDescriptionError || packageWeightError || receiverNameError || pickupLocationNameError || packageHolderNameError) {
                             errorMessage = "Vul alle verplichte velden correct in:"
                             if (pickupAddressError) errorMessage += "\n- ${if (actionType == "send") "Vertrekpunt" else "Ophaaladres"} (straat, huisnummer, postcode)"
@@ -541,14 +522,14 @@ fun SendPackageScreen(
                             if (pickupLocationNameError) errorMessage += "\n- Van welke locatie moet je $itemTypeText opgehaald worden?"
                             if (packageHolderNameError) errorMessage += "\n- Wie heeft het $itemTypeText besteld?"
                         } else {
-                            // Stel de description samen
+                            // Compose the description
                             val fullDescription = if (actionType == "send") {
                                 "$packageDescription - Ontvanger: $receiverName, Gewicht: $packageWeight kg"
                             } else {
                                 "$packageDescription - Ophaallocatie: $pickupLocationName, Naam: $packageHolderName, Gewicht: $packageWeight kg"
                             }
 
-                            // Maak het pakket aan
+                            // Create the package
                             val packageRequest = PackageRequest(
                                 user_id = userId,
                                 description = fullDescription,

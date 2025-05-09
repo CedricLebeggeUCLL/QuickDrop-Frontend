@@ -99,12 +99,9 @@ fun HelpSupportScreen(navController: NavController, userId: Int) {
                                 listOf(
                                     Pair("Hoe kan ik mijn pakket volgen?", "Gebruik de 'Track'-functie op de activeiten pagina."),
                                     Pair("Kan ik mijn profiel gegevens wijzigen?", "Ja, ga naar Instellingen om je gegevens bij te werken."),
-                                    Pair("Wat als mijn pakket gestolen of beschadigd is?", "Neem contact op met ondersteuning voor hulp."),
                                     Pair("Welk voertuig is nodig voor een klein pakket?", "Een fiets of scooter is geschikt voor kleine pakketten."),
                                     Pair("Welk voertuig is nodig voor een middelgroot pakket?", "Middelgrote pakketten vereisen een auto of kleine bestelwagen."),
                                     Pair("Welk voertuig is nodig voor een groot pakket?", "Grote pakketten vereisen een bestelwagen of vrachtwagen."),
-                                    Pair("Wat zijn de voorwaarden voor het verzenden van eten?", "Eten moet veilig verpakt zijn in lekvrije containers en binnen 2 uur bezorgd worden."),
-                                    Pair("Wat zijn de voorwaarden voor het verzenden van drinken?", "Drinken moet in lekvrije flessen of containers zitten en rechtop vervoerd worden."),
                                     Pair("Wat zijn de voorwaarden voor het verzenden van pakketten?", "Pakketten moeten stevig verpakt zijn en mogen geen verboden items bevatten (bijv. gevaarlijke stoffen).")
                                 )
                             ) { (question, answer) ->
